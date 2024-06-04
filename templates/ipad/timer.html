@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Development Waterpolo Scoresheet</title>
+    <style>
+        /* Basic styling for the layout */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr; /* Divides the screen into three columns */
+            grid-template-rows: 250px 1fr; /* Adds a top section of 100px height */
+            grid-template-areas:
+                "header header header"
+                "left main right"
+                "footer footer footer"; /* Defines areas for the content */
+            height: 100vh; /* Full height of the viewport */
+         }
+
+        header {
+            grid-area: header; /* Places the header in the 'header' area */
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            line-height: 220px; /* Vertically centers the text */
+        }
+
+        nav {
+            grid-area: left; /* Places the left content in the 'left' area */
+            background-color: #f2f2f2;
+            padding: 10px;
+            font-size: 20px
+        }
+
+        article {
+            grid-area: main; /* Places the main content in the 'main' area */
+            text-align: center;
+            color: #333;
+            padding: 20px;
+            line-height: 50px;
+            font-size: 220px ;
+        }
+
+        aside {
+            grid-area: right; /* Places the right content in the 'right' area */
+            background-color: #f2f2f2;
+            padding: 10px;
+            font-size: 20px
+        }
+        footer {
+            grid-area: footer; /* Places the header in the 'header' area */
+            background-color: #333;
+            color: #fff;
+            padding: 30px;
+            font-size: 20px
+            /*!*text-align: center;*!*/
+            /*line-height: 200px; !* Vertically centers the text *!*/
+        }
+        .custom-text {
+            padding: 20px;
+            font-size: 24px;
+            border-radius: 5px;
+        }
+        table, th, td {
+        font-size: 20px;
+          border:1px solid black;
+          border-collapse: collapse;
+        }
+    </style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js">
+  </script>
+
+</head>
+
+    <script>
+        function playSound() {
+            var audio = new Audio('/static/airhorn.mp3');
+            audio.play();
+        }
+        function startCountdown() {
+            $.ajax({
+                url: '/start_countdown',
+                success: function(response) {
+                    updateCountdown();
+                }
+            });
+        }
+
+        function pauseCountdown() {
+            $.ajax({
+                url: '/pause_countdown',
+                success: function(response) {
+                    updateCountdown();
+                }
+            });
+        }
+
+        function resumeCountdown() {
+            $.ajax({
+                url: '/resume_countdown',
+                success: function(response) {
+                    updateCountdown();
+                }
+            });
+        }
+
+        function stopCountdown() {
+            $.ajax({
+                url: '/stop_countdown',
+                success: function(response) {
+                    updateCountdown();
+                }
+            });
+        }
+
+        function updateCountdown() {
+            $.ajax({
+                url: '/get_countdown_status',
+                success: function(response) {
+                    let countdownElement = document.getElementById('countdown');
+                    let timeLeft = response.elapsed_time;
+                    if (response.countdown_running) {
+                        let minutes = Math.floor(timeLeft / 60);
+                        let seconds = Math.floor(timeLeft % 60);
+                        countdownElement.innerHTML = '<br> ' + minutes +':' + seconds.toString().padStart(2, '0') + '';
+                        // countdownElement.innerHTML = 'Remaining Time: ' + seconds.toString().padStart(2, '0') + 's';
+                        if (timeLeft > 0) {
+                            setTimeout(updateCountdown, 1000);
+                        }
+                        else {
+                        	playSound()
+                            window.location.href = "/callinterval";
+                        }
+                    } else {
+                        countdownElement.innerHTML = '<br>""';
+                    }
+                }
+            });
+        }
+
+        // Initial update of countdown display
+        updateCountdown();
+    </script>
+
+<body>
+
+  <header>
+
+      <h1>
+
+          <span style="font-size: 30px; color: white;">{{ hometimeoutv }} </span>
+          <span style="font-size: 200px; color: white;">{{ TeamHome['goals'] }} </span>
+          <span style="font-size: 100px; color: grey; width: 1000px ;">{{location}}</span>
+              <span style="font-size: 200px; color: blue;">  {{ TeamAway['goals'] }}</span>
+          <span style="font-size: 30px; color: white;">{{ awaytimeoutv }} </span>
+
+      </h1>
+  </header>
+
+
+  <nav>
+<!--    <h6>Home Team</h6>-->
+    <table>
+        <tr>
+    <th style="font-size: 15px;"> Player&nbsp;&nbsp;&nbsp;</th>
+    <th style="font-size: 15px;"> <small>Goals&nbsp;</small></th>
+    <th style="font-size: 15px;"> <small>Majors</small></th>
+    <th style="font-size: 15px;"> <small>Assists</small></th>
+    <th colspan="3"> {{HomeTeam}}</th>
+
+        </tr>
+        {% for user_id, teama in teama.items() %}
+        <tr class="custom-text" style="background-color:
+            {% if teama.majors  == 1 %}
+                #00ff00;
+            {% elif teama.majors == 2 %}
+                #ff9933;
+            {% elif teama.majors >= 3 %}
+                #ff3300; /* Add more conditions as needed */
+            {% else %}
+                white; /* Fallback color */
+            {% endif %}
+        ">
+            <td>{{ user_id }}</td>
+            <td>{{ teama.goals }}</td>
+            <td>{{ teama.majors }}</td>
+            <td>{{ teama.assists }}</td>
+            <td>
+                <form method="POST" action="/updateteamagoal/{{ user_id }}">
+                <button style="height:30px;width:80px" type="submit">Goal</button>
+                </form></td>
+            <td>
+                <form method="POST" action="/updateteamamajor/{{ user_id }}">
+                 <button style="height:30px;width:80px" type="submit">Major</button>
+                </form></td>
+            <td>
+                <form method="POST" action="/updateteamaassists/{{ user_id }}">
+                <button style="height:30px;width:80px" type="submit">Assists</button>
+                </form>
+            </td>
+
+
+        </tr>
+        {% endfor %}
+    </table>
+<table>
+            <td>
+        <form method="POST" action="/hometimeout">
+            <button style="height:50px;width:200px" type="submit">Timeout</button>
+        </form>
+      </td>
+            <td>
+        <form method="POST" action="/homepenalty">
+            <button style="height:50px;width:200px" type="submit">Penalty</button>
+        </form>
+      </td>
+
+</table>
+</nav>
+
+<article>
+
+
+    <div> <span style="color: red;" id="countdown"> </span></div>
+
+    <button style="height:50px;width:180px" onclick="startCountdown()">Start</button>
+    <button style="height:50px;width:180px" onclick="pauseCountdown()">Pause</button>
+ <!--   <button style="height:50px;width:100px" onclick="resumeCountdown()">Resume</button> -->
+    <button style="height:50px;width:50px" onclick="stopCountdown()">Reset</button>
+
+  </div>
+</div>
+<br>
+<br>
+<!--
+  <table class="center"; style="text-align: center">
+        <tr>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;Score&nbsp;&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P1&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P2&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P3&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P4&nbsp;</th>
+        </tr>
+          {% for team_id, scores in periodscores.items() %}
+        <tr>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ team_id }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals1 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals2 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals3 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals4 }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+      <table style="text-align: center">
+        <tr>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">Majors&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P1&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P2&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P3&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P4&nbsp;</th>
+        </tr>
+          {% for user_id, scores in periodscores.items() %}
+        <tr>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ user_id }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors1 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors2 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors3 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors4 }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+ -->
+  <table class="center"; style="text-align: center">
+        <tr>
+            <th style="background-color:rgb(128,128,128);  font-size: 25px;">&nbsp;Score&nbsp;&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 25px;">&nbsp;P1&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 25px;">&nbsp;P2&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 25px;">&nbsp;P3&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 25px;">&nbsp;P4&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 25px;">Majors&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 25px;">&nbsp;P1&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 25px;">&nbsp;P2&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 25px;">&nbsp;P3&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 25px;">&nbsp;P4&nbsp;</th>
+    
+        </tr>
+          {% for team_id, scores in periodscores.items() %}
+        <tr>
+            <td style="background-color:powderblue;  font-size: 25px;">{{ team_id }}</td>
+            <td style="background-color:powderblue;  font-size: 25px;">{{ scores.goals1 }}</td>
+            <td style="background-color:powderblue;  font-size: 25px;">{{ scores.goals2 }}</td>
+            <td style="background-color:powderblue;  font-size: 25px;">{{ scores.goals3 }}</td>
+            <td style="background-color:powderblue;  font-size: 25px;">{{ scores.goals4 }}</td>
+            <td style="background-color:powderblue;  font-size: 25px;">{{ team_id }}</td>
+            <td style="background-color:powderblue;  font-size: 25px;">{{ scores.majors1 }}</td>
+            <td style="background-color:powderblue;  font-size: 25px;">{{ scores.majors2 }}</td>
+            <td style="background-color:powderblue;  font-size: 25px;">{{ scores.majors3 }}</td>
+            <td style="background-color:powderblue;  font-size: 25px;">{{ scores.majors4 }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+        <button ontouchstart="playSound()">Play Sound</button>
+      {% include 'messages.html' %}
+</article>
+
+
+
+<aside>
+<!--    <h1>Away Team</h1>-->
+      <table>
+        <tr>
+            <th colspan="3"> {{AwayTeam}}</th>
+    <th style="font-size: 15px;"> Player&nbsp;&nbsp;&nbsp;</th>
+    <th style="font-size: 15px;"> <small>Goals&nbsp;</small></th>
+    <th style="font-size: 15px;"> <small>Majors</small></th>
+    <th style="font-size: 15px;"> <small>Assists</small></th>
+
+
+        </tr>
+          {% for user_id, teamb in teamb.items() %}
+          <tr class="custom-text" style="background-color:
+            {% if teamb.majors  == 1 %}
+                #00ff00;
+            {% elif teamb.majors == 2 %}
+                #ff9933;
+            {% elif teamb.majors >= 3 %}
+                #ff3300; /* Add more conditions as needed */
+            {% else %}
+                white; /* Fallback color */
+            {% endif %}
+        ">
+              <td>
+                <form method="POST" action="/updateteambgoal/{{ user_id }}">
+                <button style="height:30px;width:80px" type="submit">Goal</button>
+                </form></td>
+            <td>
+                <form method="POST" action="/updateteambmajor/{{ user_id }}">
+                 <button style="height:30px;width:80px" type="submit">Major</button>
+                </form></td>
+            <td>
+                <form method="POST" action="/updateteambassists/{{ user_id }}">
+                <button style="height:30px;width:80px" type="submit">Assists</button>
+                </form>
+            </td>
+
+            <td>{{ user_id }}</td>
+            <td>{{ teamb.goals }}</td>
+            <td>{{ teamb.majors }}</td>
+            <td>{{ teamb.assists }}</td>
+            </td>
+
+
+        </tr>
+        {% endfor %}
+    </table>
+
+<!--       <form method="POST" action="/action">-->
+<!--                 <select name="action" id="action">-->
+<!--                    <option value="increment">increment</option>-->
+<!--                    <option value="decrement">decrement</option>-->
+<!--                </select>-->
+<!--         <button type="submit">action</button>-->
+<!--   </form>-->
+
+<table>
+            <td>
+        <form method="POST" action="/awaytimeout">
+            <button style="height:50px;width:180px" type="submit">Timeout</button>
+        </form>
+      </td>
+            <td>
+        <form method="POST" action="/awaypenalty">
+            <button style="height:50px;width:180px" type="submit">Penalty</button>
+        </form>
+      </td>
+
+</table>
+
+</aside>
+
+<footer>
+
+
+  <table>
+      <td>
+        <form method="POST" action="/start">
+            <button style="height:50px;width:180px" type="submit">Start Game</button>
+        </form>
+      </td>
+      <td>
+        <form method="POST" action="/period">
+        <button style="height:50px;width:180px" type="submit">Next Period</button>
+        </form>
+        </td>
+      <td>
+        <form method="POST" action="/clear">
+            <button style="height:50px;width:180px" type="submit">Clear</button>
+        </form>
+      </td>
+      <td>
+        <form method="POST" action="/finish">
+            <button style="height:50px;width:180px" type="submit">Finish Game</button>
+        </form>
+      </td>
+      <td>
+      <span style="font-size: 35px; padding: 10px; color: Red;"> Period:  {{ quarter }} </span>
+</td>
+      <td>
+        <form action="/settings">
+            <button style="height:50px;width:180px" type="submit">Edit Settings</button>
+<!--<input style="height:50px;width:180px" type="submit" value="Edit Settings" />-->
+</form>
+      </td>
+      <td>
+        <form action="/callinterval">
+            <button style="height:50px;width:180px" type="submit" onclick="playSound()">interval</button>
+<!--<input style="height:50px;width:180px" type="submit" value="Edit Settings" />-->
+</form>
+      </td>
+      <td>
+        <form action="/download/{{ filename }}">
+            <button style="height:50px;width:180px" type="submit">download</button>
+<!--<input style="height:50px;width:180px" type="submit" value="Edit Settings" />-->
+</form>
+
+</td>
+    
+  </table>
+</footer>
+
+</body>
+</html>

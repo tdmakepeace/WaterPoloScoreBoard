@@ -1,0 +1,16 @@
+Powershell
+
+
+python -m venv venv
+venv\Scripts\Activate.ps1
+pip install auto-py-to-exe
+cd .\PycharmProjects\WaterpoloSC\
+pip install -r .\requirements.txt
+python.exe .\start.py
+
+auto-py-to-exe
+
+or
+
+pyinstaller --noconfirm --onedir --windowed --add-data "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/static;static/" --add-data "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/templates;templates/"  "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/start.py"
+
