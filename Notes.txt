@@ -1,16 +1,21 @@
 Powershell
 
-
+cd C:\Users\tmakepea\PycharmProjects\WaterpoloSC
 python -m venv venv
 venv\Scripts\Activate.ps1
 pip install auto-py-to-exe
-cd .\PycharmProjects\WaterpoloSC\
+# cd .\PycharmProjects\WaterpoloSC\
 pip install -r .\requirements.txt
-python.exe .\start.py
-
 auto-py-to-exe
+
+exit
+
+
+python.exe .\start.py
 
 or
 
-pyinstaller --noconfirm --onedir --windowed --add-data "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/static;static/" --add-data "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/templates;templates/"  "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/start.py"
+pyinstaller --noconfirm --onefile --windowed --icon "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/static/Water Polo Logo.ico" --add-data "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/static;static/" --add-data "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/templates;templates/"  "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/start.py"
 
+
+delete the venv folder under C:\Users\tmakepea\PycharmProjects\WaterpoloSC

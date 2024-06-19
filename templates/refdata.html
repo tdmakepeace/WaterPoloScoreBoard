@@ -67,7 +67,7 @@
             {% for record in data %}
             <div>
                 <label for="hatnum_{{ loop.index0 }}">Referee{{ loop.index0 +1 }}:</label>
-                <input type="number" id="hatnum_{{ loop.index0 }}" name="hatnum_{{ loop.index0 }}" value="{{ record[0] }}">
+                <input type="number" id="hatnum_{{ loop.index0 }}" disabled="disabled" name="hatnum_{{ loop.index0 }}" value="{{ record[0] }}">
                 <label for="name_{{ loop.index0 }}">Name:</label>
                 <input type="text" id="name_{{ loop.index0 }}" name="name_{{ loop.index0 }}" value="{{ record[1] }}">
                 <label for="club_{{ loop.index0 }}">Club:</label>
@@ -80,7 +80,7 @@
                <br><br>
             {% endfor %}
         </div>
-        <button type="button" onclick="addEntry()">Add Another Entry</button><br><br>
+<!--        <button type="button" onclick="addEntry()">Add Another Entry</button><br><br>-->
         <input type="submit" value="Submit">
     </form>
 </body>

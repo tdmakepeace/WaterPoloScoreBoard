@@ -77,6 +77,160 @@
 </head>
 
     <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.addEventListener('keydown', function(event) {
+                if (event.key === '1') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/1', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
+                else if (event.key === '2') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/2', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
+                else if (event.key === '3') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/3', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
+                else if (event.key === '4') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/4', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
+                else if (event.key === '5') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/5', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
+                else if (event.key === '6') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/6', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
+                else if (event.key === '7') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/7', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
+                else if (event.key === '8') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/8', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
+                else if (event.key === '9') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/9', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
+                else if (event.key === '0') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/10', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
+                else if (event.key === '-') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/11', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
+                else if (event.key === '=') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/12', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
+                else if (event.key === 'b') {
+                    event.preventDefault();
+                    window.location.href = '/';
+                    // Perform another action here
+                }
+            });
+        });
+
         function playSound() {
             var audio = new Audio('/static/airhorn.mp3');
             audio.play();
@@ -308,7 +462,7 @@
 
 
          <form action="/?">
-            <button style="height:50px;width:200px" type="submit">Back</button>
+            <button style="height:50px;width:200px" type="submit"><u>B</u>ack</button>
 
                 </form>
 </article>

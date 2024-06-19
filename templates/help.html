@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Development Waterpolo Scoresheet</title>
+
+
+       <style>
+        /* Basic styling for the layout */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr; /* Divides the screen into three columns */
+            grid-template-rows: 200px 1fr; /* Adds a top section of 100px height */
+            grid-template-areas:
+                "header header header"
+                "left main right"
+                "footer footer footer"; /* Defines areas for the content */
+            height: 100vh; /* Full height of the viewport */
+         }
+
+        header {
+            grid-area: header; /* Places the header in the 'header' area */
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            line-height: 200px; /* Vertically centers the text */
+        }
+
+        nav {
+            grid-area: left; /* Places the left content in the 'left' area */
+            background-color: #f2f2f2;
+            padding: 10px;
+            font-size: 30px
+        }
+
+        article {
+            grid-area: main; /* Places the main content in the 'main' area */
+            text-align: center;
+            color: #333;
+            /*padding: 20px;*/
+            line-height: 30px;
+            font-size: 150px ;
+        }
+
+        aside {
+            grid-area: right; /* Places the right content in the 'right' area */
+            background-color: #f2f2f2;
+            padding: 10px;
+            font-size: 30px
+        }
+        footer {
+            grid-area: footer; /* Places the header in the 'header' area */
+            background-color: #333;
+            color: #fff;
+            padding: 30px;
+            font-size: 30px
+            /*!*text-align: center;*!*/
+            /*line-height: 200px; !* Vertically centers the text *!*/
+        }
+        .custom-text {
+            padding: 20px;
+            font-size: 24px;
+            border-radius: 5px;
+        }
+        table, th, td {
+          border:1px solid black;
+          border-collapse: collapse;
+        }
+    </style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js">
+  </script>
+
+</head>
+<body>
+
+  <header>
+
+      <h1>
+          <span style="font-size: 120px; color: grey;">&nbsp;&nbsp;&nbsp;Scoreboard&nbsp;&nbsp;Help&nbsp;&nbsp;&nbsp;&nbsp; </span>
+      </h1>
+  </header>
+<article class="center"; >
+
+              <p style="font-size: 20px; color: black;"> Start / Stop</p>
+    <p style="font-size: 20px; color: grey;">To use the keyboard shortcuts keys are underscored, e.g. "s" starts and stops the clock. </p>
+             <p style="font-size: 20px; color: black;">Timeout / Penalty / Major / Goal </p>
+        <p style="font-size: 20px; color: grey;">For "home" press the key, eg ctrl + "g" for home goal, then select player number. </p>
+    <p style="font-size: 20px; color: grey;">For "away" hold down ctrl and press the key, eg ctrl + "g" for away goal, then select player number.  </p>
+             <p style="font-size: 20px; color: black;">Players </p>
+     <p style="font-size: 20px; color: grey;"> For player numbers 1-9, use the top row including the  "0" for 10 "-" for 11 and "="  for 12 and "]" for 13 </p>
+        <p style="font-size: 20px; color: black;">Players  & Referees </p>
+     <p style="font-size: 20px; color: grey;"> At the begining or end of the game, before you press finish, enter the player and referee details.  </p>
+    <br>
+        <p style="font-size: 20px; color: black;">Customisation </p>
+     <p style="font-size: 20px; color: grey;"> I am happy to update the app and share, just need sensible input. </p>
+
+
+
+
+</article>
+
+<footer>
+
+
+    <table class="center" style="width:100%" >
+        <tr>
+            <td style="width:20%" rowspan="3">  <form method="GET" action="/">
+            <button style="height:80px;width:200px" type="submit">Return to Game</button>
+        </form>    </td>
+            <td style="width:80%" >   This program was developed by Toby Makepeace from Kingston Royals WaterPolo Club      </td>
+
+        </tr>
+        <tr>
+            <td>     To contact email toby.krjwp@gmail.com, happy to customise for club donation       </td>
+        </tr>
+
+    </table>
+
+  <table>
+      <td>
+          <tr>
+
+          </tr>
+      </td>
+
+  </table>
+
+</footer>
+
+
+</body>
+</html>

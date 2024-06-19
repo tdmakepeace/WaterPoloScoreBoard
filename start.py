@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify,flash
 from flask import send_file
-import time, csv, math , os, sys
+import time, csv, math , sys
 from datetime import datetime, timedelta
 # import winsound
 import os
@@ -78,8 +78,8 @@ awaytimeoutv = 0
 
 intervaltime = 2
 timeouttime = 1
-runningclock = "no"
-gametime = 8
+runningclock = "yes"
+gametime = 10
 location = 'New Malden'
 HomeTeam = 'Kingston Royals'
 AwayTeam = 'Away Team'
@@ -1225,6 +1225,10 @@ def settings():
     # return render_template('setup.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam)
     return render_template('setup.html' , HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location)
 
+@app.route('/help')
+def help():
+    return render_template('help.html')
+
 @app.route('/save' , methods=['GET', 'POST'])
 def save():
     global runningclock, gametime, location, HomeTeam, AwayTeam,  timeouttime, intervaltime
@@ -1335,5 +1339,5 @@ def restart():
 
 
 if __name__ == '__main__':
-    #app.run(debug=True, host=webhost, port=webport)
+    # app.run(debug=True, host=webhost, port=webport)
     webview.start()
