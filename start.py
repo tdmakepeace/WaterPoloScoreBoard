@@ -86,6 +86,7 @@ AwayTeam = 'Away Team'
 
 
 filename = datetime.now().strftime(HomeTeam+'-%Y-%m-%d-%H-%M.csv')
+running_file = datetime.now().strftime('temp'+'-%Y-%m-%d-%H-%M.csv')
 countdown_running = False
 start_time = 0
 elapsed_time = 0
@@ -393,7 +394,7 @@ def updateteamagoal(user_id):
 
         td_str = str(timedelta(seconds=remaining_time))
         x = td_str.split(':')
-        f = open(filename, 'a')
+        f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
         data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , user_id , 'Home' , teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['assists'] ]
@@ -457,7 +458,7 @@ def updateteamamajor(user_id):
         td_str = str(timedelta(seconds=remaining_time))
         x = td_str.split(':')
 
-        f = open(filename, 'a')
+        f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
         data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Majors', user_id, 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['assists']]
@@ -516,7 +517,7 @@ def updateteamapenalty(user_id):
         td_str = str(timedelta(seconds=remaining_time))
         x = td_str.split(':')
 
-        f = open(filename, 'a')
+        f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
         data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', user_id, 'Home',
@@ -549,7 +550,7 @@ def updateteamapenalty(user_id):
 #             td_str = str(timedelta(seconds=remaining_time))
 #             x = td_str.split(':')
 #
-#             f = open(filename, 'a')
+#             f = open(running_file, 'a')
 #             writer = csv.writer(f)
 #             # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
 #             data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Assists', user_id, 'Home',
@@ -601,7 +602,7 @@ def updateteambgoal(user_id):
         td_str = str(timedelta(seconds=remaining_time))
         x = td_str.split(':')
 
-        f = open(filename, 'a')
+        f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
         data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', user_id, 'Away',
@@ -662,7 +663,7 @@ def updateteambmajor(user_id):
         td_str = str(timedelta(seconds=remaining_time))
         x = td_str.split(':')
 
-        f = open(filename, 'a')
+        f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
         data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Major', user_id, 'Away',
@@ -721,7 +722,7 @@ def updateteambpenalty(user_id):
         td_str = str(timedelta(seconds=remaining_time))
         x = td_str.split(':')
 
-        f = open(filename, 'a')
+        f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
         data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', user_id, 'Away',
@@ -756,7 +757,7 @@ def updateteambpenalty(user_id):
 #             td_str = str(timedelta(seconds=remaining_time))
 #             x = td_str.split(':')
 #
-#             f = open(filename, 'a')
+#             f = open(running_file, 'a')
 #             writer = csv.writer(f)
 #             # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
 #             data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Assist', user_id, 'Away',
@@ -778,7 +779,7 @@ def period():
             quarter = quarter + 1
             timestamp = datetime.now()
 
-            f = open(filename, 'a')
+            f = open(running_file, 'a')
             writer = csv.writer(f)
             header = ['Game Status at ', location, ' on the ', timestamp, 'end of quarter :' ,quarter -1, ]
             writer.writerow(header)
@@ -797,7 +798,7 @@ def period():
             quarter = quarter - 1
             timestamp = datetime.now()
 
-            f = open(filename, 'a')
+            f = open(running_file, 'a')
             writer = csv.writer(f)
             header = ['Game Status at ', location, ' on the ', timestamp, 'end of quarter :' ,quarter -1, ]
             writer.writerow(header)
@@ -831,7 +832,8 @@ def start():
     if request.method == 'POST':
 
         global quarter , scores, TeamHome, TeamAway,periodscores,teama,teamb
-        global direction ,hometimeoutv, awaytimeoutv
+        global direction ,hometimeoutv, awaytimeoutv, filename
+        filename = datetime.now().strftime(HomeTeam + '-%Y-%m-%d-%H-%M.csv')
         now = datetime.now()  # current date and time
         timestamp = now.strftime("%d/%m/%Y, %H:%M:%S")
 
@@ -843,26 +845,26 @@ def start():
         writer = csv.writer(f)
         writer.writerow(header)
 
+        #
+        # header2 = ['Home Team: ', HomeTeam ]
+        # writer.writerow(header2)
+        # header2 = ['Hatnumber','Player']
+        # writer.writerow(header2)
+        # for i in home_data['home'] :
+        #     data = i[0],i[1]
+        #     writer.writerow(data)
+        #
+        # header2 = ['Away Team: ', AwayTeam ]
+        # writer.writerow(header2)
+        # header2 = ['Hatnumber','Player']
+        # writer.writerow(header2)
+        # for i in away_data['away'] :
+        #     data = i[0],i[1]
+        #     writer.writerow(data)
 
-        header2 = ['Home Team: ', HomeTeam ]
-        writer.writerow(header2)
-        header2 = ['Hatnumber','Player']
-        writer.writerow(header2)
-        for i in home_data['home'] :
-            data = i[0],i[1]
-            writer.writerow(data)
 
-        header2 = ['Away Team: ', AwayTeam ]
-        writer.writerow(header2)
-        header2 = ['Hatnumber','Player']
-        writer.writerow(header2)
-        for i in away_data['away'] :
-            data = i[0],i[1]
-            writer.writerow(data)
-
-
-        header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'assists']
-        writer.writerow(header)
+        # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'assists']
+        # writer.writerow(header)
 
         f.close()
 
@@ -981,223 +983,206 @@ def finish():
             data = i[0],i[1],i[2],i[3]
             writer.writerow(data)
 
+        header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'assists']
+        writer.writerow(header)
+
         f.close()
 
+        with open(running_file, 'r') as firstfile, open(filename, 'a') as secondfile:
+
+            # read content from first file
+            for line in firstfile:
+                # append content to second file
+                secondfile.write(line)
+
     return redirect(url_for('index'))
 
-@app.route('/hometimeout', methods=['GET', 'POST'])
+@app.route('/hometimeout')
 def hometimeout():
-    if request.method == 'POST':
-        global hometimeoutv
-        global quarter
-        global direction
-        global countdown_running, start_time, elapsed_time
-        global timeout, reason ,timeouttime
-        reason = 'Home Timeout'
-        timeout = timeouttime
-        # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
-        if countdown_running:
-            if direction == 'increment':
-                pause_countdown()
-                hometimeoutv = int(hometimeoutv) + 1
-                print(hometimeoutv)
-                td_str = str(timedelta(seconds=remaining_time))
-                x = td_str.split(':')
 
-                f = open(filename, 'a')
-                writer = csv.writer(f)
-                # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout',
-                hometimeoutv, 'Home']
-                writer.writerow(data)
-                f.close()
-                # pause_countdown()
-                time.sleep(1)
-                start_timeout()
-                return redirect(url_for('timeout'))
+    global hometimeoutv
+    global quarter
+    global direction
+    global countdown_running, start_time, elapsed_time
+    global timeout, reason ,timeouttime
+    reason = 'Home Timeout'
+    timeout = timeouttime
+    # elapsed_time = time.time() - start_time
+    remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
+    if countdown_running:
+        if direction == 'increment':
+            pause_countdown()
+            hometimeoutv = int(hometimeoutv) + 1
+            print(hometimeoutv)
+            td_str = str(timedelta(seconds=remaining_time))
+            x = td_str.split(':')
 
-            elif direction == 'decrement':
-                hometimeoutv = int(hometimeoutv) - 1
-                print(hometimeoutv)
-                td_str = str(timedelta(seconds=remaining_time))
-                x = td_str.split(':')
+            f = open(running_file, 'a')
+            writer = csv.writer(f)
+            # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout',
+            hometimeoutv, 'Home']
+            writer.writerow(data)
+            f.close()
+            # pause_countdown()
+            time.sleep(1)
+            start_timeout()
+            return redirect(url_for('timeout'))
 
-                f = open(filename, 'a')
-                writer = csv.writer(f)
-                # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout removed',
-                hometimeoutv, 'Home']
-                writer.writerow(data)
-                f.close()
-                direction = "increment"
+        elif direction == 'decrement':
+            hometimeoutv = int(hometimeoutv) - 1
+            print(hometimeoutv)
+            td_str = str(timedelta(seconds=remaining_time))
+            x = td_str.split(':')
 
-        else:
-            # msg = 'clock was not running'
-            # flash(msg, "warning")
-            if direction == 'increment':
-                hometimeoutv = int(hometimeoutv) + 1
-                print(hometimeoutv)
-                td_str = str(timedelta(seconds=remaining_time))
-                x = td_str.split(':')
+            f = open(running_file, 'a')
+            writer = csv.writer(f)
+            # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout removed',
+            hometimeoutv, 'Home']
+            writer.writerow(data)
+            f.close()
+            direction = "increment"
 
-                f = open(filename, 'a')
-                writer = csv.writer(f)
-                # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout',
-                hometimeoutv, 'Home']
-                writer.writerow(data)
-                f.close()
-                # pause_countdown()
-                time.sleep(1)
-                start_timeout()
-                return redirect(url_for('timeout'))
+    else:
+        # msg = 'clock was not running'
+        # flash(msg, "warning")
+        if direction == 'increment':
+            hometimeoutv = int(hometimeoutv) + 1
+            print(hometimeoutv)
+            td_str = str(timedelta(seconds=remaining_time))
+            x = td_str.split(':')
 
-            elif direction == 'decrement':
-                hometimeoutv = int(hometimeoutv) - 1
-                print(hometimeoutv)
-                td_str = str(timedelta(seconds=remaining_time))
-                x = td_str.split(':')
+            f = open(running_file, 'a')
+            writer = csv.writer(f)
+            # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout',
+            hometimeoutv, 'Home']
+            writer.writerow(data)
+            f.close()
+            # pause_countdown()
+            time.sleep(1)
+            start_timeout()
+            return redirect(url_for('timeout'))
 
-                f = open(filename, 'a')
-                writer = csv.writer(f)
-                # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout removed',
-                hometimeoutv, 'Home']
-                writer.writerow(data)
-                f.close()
-                direction = "increment"
+        elif direction == 'decrement':
+            hometimeoutv = int(hometimeoutv) - 1
+            print(hometimeoutv)
+            td_str = str(timedelta(seconds=remaining_time))
+            x = td_str.split(':')
 
-        return redirect(url_for('index'))
-
-
-@app.route('/awaytimeout', methods=['GET', 'POST'])
-def awaytimeout():
-    if request.method == 'POST':
-        global awaytimeoutv
-        global quarter
-        global direction
-        global countdown_running, start_time, elapsed_time
-        global timeout, reason, timeouttime
-        reason = 'Away Timeout'
-        timeout = timeouttime
-        print(timeout)
-        print(timeouttime)
-        # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
-        if countdown_running:
-            if direction == 'increment':
-                awaytimeoutv = int(awaytimeoutv) + 1
-                print(awaytimeoutv)
-                td_str = str(timedelta(seconds=remaining_time))
-                x = td_str.split(':')
-
-                f = open(filename, 'a')
-                writer = csv.writer(f)
-                # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout', awaytimeoutv ,'Away']
-                writer.writerow(data)
-                f.close()
-                pause_countdown()
-                time.sleep(1)
-                stop_timeout()
-                return redirect(url_for('timeout'))
-
-            elif direction == 'decrement':
-                awaytimeoutv = int(awaytimeoutv) - 1
-                print(awaytimeoutv)
-                td_str = str(timedelta(seconds=remaining_time))
-                x = td_str.split(':')
-
-                f = open(filename, 'a')
-                writer = csv.writer(f)
-                # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout', awaytimeoutv ,'Away']
-                writer.writerow(data)
-                f.close()
-                direction = "increment"
-
-        else:
-            msg = 'clock not running'
-            flash(msg, "warning")
-            if direction == 'decrement':
-                awaytimeoutv = int(awaytimeoutv) - 1
-                print(awaytimeoutv)
-                td_str = str(timedelta(seconds=remaining_time))
-                x = td_str.split(':')
-
-                f = open(filename, 'a')
-                writer = csv.writer(f)
-                # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout', awaytimeoutv,
-                'Away']
-                writer.writerow(data)
-                f.close()
-                direction = "increment"
+            f = open(running_file, 'a')
+            writer = csv.writer(f)
+            # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout removed',
+            hometimeoutv, 'Home']
+            writer.writerow(data)
+            f.close()
+            direction = "increment"
 
     return redirect(url_for('index'))
 
 
-# @app.route('/homepenalty', methods=['GET', 'POST'])
-# def homepenalty():
-#     if request.method == 'POST':
-#         global quarter
-#         global direction
-#         global countdown_running, start_time, elapsed_time
-#         elapsed_time = time.time() - start_time
-#         remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
-#         pause_countdown()
-#         td_str = str(timedelta(seconds=remaining_time))
-#         x = td_str.split(':')
-#
-#         f = open(filename, 'a')
-#         writer = csv.writer(f)
-#         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-#         data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', 'Penalty' ,'Home']
-#         writer.writerow(data)
-#         f.close()
-#
-#     return redirect(url_for('index'))
-#
-#
-# @app.route('/awaypenalty', methods=['GET', 'POST'])
-# def awaypenalty():
-#     if request.method == 'POST':
-#         global quarter
-#         global direction
-#         global countdown_running, start_time, elapsed_time
-#         elapsed_time = time.time() - start_time
-#         remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
-#         pause_countdown()
-#         td_str = str(timedelta(seconds=remaining_time))
-#         x = td_str.split(':')
-#
-#         f = open(filename, 'a')
-#         writer = csv.writer(f)
-#         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-#         data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', 'Penalty' ,'Away']
-#         writer.writerow(data)
-#         f.close()
-#
-#     return redirect(url_for('index'))
+@app.route('/awaytimeout')
+def awaytimeout():
 
+    global awaytimeoutv
+    global quarter
+    global direction
+    global countdown_running, start_time, elapsed_time
+    global timeout, reason, timeouttime
+    reason = 'Away Timeout'
+    timeout = timeouttime
+    print(timeout)
+    print(timeouttime)
+    # elapsed_time = time.time() - start_time
+    remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
+    if countdown_running:
+        if direction == 'increment':
+            awaytimeoutv = int(awaytimeoutv) + 1
+            print(awaytimeoutv)
+            td_str = str(timedelta(seconds=remaining_time))
+            x = td_str.split(':')
+
+            f = open(running_file, 'a')
+            writer = csv.writer(f)
+            # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout', awaytimeoutv ,'Away']
+            writer.writerow(data)
+            f.close()
+            pause_countdown()
+            time.sleep(1)
+            stop_timeout()
+            return redirect(url_for('timeout'))
+
+        elif direction == 'decrement':
+            awaytimeoutv = int(awaytimeoutv) - 1
+            print(awaytimeoutv)
+            td_str = str(timedelta(seconds=remaining_time))
+            x = td_str.split(':')
+
+            f = open(running_file, 'a')
+            writer = csv.writer(f)
+            # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout', awaytimeoutv ,'Away']
+            writer.writerow(data)
+            f.close()
+            direction = "increment"
+
+    else:
+        msg = 'clock not running'
+        flash(msg, "warning")
+        if direction == 'decrement':
+            awaytimeoutv = int(awaytimeoutv) - 1
+            print(awaytimeoutv)
+            td_str = str(timedelta(seconds=remaining_time))
+            x = td_str.split(':')
+
+            f = open(running_file, 'a')
+            writer = csv.writer(f)
+            # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout', awaytimeoutv,
+            'Away']
+            writer.writerow(data)
+            f.close()
+            direction = "increment"
+
+    return redirect(url_for('index'))
 
 
 
 @app.route('/timeout')
 def timeout():
     start_timeout()
-    return render_template('timeout.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway , location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, reason=reason)
-
+    return render_template('timeout.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
 @app.route('/runinterval')
 def runinterval():
     start_timeout()
-    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway , location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, reason=reason)
-
+    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
 
 @app.route('/returninterval')
 def returninterval():
     stop_countdown()
+
+    timestamp = datetime.now()
+
+    f = open(running_file, 'a')
+    writer = csv.writer(f)
+    header = ['Game Status at ', location, ' on the ', timestamp, 'end of quarter :', quarter - 1, ]
+    writer.writerow(header)
+
+    # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
+    # writer.writerow(header1)
+
+    data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'], 'Home Majors:',
+            scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
+    writer.writerow(data)
+
+    header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors',
+              'assists']
+    writer.writerow(header)
+
+    f.close()
     return redirect(url_for('index'))
 
 

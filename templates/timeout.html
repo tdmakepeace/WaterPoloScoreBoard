@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Development Waterpolo Scoresheet</title>
-    <style>
+   <style>
         /* Basic styling for the layout */
         body {
             margin: 0;
@@ -23,7 +23,10 @@
             background-color: #333;
             color: #fff;
             text-align: center;
-            line-height: 250px; /* Vertically centers the text */
+            line-height: 220px; /* Vertically centers the text */
+            /*height: 300px; !* Full height of the viewport *!*/
+            /*min-height: 40%*/
+            height: 35
         }
 
         nav {
@@ -57,13 +60,19 @@
             /*!*text-align: center;*!*/
             /*line-height: 200px; !* Vertically centers the text *!*/
         }
+        .center {
+          margin-left: auto;
+          margin-right: auto;
+        }
+
         .custom-text {
+            text-align: center;
             padding: 20px;
             font-size: 24px;
             border-radius: 5px;
         }
-        table, th, td {
-        font-size: 20px;
+       table, th, td {
+        font-size: 30px;
           border:1px solid black;
           border-collapse: collapse;
         }
@@ -151,16 +160,51 @@
 
       <h1>
 
-
           <span style="font-size: 30px; color: white;">{{ hometimeoutv }} </span>
-          <span style="font-size: 180px; color: white;">{{ TeamHome['goals'] }} </span>
-          <span style="font-size: 80px; color: grey; width: 1000px ;"> {{ reason }}</span>
-              <span style="font-size: 180px; color: blue;">  {{ TeamAway['goals'] }}</span>
+          <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }} </span>
+          <span style="font-size: 100px; color: grey; width: 1000px ;">{{location}}</span>
+              <span style="font-size: 300px; color: Yellow;">  {{ TeamAway['goals'] }}</span>
           <span style="font-size: 30px; color: white;">{{ awaytimeoutv }} </span>
 
       </h1>
   </header>
-  
+
+  <nav>
+<!--    <h6>Home Team</h6>-->
+    <table class="center" style="width:100%"  >
+        <tr>
+    <th colspan="4"> <button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " onclick="alert('Edit at end of game')">{{HomeTeam}}</button> </th>
+</tr>
+        <tr>
+    <th> Player&nbsp;&nbsp;&nbsp;</th>
+    <th> <small>Goals&nbsp;</small></th>
+    <th> <small>Majors</small></th>
+<!--    <th> <small>Assists</small></th>-->
+        </tr>
+        {% for user_id, teama in teama.items() %}
+        <tr class="custom-text" style="background-color:
+            {% if teama.majors  == 1 %}
+                #00ff00;
+            {% elif teama.majors == 2 %}
+                #ff9933;
+            {% elif teama.majors >= 3 %}
+                #ff3300; /* Add more conditions as needed */
+            {% else %}
+                white; /* Fallback color */
+            {% endif %}
+        ">
+            <td>{{ user_id }}</td>
+            <td>{{ teama.goals }}</td>
+            <td>{{ teama.majors }}</td>
+<!--            <td>{{ teama.assists }}</td>-->
+
+
+        </tr>
+        {% endfor %}
+    </table>
+
+</nav>
+
 <article>
     <div> <span style="color: red;" id="timeout"> </span></div>
 
@@ -178,6 +222,43 @@
 
 
 </article>
+<aside>
+<!--    <h6>Away Team</h6>-->
+    <table class="center" style="width:100%"  >
+        <tr>
+    <th colspan="4"> <button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " onclick="alert('Edit at end of game')">{{AwayTeam}}</button> </th>
+</tr>
+        <tr>
+    <th> Player&nbsp;&nbsp;&nbsp;</th>
+    <th> <small>Goals&nbsp;</small></th>
+    <th> <small>Majors</small></th>
+<!--    <th> <small>Assists</small></th>-->
+
+        </tr>
+        {% for user_id, teamb in teamb.items() %}
+        <tr class="custom-text" style="background-color:
+            {% if teamb.majors  == 1 %}
+                #00ff00;
+            {% elif teamb.majors == 2 %}
+                #ff9933;
+            {% elif teamb.majors >= 3 %}
+                #ff3300; /* Add more conditions as needed */
+            {% else %}
+                white; /* Fallback color */
+            {% endif %}
+        ">
+            <td>{{ user_id }}</td>
+            <td>{{ teamb.goals }}</td>
+            <td>{{ teamb.majors }}</td>
+<!--            <td>{{ teama.assists }}</td>-->
+
+
+        </tr>
+        {% endfor %}
+    </table>
+
+
+</aside>
 
 <footer>
 
