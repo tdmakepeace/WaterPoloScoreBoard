@@ -3,14 +3,34 @@
 <head>
     <title>Development Waterpolo Scoresheet</title>
     <link rel="stylesheet" href="../static/style.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js">
+    <script src="static/jquery.min.js">
   </script>
+
+    <style>
+        .red {
+            color: red;
+            font-size: 30px;
+        }
+        .yellow {
+            color: yellow;
+            font-size: 30px;
+        }
+        .none {
+            color: black;
+            font-size: 30px;
+        }
+    </style>
+
 
 </head>
 
     <script>
         function playSound() {
             var audio = new Audio('/static/airhorn.mp3');
+            audio.play();
+        }
+        function playbell() {
+            var audio = new Audio('/static/bell-ring.mp3');
             audio.play();
         }
         function startCountdown() {
@@ -58,6 +78,10 @@
                     event.preventDefault();
                     window.location.href = '/awaytimeout';
                 }
+                else if (event.ctrlKey && event.key === 'c') {
+                    event.preventDefault();
+                    window.location.href = '/awaycard';
+                }
                  //Home
                 else if (event.key === 'm') {
                     event.preventDefault();
@@ -74,16 +98,16 @@
                 }
                 else if ( event.key === 't') {
                      event.preventDefault();
-                    fetch('/hometimeout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
+                    // fetch('/hometimeout', {
+                    //     method: 'POST',
+                    //     headers: {
+                    //         'Content-Type': 'application/json'
+                    //     },
+                    //     body: JSON.stringify({ key: 'value' })
+                    // })
+                    // .then(response => response.json())
 
-                    window.location.href = '/timeout';
+                    window.location.href = '/hometimeout';
                 }
 
             });
@@ -143,15 +167,44 @@
                         let seconds = Math.floor(timeLeft % 60);
                         countdownElement.innerHTML = '<br> ' + minutes + ':' + seconds.toString().padStart(2, '0') + '';
                         // countdownElement.innerHTML = 'Remaining Time: ' + seconds.toString().padStart(2, '0') + 's';
-                        if (timeLeft > 0) {
-                            setTimeout(updateCountdown, 1000);
-                        } else {
-                            playSound()
-                            setTimeout(() => {
-                                window.location.href = "/callinterval";
-                            }, 2000);
+                        var quarter = {{ quarter }}
+                        if (quarter < 4) {
+                            if (timeLeft > 1) {
+                                setTimeout(updateCountdown, 1000);
+                            } else {
+                                playSound()
+                                setTimeout(() => {
+                                    window.location.href = "/callinterval";
+                                }, 2000);
 
+                            }
+                        } else {
+                            if (timeLeft > 61) {
+                                setTimeout(updateCountdown, 1000);
+                            } else if (timeLeft > 59) {
+                                playbell();
+                                setTimeout(updateCountdown, 1000);
+                            } else if (timeLeft > 1) {
+                                setTimeout(updateCountdown, 1000);
+                            } else {
+                                playSound();
+                                setTimeout(() => {
+                                    window.location.href = "/callinterval";
+                                }, 2000);
+                            }
                         }
+
+
+
+                        // if  (timeLeft > 1) {
+                        //     setTimeout(updateCountdown, 1000);
+                        // } else {
+                        //     playSound()
+                        //     setTimeout(() => {
+                        //         window.location.href = "/callinterval";
+                        //     }, 2000);
+                        //
+                        // }
                     } else {
                         // countdownElement.innerHTML = '<br>Paused';
                         let timeLeft = response.elapsed_time;
@@ -199,6 +252,7 @@
         //     // Initial update of countdown display
         // }
         updateCountdown();
+
     </script>
 
 <body>
@@ -207,11 +261,18 @@
 
       <h1>
 
+          <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">  {{ home_coach.red }} </span>
+          <span class="{% if home_coach.yellow == 1 %}yellow{% else %}none{% endif %}">  {{ home_coach.yellow }} </span>
+          <span style="font-size: 30px; color: #333333 ;"> spacer </span>
           <span style="font-size: 30px; color: white;">{{ hometimeoutv }} </span>
           <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }} </span>
           <span style="font-size: 100px; color: grey; width: 1000px ;">{{location}}</span>
               <span style="font-size: 300px; color: Yellow;">  {{ TeamAway['goals'] }}</span>
           <span style="font-size: 30px; color: white;">{{ awaytimeoutv }} </span>
+          <span style="font-size: 30px; color: #333333 ;"> spacer </span>
+          <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">  {{ away_coach.yellow }} </span>
+          <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">  {{ away_coach.red }} </span>
+
 
       </h1>
   </header>
@@ -231,7 +292,9 @@
         </tr>
         {% for user_id, teama in teama.items() %}
         <tr class="custom-text" style="background-color:
-            {% if teama.majors  == 1 %}
+            {% if teama.reds  == 1 %}
+              black;
+            {% elif teama.majors  == 1 %}
                 #00ff00;
             {% elif teama.majors == 2 %}
                 #ff9933;
@@ -240,6 +303,8 @@
             {% else %}
                 white; /* Fallback color */
             {% endif %}
+
+
         ">
             <td>{{ user_id }}</td>
             <td>{{ teama.goals }}</td>
@@ -252,9 +317,14 @@
     </table>
 <table>
     <tr>
-            <td>
+        <td>
+              <form action="/homecard">
+            <button style="height:50px;width:120px" type="submit">    <u>C</u>ard</button>
+            </form>
+      </td>
+        <td>
         <form action="/hometimeout">
-            <button style="height:50px;width:200px" type="submit"><u>T</u>imeout</button>
+            <button style="height:50px;width:160px" type="submit"><u>T</u>imeout</button>
         </form>
       </td>
             <td>
@@ -263,23 +333,25 @@
                   </form>
       </td>
     </tr>
-<!--</table>-->
-<!--<table>-->
-
+</table>
+<table>
+<tr>
 
         <td>
               <form action="/homemajor">
-            <button style="height:50px;width:200px" type="submit"><u>M</u>ajor</button>
+            <button style="height:50px;width:240px" type="submit"><u>M</u>ajor</button>
 </form>
 
       </td>
         <td>
                    <form action="/homegoal">
-            <button style="height:50px;width:200px" type="submit"><u>G</u>oal</button>
+            <button style="height:50px;width:240px" type="submit"><u>G</u>oal</button>
 <!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
 </form>
 
       </td>
+
+    </tr>
 
 </table>
 </nav>
@@ -404,7 +476,9 @@
         </tr>
         {% for user_id, teamb in teamb.items() %}
         <tr class="custom-text" style="background-color:
-            {% if teamb.majors  == 1 %}
+            {% if teamb.reds  == 1 %}
+              black;
+            {% elif teamb.majors  == 1 %}
                 #00ff00;
             {% elif teamb.majors == 2 %}
                 #ff9933;
@@ -434,9 +508,15 @@
 
 <table>
     <tr>
+                <td>
+              <form action="/awaycard">
+            <button style="height:50px;width:120px" type="submit"><sub>ctrl</sub>    <u>C</u>ard</button>
+        </form>
+      </td>
+
             <td>
         <form action="/awaytimeout">
-            <button style="height:50px;width:200px" type="submit"><sub>ctrl</sub>    <u>T</u>imeout</button>
+            <button style="height:50px;width:160px" type="submit"><sub>ctrl</sub>    <u>T</u>imeout</button>
         </form>
       </td>
             <td>
@@ -445,21 +525,27 @@
                   </form>
       </td>
     </tr>
+</table>
+    <table>
  <tr>
 
         <td>
               <form action="/awaymajor">
-            <button style="height:50px;width:200px" type="submit"><sub>ctrl</sub>    <u>M</u>ajor</button>
+            <button style="height:50px;width:240px" type="submit"><sub>ctrl</sub>    <u>M</u>ajor</button>
 </form>
 
       </td>
         <td>
                    <form action="/awaygoal">
-            <button style="height:50px;width:200px" type="submit"><sub>ctrl</sub>    <u>G</u>oal</button>
+            <button style="height:50px;width:240px" type="submit"><sub>ctrl</sub>    <u>G</u>oal</button>
 <!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
 </form>
 
       </td>
+</tr>
+     <tr>
+
+
 </tr>
 </table>
 
@@ -504,12 +590,6 @@
 <!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
 </form>
       </td>
-      <td>
-        <form action="/download/{{ filename }}">
-            <button style="height:50px;width:150px" type="submit">download</button>
-<!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
-</form>
-</td>
           <td>
         <form action="/saverefdata/referee">
             <button style="height:50px;width:150px" type="submit">Referees</button>

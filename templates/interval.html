@@ -77,7 +77,7 @@
           border-collapse: collapse;
         }
     </style>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js">
+<script src="static/jquery.min.js">
   </script>
 
 </head>
@@ -87,7 +87,10 @@
             var audio = new Audio('/static/airhorn.mp3');
             audio.play();
         }
-        
+        function playwhistle() {
+            var audio = new Audio('/static/coach-whistle.mp3');
+            audio.play();
+        }
         function startTimeout() {
             $.ajax({
                 url: '/start_timeout',
@@ -135,11 +138,15 @@
                         let seconds = Math.floor(timeLeft % 60);
                         timeoutElement.innerHTML = '<br> ' + minutes +':' + seconds.toString().padStart(2, '0') + '';
                         // timeoutElement.innerHTML = 'Remaining Time: ' + seconds.toString().padStart(2, '0') + 's';
-                        if (timeLeft > 0) {
+                        if (timeLeft > 16) {
                             setTimeout(updateTimeout, 1000);
-                        }
-                        else {
-                            playSound()
+                        } else if  (timeLeft > 14) {
+                            playwhistle();
+                            setTimeout(updateTimeout, 1000);
+                        } else if (timeLeft > 1) {
+                            setTimeout(updateTimeout, 1000);
+                        } else {
+                            playSound();
                             setTimeout(() => { window.location.href = "/returninterval"; }, 2000);
                         }
                     } else {

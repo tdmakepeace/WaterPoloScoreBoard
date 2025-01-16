@@ -3,7 +3,7 @@
 <head>
     <title>Development Waterpolo Scoresheet</title>
  <link rel="stylesheet" href="../static/style.css">
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js">
+<script src="static/jquery.min.js">
   </script>
 
 </head>
@@ -329,9 +329,9 @@
 
   <nav>
 <!--    <h6>Home Team</h6>-->
-    <table>
+    <table class="center" style="width:100%"  >
         <tr>
-    <th colspan="4"> {{HomeTeam}}</th>
+    <th colspan="4"> <form action="/savehomeplayers/home"><button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " type="submit">{{HomeTeam}}</button> </form></th>
 </tr>
         <tr>
     <th> Player&nbsp;&nbsp;&nbsp;</th>
@@ -341,7 +341,9 @@
         </tr>
         {% for user_id, teama in teama.items() %}
         <tr class="custom-text" style="background-color:
-            {% if teama.majors  == 1 %}
+            {% if teama.reds  == 1 %}
+              black;
+            {% elif teama.majors  == 1 %}
                 #00ff00;
             {% elif teama.majors == 2 %}
                 #ff9933;
@@ -350,6 +352,8 @@
             {% else %}
                 white; /* Fallback color */
             {% endif %}
+
+
         ">
             <td>{{ user_id }}</td>
             <td>{{ teama.goals }}</td>
@@ -473,23 +477,23 @@
 
 
 <aside>
-<!--    <h1>Away Team</h1>-->
-      <table>
+<!--    <h6>Away Team</h6>-->
+    <table class="center" style="width:100%"  >
         <tr>
-            <th colspan="4"> {{AwayTeam}}</th>
-
+    <th colspan="4"> <form action="/saveawayplayers/away"><button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " type="submit">{{AwayTeam}}</button> </form> </th>
 </tr>
         <tr>
-            <th> Player&nbsp;&nbsp;&nbsp;</th>
-            <th> <small>Goals&nbsp;</small></th>
-            <th> <small>Majors</small></th>
-<!--            <th> <small>Assists</small></th>-->
-
+    <th> Player&nbsp;&nbsp;&nbsp;</th>
+    <th> <small>Goals&nbsp;</small></th>
+    <th> <small>Majors</small></th>
+<!--    <th> <small>Assists</small></th>-->
 
         </tr>
-          {% for user_id, teamb in teamb.items() %}
-          <tr class="custom-text" style="background-color:
-            {% if teamb.majors  == 1 %}
+        {% for user_id, teamb in teamb.items() %}
+        <tr class="custom-text" style="background-color:
+            {% if teamb.reds  == 1 %}
+              black;
+            {% elif teamb.majors  == 1 %}
                 #00ff00;
             {% elif teamb.majors == 2 %}
                 #ff9933;
@@ -499,12 +503,10 @@
                 white; /* Fallback color */
             {% endif %}
         ">
-
             <td>{{ user_id }}</td>
             <td>{{ teamb.goals }}</td>
             <td>{{ teamb.majors }}</td>
-<!--            <td>{{ teamb.assists }}</td>-->
-            </td>
+<!--            <td>{{ teama.assists }}</td>-->
 
 
         </tr>

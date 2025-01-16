@@ -39,37 +39,42 @@ away_data = {'away': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6
 
 ref_data = {'referee': [['1', '','',''], ['2', '','','']]}
 
+home_coach = {'red': 0 , 'yellow': 0}
+away_coach = {'red': 0 , 'yellow': 0}
+
+home_team_red = {'red': 0 , 'yellow': 0}
+away_team_red = {'red': 0 , 'yellow': 0}
 
 teama = {
-    1: {'assists': 0, 'goals': 0, 'majors': 0},
-    2: {'assists': 0, 'goals': 0, 'majors': 0},
-    3: {'assists': 0, 'goals': 0, 'majors': 0},
-    4: {'assists': 0, 'goals': 0, 'majors': 0},
-    5: {'assists': 0, 'goals': 0, 'majors': 0},
-    6: {'assists': 0, 'goals': 0, 'majors': 0},
-    7: {'assists': 0, 'goals': 0, 'majors': 0},
-    8: {'assists': 0, 'goals': 0, 'majors': 0},
-    9: {'assists': 0, 'goals': 0, 'majors': 0},
-    10: {'assists': 0, 'goals': 0, 'majors': 0},
-    11: {'assists': 0, 'goals': 0, 'majors': 0},
-    12: {'assists': 0, 'goals': 0, 'majors': 0},
-    13: {'assists': 0, 'goals': 0, 'majors': 0}
+    1: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    2: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    3: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    4: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    5: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    6: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    7: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    8: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    9: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    10: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    11: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    12: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 }
 }
 
 teamb = {
-    1: {'assists': 0, 'goals': 0, 'majors': 0},
-    2: {'assists': 0, 'goals': 0, 'majors': 0},
-    3: {'assists': 0, 'goals': 0, 'majors': 0},
-    4: {'assists': 0, 'goals': 0, 'majors': 0},
-    5: {'assists': 0, 'goals': 0, 'majors': 0},
-    6: {'assists': 0, 'goals': 0, 'majors': 0},
-    7: {'assists': 0, 'goals': 0, 'majors': 0},
-    8: {'assists': 0, 'goals': 0, 'majors': 0},
-    9: {'assists': 0, 'goals': 0, 'majors': 0},
-    10: {'assists': 0, 'goals': 0, 'majors': 0},
-    11: {'assists': 0, 'goals': 0, 'majors': 0},
-    12: {'assists': 0, 'goals': 0, 'majors': 0},
-    13: {'assists': 0, 'goals': 0, 'majors': 0}
+    1: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    2: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    3: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    4: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    5: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    6: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    7: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    8: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    9: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    10: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    11: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    12: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 }
 }
 quarter= 0
 direction = "increment"
@@ -106,11 +111,12 @@ window = webview.create_window('WaterPolo Scoreboard',app )
 
 @app.route('/')
 def index():
-    return render_template('timer.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
+    # print(home_coach, away_coach)
+    return render_template('timer.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, home_coach=home_team_red, away_coach=away_team_red )
 
 @app.route('/display')
 def display():
-    return render_template('display.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
+    return render_template('display.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, home_coach=home_team_red, away_coach=away_team_red )
 
 
 @app.route('/start_countdown')
@@ -170,7 +176,8 @@ def get_countdown_status():
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
 @app.route('/start_timeout')
 def start_timeout():
-    global timeoutrunning, starttimeout, elapsedtimeout
+    global timeoutrunning, starttimeout, elapsedtimeout ,timeout
+    # timeout = timeouttime
     timeoutrunning = True
     starttimeout = time.time() - elapsedtimeout
     return jsonify({'status': 'success'})
@@ -267,6 +274,34 @@ def minsec():
 
 ###### url
 
+@app.route('/homecard')
+def homecard():
+    if countdown_running:
+        if runningclock == "no":
+            pause_countdown()
+    else:
+        msg = 'clock not running'
+        flash(msg, "warning")
+
+    return render_template('homecard.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
+                           TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
+                           HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
+                           awaytimeoutv=awaytimeoutv, filename=filename)
+
+@app.route('/awaycard')
+def awaycard():
+    if countdown_running:
+        if runningclock == "no":
+            pause_countdown()
+    else:
+        msg = 'clock not running'
+        flash(msg, "warning")
+
+    return render_template('awaycard.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
+                           TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
+                           HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
+                           awaytimeoutv=awaytimeoutv, filename=filename)
+
 
 @app.route('/homegoal')
 def homegoal():
@@ -351,6 +386,201 @@ def awaypenalty():
                            awaytimeoutv=awaytimeoutv, filename=filename)
 
 
+@app.route('/updateteamacoach/<int:id>', methods=['GET', 'POST'])
+def updateteamacoach(id):
+    if request.method == 'POST':
+        global quarter, direction
+        global countdown_running, start_time, elapsed_time,home_coach,away_coach
+
+        # elapsed_time = time.time() - start_time
+        remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+        # print('help1')
+        # action = request.form['action']
+        direction = str(direction)
+        # action = "increment"
+
+        td_str = str(timedelta(seconds=remaining_time))
+        x = td_str.split(':')
+        f = open(running_file, 'a')
+        writer = csv.writer(f)
+        # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+
+
+        if direction == 'increment':
+            # print('help2')
+            if id == 1 :
+                home_coach['yellow'] = 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW', 'Coach', 'Home']
+                writer.writerow(data)
+
+
+            elif id == 2 :
+                home_coach['red'] = 1
+                home_team_red['red'] = home_team_red['red'] + 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Coach', 'Home']
+                writer.writerow(data)
+
+        elif direction == 'decrement':
+            if id == 1 :
+                home_coach['yellow'] = 0
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL', 'Coach', 'Home']
+                writer.writerow(data)
+            elif id == 2 :
+                home_coach['red'] = 0
+                home_team_red['red'] = home_team_red['red'] - 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL', 'Coach', 'Home']
+                writer.writerow(data)
+            direction = "increment"
+
+        f.close()
+
+    return redirect(url_for('index'))
+
+@app.route('/updateteambcoach/<int:id>', methods=['GET', 'POST'])
+def updateteambcoach(id):
+    if request.method == 'POST':
+        global quarter, direction
+        global countdown_running, start_time, elapsed_time ,home_coach,away_coach
+
+        # elapsed_time = time.time() - start_time
+        remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+        # print('help1')
+        # action = request.form['action']
+        direction = str(direction)
+        # action = "increment"
+
+        td_str = str(timedelta(seconds=remaining_time))
+        x = td_str.split(':')
+        f = open(running_file, 'a')
+        writer = csv.writer(f)
+        # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+
+
+        if direction == 'increment':
+            # print('help2')
+            if id == 1 :
+                away_coach['yellow'] = 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW', 'Coach', 'Away']
+                writer.writerow(data)
+
+            elif id == 2 :
+                away_coach['red'] = 1
+                away_team_red['red'] = away_team_red['red'] + 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Coach', 'Away']
+                writer.writerow(data)
+
+        elif direction == 'decrement':
+            if id == 1 :
+                away_coach['yellow'] = 0
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach', 'Away']
+                writer.writerow(data)
+            elif id == 2 :
+                away_coach['red'] = 0
+                away_team_red['red'] = away_team_red['red'] - 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach', 'Away']
+                writer.writerow(data)
+            direction = "increment"
+
+        f.close()
+
+    return redirect(url_for('index'))
+
+
+
+@app.route('/updateteamacard/<int:user_id>', methods=['GET', 'POST'])
+def updateteamacard(user_id):
+    if request.method == 'POST':
+        global quarter, direction
+        global countdown_running, start_time, elapsed_time
+
+
+        # elapsed_time = time.time() - start_time
+        remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+        # print('help1')
+        # action = request.form['action']
+        direction = str(direction)
+        # action = "increment"
+        td_str = str(timedelta(seconds=remaining_time))
+        x = td_str.split(':')
+        f = open(running_file, 'a')
+        writer = csv.writer(f)
+        # print(teama)
+        if direction == 'increment':
+            # print('help2')
+            teama[user_id]['reds'] = teama[user_id]['reds'] + 1
+            home_team_red['red'] = home_team_red['red']  + 1
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', user_id, 'Home',
+                    teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            teama[user_id]['reds'] = teama[user_id]['reds'] - 1
+            home_team_red['red'] = home_team_red['red'] - 1
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', user_id, 'Home',
+                    teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            writer.writerow(data)
+
+            direction = "increment"
+
+
+        # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+
+        f.close()
+        # print(quarter)
+        # print(periodscores)
+        # print(direction)
+        # print(runningclock)
+        # print(user_id)
+        # print(teama)
+
+    return redirect(url_for('index'))
+
+@app.route('/updateteambcard/<int:user_id>', methods=['GET', 'POST'])
+def updateteambcard(user_id):
+    if request.method == 'POST':
+        global quarter, direction
+        global countdown_running, start_time, elapsed_time
+
+
+        # elapsed_time = time.time() - start_time
+        remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+        # print('help1')
+        # action = request.form['action']
+        direction = str(direction)
+        # action = "increment"
+        td_str = str(timedelta(seconds=remaining_time))
+        x = td_str.split(':')
+        f = open(running_file, 'a')
+        writer = csv.writer(f)
+        # print(teamb)
+        if direction == 'increment':
+            # print('help2')
+            teamb[user_id]['reds'] = teamb[user_id]['reds'] + 1
+            away_team_red['red'] = away_team_red['red'] + 1
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', user_id, 'Home',
+                    teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            teamb[user_id]['red'] = teamb[user_id]['reds'] - 1
+            away_team_red['red'] = away_team_red['red'] - 1
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', user_id, 'Home',
+                    teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            writer.writerow(data)
+
+            direction = "increment"
+
+
+        # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+        # print(teamb)
+        f.close()
+        # print(quarter)
+        # print(periodscores)
+        # print(direction)
+        # print(runningclock)
+        # print(user_id)
+
+    return redirect(url_for('index'))
+
+
 
 @app.route('/updateteamagoal/<int:user_id>', methods=['GET', 'POST'])
 def updateteamagoal(user_id):
@@ -397,7 +627,7 @@ def updateteamagoal(user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , user_id , 'Home' , teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['assists'] ]
+        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , user_id , 'Home' , teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
         writer.writerow(data)
         f.close()
         # print(quarter)
@@ -461,7 +691,7 @@ def updateteamamajor(user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Majors', user_id, 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['assists']]
+        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Majors', user_id, 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
         writer.writerow(data)
         f.close()
 
@@ -521,7 +751,7 @@ def updateteamapenalty(user_id):
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
         data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', user_id, 'Home',
-                teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['assists']]
+                teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
         writer.writerow(data)
         f.close()
 
@@ -606,7 +836,7 @@ def updateteambgoal(user_id):
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
         data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', user_id, 'Away',
-        teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['assists']]
+        teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
         writer.writerow(data)
         f.close()
 
@@ -667,7 +897,7 @@ def updateteambmajor(user_id):
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
         data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Major', user_id, 'Away',
-        teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['assists']]
+        teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
         writer.writerow(data)
         f.close()
 
@@ -726,7 +956,7 @@ def updateteambpenalty(user_id):
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
         data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', user_id, 'Away',
-        teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['assists']]
+        teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
         writer.writerow(data)
         f.close()
 
@@ -790,7 +1020,7 @@ def period():
             data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'],'Home Majors:',  scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
             writer.writerow(data)
 
-            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'assists']
+            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'reds']
             writer.writerow(header)
 
             f.close()
@@ -809,7 +1039,7 @@ def period():
             data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'],'Home Majors:',  scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
             writer.writerow(data)
 
-            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'assists']
+            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'reds']
             writer.writerow(header)
 
             f.close()
@@ -883,35 +1113,35 @@ def start():
         }
 
         teama = {
-        1: {'assists': 0, 'goals': 0, 'majors': 0},
-        2: {'assists': 0, 'goals': 0, 'majors': 0},
-        3: {'assists': 0, 'goals': 0, 'majors': 0},
-        4: {'assists': 0, 'goals': 0, 'majors': 0},
-        5: {'assists': 0, 'goals': 0, 'majors': 0},
-        6: {'assists': 0, 'goals': 0, 'majors': 0},
-        7: {'assists': 0, 'goals': 0, 'majors': 0},
-        8: {'assists': 0, 'goals': 0, 'majors': 0},
-        9: {'assists': 0, 'goals': 0, 'majors': 0},
-        10: {'assists': 0, 'goals': 0, 'majors': 0},
-        11: {'assists': 0, 'goals': 0, 'majors': 0},
-        12: {'assists': 0, 'goals': 0, 'majors': 0},
-        13: {'assists': 0, 'goals': 0, 'majors': 0}
+        1: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        2: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        3: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        4: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        5: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        6: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        7: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        8: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        9: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        10: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        11: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        12: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 }
         }
 
         teamb = {
-        1: {'assists': 0, 'goals': 0, 'majors': 0},
-        2: {'assists': 0, 'goals': 0, 'majors': 0},
-        3: {'assists': 0, 'goals': 0, 'majors': 0},
-        4: {'assists': 0, 'goals': 0, 'majors': 0},
-        5: {'assists': 0, 'goals': 0, 'majors': 0},
-        6: {'assists': 0, 'goals': 0, 'majors': 0},
-        7: {'assists': 0, 'goals': 0, 'majors': 0},
-        8: {'assists': 0, 'goals': 0, 'majors': 0},
-        9: {'assists': 0, 'goals': 0, 'majors': 0},
-        10: {'assists': 0, 'goals': 0, 'majors': 0},
-        11: {'assists': 0, 'goals': 0, 'majors': 0},
-        12: {'assists': 0, 'goals': 0, 'majors': 0},
-        13: {'assists': 0, 'goals': 0, 'majors': 0}
+        1: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        2: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        3: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        4: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        5: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        6: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        7: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        8: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        9: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        10: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        11: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        12: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 }
         }
         hometimeoutv = 0
         awaytimeoutv = 0
@@ -921,7 +1151,7 @@ def start():
 
 @app.route('/finish', methods=['GET', 'POST'])
 def finish():
-    if request.method == 'POST':
+    if  request.method == 'GET' or request.method == 'POST':
         global quarter
         # timestamp = datetime.now()
 
@@ -963,16 +1193,16 @@ def finish():
             data = i[0],i[1]
             writer.writerow(data)
 
-        header2 = ['Home Player','goals','majors','assists']
+        header2 = ['Home Player','goals','majors','reds']
         writer.writerow(header2)
         for user_id in teama:
-            data = [user_id ,teama[user_id]['goals'],teama[user_id]['majors'],teama[user_id]['assists'] ]
+            data = [user_id ,teama[user_id]['goals'],teama[user_id]['majors'],teama[user_id]['reds'] ]
             writer.writerow(data)
 
-        header2 = ['Away Player','goals','majors','assists']
+        header2 = ['Away Player','goals','majors','reds']
         writer.writerow(header2)
         for user_id in teamb:
-            data = [user_id ,teamb[user_id]['goals'],teamb[user_id]['majors'],teamb[user_id]['assists'] ]
+            data = [user_id ,teamb[user_id]['goals'],teamb[user_id]['majors'],teamb[user_id]['reds'] ]
             writer.writerow(data)
 
         header2 = ['Referees: ' ]
@@ -983,7 +1213,7 @@ def finish():
             data = i[0],i[1],i[2],i[3]
             writer.writerow(data)
 
-        header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'assists']
+        header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'reds']
         writer.writerow(header)
 
         f.close()
@@ -994,7 +1224,7 @@ def finish():
             for line in firstfile:
                 # append content to second file
                 secondfile.write(line)
-
+        f.close()
     return redirect(url_for('index'))
 
 @app.route('/hometimeout')
@@ -1013,7 +1243,7 @@ def hometimeout():
         if direction == 'increment':
             pause_countdown()
             hometimeoutv = int(hometimeoutv) + 1
-            print(hometimeoutv)
+            # print(hometimeoutv)
             td_str = str(timedelta(seconds=remaining_time))
             x = td_str.split(':')
 
@@ -1031,7 +1261,7 @@ def hometimeout():
 
         elif direction == 'decrement':
             hometimeoutv = int(hometimeoutv) - 1
-            print(hometimeoutv)
+            # print(hometimeoutv)
             td_str = str(timedelta(seconds=remaining_time))
             x = td_str.split(':')
 
@@ -1049,7 +1279,7 @@ def hometimeout():
         # flash(msg, "warning")
         if direction == 'increment':
             hometimeoutv = int(hometimeoutv) + 1
-            print(hometimeoutv)
+            # print(hometimeoutv)
             td_str = str(timedelta(seconds=remaining_time))
             x = td_str.split(':')
 
@@ -1067,7 +1297,7 @@ def hometimeout():
 
         elif direction == 'decrement':
             hometimeoutv = int(hometimeoutv) - 1
-            print(hometimeoutv)
+            # print(hometimeoutv)
             td_str = str(timedelta(seconds=remaining_time))
             x = td_str.split(':')
 
@@ -1093,14 +1323,14 @@ def awaytimeout():
     global timeout, reason, timeouttime
     reason = 'Away Timeout'
     timeout = timeouttime
-    print(timeout)
-    print(timeouttime)
+    # print(timeout)
+    # print(timeouttime)
     # elapsed_time = time.time() - start_time
     remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
     if countdown_running:
         if direction == 'increment':
             awaytimeoutv = int(awaytimeoutv) + 1
-            print(awaytimeoutv)
+            # print(awaytimeoutv)
             td_str = str(timedelta(seconds=remaining_time))
             x = td_str.split(':')
 
@@ -1117,7 +1347,7 @@ def awaytimeout():
 
         elif direction == 'decrement':
             awaytimeoutv = int(awaytimeoutv) - 1
-            print(awaytimeoutv)
+            # print(awaytimeoutv)
             td_str = str(timedelta(seconds=remaining_time))
             x = td_str.split(':')
 
@@ -1134,7 +1364,7 @@ def awaytimeout():
         flash(msg, "warning")
         if direction == 'decrement':
             awaytimeoutv = int(awaytimeoutv) - 1
-            print(awaytimeoutv)
+            # print(awaytimeoutv)
             td_str = str(timedelta(seconds=remaining_time))
             x = td_str.split(':')
 
@@ -1153,10 +1383,14 @@ def awaytimeout():
 
 @app.route('/timeout')
 def timeout():
+    global  timeout
+    timeout = timeouttime
     start_timeout()
     return render_template('timeout.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
 @app.route('/runinterval')
 def runinterval():
+    global timeout
+    timeout = intervaltime
     start_timeout()
     return render_template('interval.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
 
@@ -1179,10 +1413,11 @@ def returninterval():
     writer.writerow(data)
 
     header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors',
-              'assists']
+              'reds']
     writer.writerow(header)
 
     f.close()
+
     return redirect(url_for('index'))
 
 
@@ -1193,13 +1428,35 @@ def callinterval():
         global countdown_running, start_time, elapsed_time
         global timeout, reason ,intervaltime
         reason = 'Break'
-        timeout = intervaltime
+        timeout = timeouttime
         # elapsed_time = time.time() - start_time
         # remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
         quarter=quarter +1
         pause_countdown()
         time.sleep(1)
         stop_timeout()
+        if quarter == 5:
+            timestamp = datetime.now()
+
+            f = open(running_file, 'a')
+            writer = csv.writer(f)
+            header = ['Game Status at ', location, ' on the ', timestamp, 'end of quarter :', quarter - 1, ]
+            writer.writerow(header)
+
+            # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
+            # writer.writerow(header1)
+
+            data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'], 'Home Majors:',
+                    scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
+            writer.writerow(data)
+
+            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors',
+                      'reds']
+            writer.writerow(header)
+
+            f.close()
+
+            return redirect(url_for('finish'))
         return redirect(url_for('runinterval'))
 
     return redirect(url_for('index'))
@@ -1253,7 +1510,7 @@ def savehomeplayers(user_id):
             form_data = [hatnum,name]
 
             home_data[user_id].append(form_data)
-        print(home_data)
+        # print(home_data)
         return redirect(url_for('index'))
 
     # For GET requests, render the form with existing data
@@ -1278,7 +1535,7 @@ def saveawayplayers(user_id):
             form_data = [hatnum,name]
 
             away_data[user_id].append(form_data)
-        print(away_data)
+        # print(away_data)
         return redirect(url_for('index'))
 
     # For GET requests, render the form with existing data
@@ -1305,7 +1562,7 @@ def saverefdata(user_id):
             form_data = [hatnum,name,club,expences]
 
             ref_data[user_id].append(form_data)
-        print(ref_data)
+        # print(ref_data)
         return redirect(url_for('index'))
 
     # For GET requests, render the form with existing data
@@ -1319,7 +1576,7 @@ def download(filename):
     return send_file(filename, as_attachment=True)
 
 def restart():
-    print('Restarting script...')
+    # print('Restarting script...')
     os.execv(sys.executable, ['python3 start.py'] + sys.argv)
 
 
