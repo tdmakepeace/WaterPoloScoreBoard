@@ -37,6 +37,15 @@ periodscores = {
 home_data = {'home': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6', ''], ['7', ''], ['8', ''], ['9', ''], ['10', ''], ['11', ''], ['12', ''], ['13', '']]}
 away_data = {'away': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6', ''], ['7', ''], ['8', ''], ['9', ''], ['10', ''], ['11', ''], ['12', ''], ['13', '']]}
 
+# home_data = {
+#     'home': [['1', 'home1'], ['2', 'home2'], ['3', 'home3'], ['4', 'home4'], ['5', ''], ['6', ''], ['7', ''], ['8', ''],
+#              ['9', ''],
+#              ['10', ''], ['11', ''], ['12', ''], ['13', '']]}
+# away_data = {
+#     'away': [['1', 'away1'], ['2', 'away2'], ['3', 'away3'], ['4', 'fred'], ['5', ''], ['6', ''], ['7', ''], ['8', ''],
+#              ['9', ''],
+#              ['10', ''], ['11', ''], ['12', ''], ['13', '']]}
+
 ref_data = {'referee': [['1', '','',''], ['2', '','','']]}
 
 home_coach = {'red': 0 , 'yellow': 0}
@@ -410,25 +419,25 @@ def updateteamacoach(id):
             # print('help2')
             if id == 1 :
                 home_coach['yellow'] = 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW', 'Coach', 'Home']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW', 'Coach','', 'Home']
                 writer.writerow(data)
 
 
             elif id == 2 :
                 home_coach['red'] = 1
                 home_team_red['red'] = home_team_red['red'] + 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Coach', 'Home']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Coach','', 'Home']
                 writer.writerow(data)
 
         elif direction == 'decrement':
             if id == 1 :
                 home_coach['yellow'] = 0
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL', 'Coach', 'Home']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach','', 'Home']
                 writer.writerow(data)
             elif id == 2 :
                 home_coach['red'] = 0
                 home_team_red['red'] = home_team_red['red'] - 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL', 'Coach', 'Home']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach','', 'Home']
                 writer.writerow(data)
             direction = "increment"
 
@@ -455,29 +464,28 @@ def updateteambcoach(id):
         writer = csv.writer(f)
         # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
 
-
         if direction == 'increment':
             # print('help2')
             if id == 1 :
                 away_coach['yellow'] = 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW', 'Coach', 'Away']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW', 'Coach','', 'Away']
                 writer.writerow(data)
 
             elif id == 2 :
                 away_coach['red'] = 1
                 away_team_red['red'] = away_team_red['red'] + 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Coach', 'Away']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Coach','', 'Away']
                 writer.writerow(data)
 
         elif direction == 'decrement':
             if id == 1 :
                 away_coach['yellow'] = 0
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach', 'Away']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach','', 'Away']
                 writer.writerow(data)
             elif id == 2 :
                 away_coach['red'] = 0
                 away_team_red['red'] = away_team_red['red'] - 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach', 'Away']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach','', 'Away']
                 writer.writerow(data)
             direction = "increment"
 
@@ -509,13 +517,13 @@ def updateteamacard(user_id):
             # print('help2')
             teama[user_id]['reds'] = teama[user_id]['reds'] + 1
             home_team_red['red'] = home_team_red['red']  + 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', user_id, 'Home',
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', user_id, home_data['home'][user_id - 1][1], 'Home',
                     teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
         elif direction == 'decrement':
             teama[user_id]['reds'] = teama[user_id]['reds'] - 1
             home_team_red['red'] = home_team_red['red'] - 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', user_id, 'Home',
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', user_id, home_data['home'][user_id - 1][1], 'Home',
                     teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
 
@@ -556,13 +564,13 @@ def updateteambcard(user_id):
             # print('help2')
             teamb[user_id]['reds'] = teamb[user_id]['reds'] + 1
             away_team_red['red'] = away_team_red['red'] + 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', user_id, 'Home',
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', user_id, away_data['away'][user_id - 1][1], 'Away',
                     teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
         elif direction == 'decrement':
             teamb[user_id]['red'] = teamb[user_id]['reds'] - 1
             away_team_red['red'] = away_team_red['red'] - 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', user_id, 'Home',
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', user_id, away_data['away'][user_id - 1][1], 'Away',
                     teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
 
@@ -627,7 +635,7 @@ def updateteamagoal(user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , user_id , 'Home' , teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
+        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , user_id , home_data['home'][user_id - 1][1], 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
         writer.writerow(data)
         f.close()
         # print(quarter)
@@ -691,7 +699,7 @@ def updateteamamajor(user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Majors', user_id, 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Majors', user_id, home_data['home'][user_id - 1][1], 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
         writer.writerow(data)
         f.close()
 
@@ -750,7 +758,7 @@ def updateteamapenalty(user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', user_id, 'Home',
+        data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', user_id, home_data['home'][user_id - 1][1], 'Home',
                 teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
         writer.writerow(data)
         f.close()
@@ -835,7 +843,7 @@ def updateteambgoal(user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', user_id, 'Away',
+        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', user_id, away_data['away'][user_id - 1][1], 'Away',
         teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
         writer.writerow(data)
         f.close()
@@ -896,7 +904,7 @@ def updateteambmajor(user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Major', user_id, 'Away',
+        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Major', user_id, away_data['away'][user_id - 1][1], 'Away',
         teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
         writer.writerow(data)
         f.close()
@@ -955,7 +963,7 @@ def updateteambpenalty(user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', user_id, 'Away',
+        data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', user_id, away_data['away'][user_id - 1][1], 'Away',
         teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
         writer.writerow(data)
         f.close()
@@ -1020,7 +1028,7 @@ def period():
             data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'],'Home Majors:',  scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
             writer.writerow(data)
 
-            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'reds']
+            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors', 'reds']
             writer.writerow(header)
 
             f.close()
@@ -1039,7 +1047,7 @@ def period():
             data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'],'Home Majors:',  scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
             writer.writerow(data)
 
-            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'reds']
+            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors', 'reds']
             writer.writerow(header)
 
             f.close()
@@ -1097,6 +1105,7 @@ def start():
         # writer.writerow(header)
 
         f.close()
+
 
         scores = {
         'Home': {'goals': 0, 'majors': 0},
@@ -1179,30 +1188,35 @@ def finish():
 
         header2 = ['Home Team: ', HomeTeam ]
         writer.writerow(header2)
-        header2 = ['Hatnumber','Player']
+        # header2 = ['Hatnumber','Player']
+        # writer.writerow(header2)
+        # for i in home_data['home'] :
+        #     data = i[0],i[1]
+        #     writer.writerow(data)
+
+
+        header2 = ['Home Player','name', 'goals', 'majors', 'reds']
+
         writer.writerow(header2)
-        for i in home_data['home'] :
-            data = i[0],i[1]
+        for user_id in teama:
+
+            data = [user_id ,home_data['home'][user_id-1][1], teama[user_id]['goals'],teama[user_id]['majors'],teama[user_id]['reds'] ]
             writer.writerow(data)
+
 
         header2 = ['Away Team: ', AwayTeam ]
         writer.writerow(header2)
-        header2 = ['Hatnumber','Player']
-        writer.writerow(header2)
-        for i in away_data['away'] :
-            data = i[0],i[1]
-            writer.writerow(data)
+        # header2 = ['Hatnumber','Player']
+        # writer.writerow(header2)
+        # for i in away_data['away'] :
+        #     data = i[0],i[1]
+        #     writer.writerow(data)
 
-        header2 = ['Home Player','goals','majors','reds']
-        writer.writerow(header2)
-        for user_id in teama:
-            data = [user_id ,teama[user_id]['goals'],teama[user_id]['majors'],teama[user_id]['reds'] ]
-            writer.writerow(data)
 
-        header2 = ['Away Player','goals','majors','reds']
+        header2 = ['Away Player','name', 'goals', 'majors', 'reds']
         writer.writerow(header2)
         for user_id in teamb:
-            data = [user_id ,teamb[user_id]['goals'],teamb[user_id]['majors'],teamb[user_id]['reds'] ]
+            data = [user_id ,away_data['away'][user_id-1][1], teamb[user_id]['goals'],teamb[user_id]['majors'],teamb[user_id]['reds'] ]
             writer.writerow(data)
 
         header2 = ['Referees: ' ]
@@ -1412,7 +1426,7 @@ def returninterval():
             scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
     writer.writerow(data)
 
-    header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors',
+    header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors',
               'reds']
     writer.writerow(header)
 
@@ -1450,7 +1464,7 @@ def callinterval():
                     scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
             writer.writerow(data)
 
-            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors',
+            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors',
                       'reds']
             writer.writerow(header)
 
