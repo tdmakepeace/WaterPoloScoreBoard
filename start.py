@@ -101,6 +101,7 @@ AwayTeam = 'Away Team'
 
 filename = datetime.now().strftime(HomeTeam+'-%Y-%m-%d-%H-%M.csv')
 running_file = datetime.now().strftime('temp'+'-%Y-%m-%d-%H-%M.csv')
+compress_file = datetime.now().strftime(HomeTeam+'_END_'+'-%Y-%m-%d-%H-%M.csv')
 countdown_running = False
 start_time = 0
 elapsed_time = 0
@@ -110,7 +111,7 @@ starttimeout = 0
 elapsedtimeout = 0
 
 reason = 'Timeout'
-timeout = 0
+timeout = timeouttime
 
 
 # timestamp = datetime.now()
@@ -121,12 +122,14 @@ window = webview.create_window('WaterPolo Scoreboard',app )
 @app.route('/')
 def index():
     # print(home_coach, away_coach)
+    global timeouttime, timeout
+    timeouttime = 1
+    timeout = timeouttime
     return render_template('timer.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, home_coach=home_team_red, away_coach=away_team_red )
 
 @app.route('/display')
 def display():
     return render_template('display.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, home_coach=home_team_red, away_coach=away_team_red )
-
 
 @app.route('/start_countdown')
 def start_countdown():
@@ -173,7 +176,7 @@ def resume_countdown():
 
 @app.route('/get_countdown_status')
 def get_countdown_status():
-    global countdown_running, start_time, elapsed_time
+    global countdown_running, start_time, elapsed_time, remaining_time
     if countdown_running:
         elapsed_time = time.time() - start_time
         remaining_time = max((gametime*60) - elapsed_time, 0)
@@ -183,18 +186,20 @@ def get_countdown_status():
         # elapsed_time = time.time() - start_time
         remaining_time = max((gametime*60) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
+
+
 @app.route('/start_timeout')
 def start_timeout():
-    global timeoutrunning, starttimeout, elapsedtimeout ,timeout
+    global timeoutrunning, starttimeout, elapsedtimeout
     # timeout = timeouttime
     timeoutrunning = True
+    elapsedtimeout = 0
     starttimeout = time.time() - elapsedtimeout
     return jsonify({'status': 'success'})
 
 @app.route('/stop_timeout')
 def stop_timeout():
     global timeoutrunning, starttimeout, elapsedtimeout
-    timeoutrunning = False
     starttimeout = 0
     elapsedtimeout = 0
     return jsonify({'status': 'success'})
@@ -215,7 +220,7 @@ def resume_timeout():
 
 @app.route('/get_timeout_status')
 def get_timeout_status():
-    global timeoutrunning, starttimeout, elapsedtimeout , timeout
+    global timeoutrunning, starttimeout, elapsedtimeout
     if timeoutrunning:
         elapsedtimeout = time.time() - starttimeout
         remainingtimeout = max((timeout*60) - elapsedtimeout, 0)
@@ -312,8 +317,8 @@ def awaycard():
                            awaytimeoutv=awaytimeoutv, filename=filename)
 
 
-@app.route('/homegoal')
-def homegoal():
+@app.route('/goal')
+def goal():
     if countdown_running:
         if runningclock == "no":
             pause_countdown()
@@ -321,12 +326,12 @@ def homegoal():
         msg = 'clock not running'
         flash(msg, "warning")
 
-    return render_template('homegoal.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
+    return render_template('goal.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
                            HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
                            awaytimeoutv=awaytimeoutv, filename=filename)
-@app.route('/homemajor')
-def homemajor():
+@app.route('/major')
+def major():
     if countdown_running:
         if runningclock == "no":
             pause_countdown()
@@ -334,13 +339,13 @@ def homemajor():
         msg = 'clock not running'
         flash(msg, "warning")
 
-    return render_template('homemajor.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
+    return render_template('major.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
                            HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
                            awaytimeoutv=awaytimeoutv, filename=filename)
 
-@app.route('/homepenalty')
-def homepenalty():
+@app.route('/penalty')
+def penalty():
     if countdown_running:
         if runningclock == "no":
             pause_countdown()
@@ -348,51 +353,51 @@ def homepenalty():
         msg = 'clock not running'
         flash(msg, "warning")
 
-    return render_template('homepenalty.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
+    return render_template('penalty.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
                            HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
                            awaytimeoutv=awaytimeoutv, filename=filename)
 
-@app.route('/awaygoal')
-def awaygoal():
-    if countdown_running:
-        if runningclock == "no":
-            pause_countdown()
-    else:
-        msg = 'clock not running'
-        flash(msg, "warning")
-
-    return render_template('awaygoal.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
-                           TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
-                           awaytimeoutv=awaytimeoutv, filename=filename)
-@app.route('/awaymajor')
-def awaymajor():
-    if countdown_running:
-        if runningclock == "no":
-            pause_countdown()
-    else:
-        msg = 'clock not running'
-        flash(msg, "warning")
-
-    return render_template('awaymajor.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
-                           TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
-                           awaytimeoutv=awaytimeoutv, filename=filename)
-
-@app.route('/awaypenalty')
-def awaypenalty():
-    if countdown_running:
-        if runningclock == "no":
-            pause_countdown()
-    else:
-        msg = 'clock not running'
-        flash(msg, "warning")
-
-    return render_template('awaypenalty.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
-                           TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
-                           awaytimeoutv=awaytimeoutv, filename=filename)
+# @app.route('/awaygoal')
+# def awaygoal():
+#     if countdown_running:
+#         if runningclock == "no":
+#             pause_countdown()
+#     else:
+#         msg = 'clock not running'
+#         flash(msg, "warning")
+#
+#     return render_template('awaygoal.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
+#                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
+#                            HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
+#                            awaytimeoutv=awaytimeoutv, filename=filename)
+# @app.route('/awaymajor')
+# def awaymajor():
+#     if countdown_running:
+#         if runningclock == "no":
+#             pause_countdown()
+#     else:
+#         msg = 'clock not running'
+#         flash(msg, "warning")
+#
+#     return render_template('awaymajor.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
+#                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
+#                            HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
+#                            awaytimeoutv=awaytimeoutv, filename=filename)
+#
+# @app.route('/awaypenalty')
+# def awaypenalty():
+#     if countdown_running:
+#         if runningclock == "no":
+#             pause_countdown()
+#     else:
+#         msg = 'clock not running'
+#         flash(msg, "warning")
+#
+#     return render_template('awaypenalty.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
+#                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
+#                            HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
+#                            awaytimeoutv=awaytimeoutv, filename=filename)
 
 
 @app.route('/updateteamacoach/<int:id>', methods=['GET', 'POST'])
@@ -1232,13 +1237,46 @@ def finish():
 
         f.close()
 
-        with open(running_file, 'r') as firstfile, open(filename, 'a') as secondfile:
+        # with open(running_file, 'r') as firstfile, open(filename, 'a') as secondfile:
+        #
+        #     # read content from first file
+        #     for line in firstfile:
+        #         # append content to second file
+        #         if any(line) or any(field.strip() for field in line):
+        #             secondfile.write(line)
+        # f.close()
 
-            # read content from first file
-            for line in firstfile:
-                # append content to second file
-                secondfile.write(line)
+        with open(running_file, newline='') as in_file:
+            with open(filename, 'a', newline='') as out_file:
+                writer = csv.writer(out_file)
+                for row in csv.reader(in_file):
+                    if row:
+                        writer.writerow(row)
         f.close()
+
+
+
+        with open(filename, newline='') as in_file:
+            with open(compress_file, 'w', newline='') as out_file:
+                writer = csv.writer(out_file)
+                for row in csv.reader(in_file):
+                    if row:
+                        writer.writerow(row)
+        f.close()
+
+        try:
+            os.remove(running_file)
+        except OSError as e:  # this would be "except OSError, e:" before Python 2.6
+            if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
+                raise  # re-raise exception if a different error occurred...
+
+        try:
+            os.remove(filename)
+        except OSError as e:  # this would be "except OSError, e:" before Python 2.6
+            if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
+                raise  # re-raise exception if a different error occurred...
+
+
     return redirect(url_for('index'))
 
 @app.route('/hometimeout')
@@ -1397,10 +1435,10 @@ def awaytimeout():
 
 @app.route('/timeout')
 def timeout():
-    global  timeout
+    global  timeout , timeouttime
     timeout = timeouttime
     start_timeout()
-    return render_template('timeout.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
+    return render_template('timeout.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, clocktime=remaining_time)
 @app.route('/runinterval')
 def runinterval():
     global timeout
@@ -1470,7 +1508,7 @@ def callinterval():
 
             f.close()
 
-            return redirect(url_for('finish'))
+            return redirect(url_for('index'))
         return redirect(url_for('runinterval'))
 
     return redirect(url_for('index'))

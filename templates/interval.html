@@ -83,6 +83,26 @@
 </head>
 
       <script>
+       document.addEventListener('DOMContentLoaded', (event) => {
+            document.addEventListener('keydown', function(event) {
+                 if (event.ctrlKey && event.key === 'n') {
+                    event.preventDefault();
+                    resumeTimeout()
+                }
+                // shared
+                else if (event.key === 'n') {
+                    event.preventDefault();
+                    pauseTimeout()
+                }
+                else if (event.key === 'x') {
+                    event.preventDefault();
+                    window.location.href = '/returninterval';
+                    // Perform another action here
+                }
+
+
+            });
+        });
         function playSound() {
             var audio = new Audio('/static/airhorn.mp3');
             audio.play();
@@ -138,9 +158,9 @@
                         let seconds = Math.floor(timeLeft % 60);
                         timeoutElement.innerHTML = '<br> ' + minutes +':' + seconds.toString().padStart(2, '0') + '';
                         // timeoutElement.innerHTML = 'Remaining Time: ' + seconds.toString().padStart(2, '0') + 's';
-                        if (timeLeft > 16) {
+                        if (timeLeft > 31) {
                             setTimeout(updateTimeout, 1000);
-                        } else if  (timeLeft > 14) {
+                        } else if  (timeLeft > 29) {
                             playwhistle();
                             setTimeout(updateTimeout, 1000);
                         } else if (timeLeft > 1) {
@@ -218,11 +238,11 @@
     <div> <span style="color: red;" id="timeout"> </span></div>
 
 <!--    <button style="height:50px;width:100px" onclick="startTimeout()">Start Timeoute Period</button>-->
-    <button style="height:50px;width:100px" onclick="pauseTimeout()">Pause</button>
-    <button style="height:50px;width:100px" onclick="resumeTimeout()">Resume</button>
+    <button style="height:50px;width:100px" onclick="pauseTimeout()">Pause (N)</button>
+    <button style="height:50px;width:100px" onclick="resumeTimeout()">Resume (cntl+N)</button>
       <!-- <button onclick="playSound()">Play Sound</button>  -->
             <form method="GET" action="/returninterval">
-            <button style="height:50px;width:100px" onclick="stopTimeout()" type="submit">Return to Game</button>
+            <button style="height:50px;width:100px" onclick="stopTimeout()" type="submit">Return to Game (X) </button>
         </form>
 
 <!--    <button style="height:50px;width:100px" onclick="stopTimeout()">END</button>-->

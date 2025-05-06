@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 <head>
     <title>Development Waterpolo Scoresheet</title>
    <style>
@@ -83,6 +83,26 @@
 </head>
 
       <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.addEventListener('keydown', function(event) {
+                 if (event.ctrlKey && event.key === 'n') {
+                    event.preventDefault();
+                    resumeTimeout()
+                }
+                // shared
+                else if (event.key === 'n') {
+                    event.preventDefault();
+                    pauseTimeout()
+                }
+                else if (event.key === 'x') {
+                    event.preventDefault();
+                    window.location.href = '/';
+                    // Perform another action here
+                }
+
+
+            });
+        });
        function playSound() {
             var audio = new Audio('/static/airhorn.mp3');
             audio.play();
@@ -157,9 +177,13 @@
             });
         }
 
-        // Initial update of timeout display
+       // Initial update of timeout display
         updateTimeout();
-    </script>
+
+
+
+
+   </script>
 
 
 <!-- <body onload=playSound()> -->
@@ -217,17 +241,27 @@
     <div> <span style="color: red;" id="timeout"> </span></div>
 
 <!--    <button style="height:50px;width:100px" onclick="startTimeout()">Start Timeoute Period</button>-->
-    <button style="height:50px;width:100px" onclick="pauseTimeout()">Pause</button>
-    <button style="height:50px;width:100px" onclick="resumeTimeout()">Resume</button>
+    <button style="height:50px;width:100px" onclick="pauseTimeout()">Pause (N)</button>
+    <button style="height:50px;width:100px" onclick="resumeTimeout()">Resume (cntl+N</button>
             <form method="GET" action="/">
-            <button style="height:50px;width:100px" onclick="stopTimeout()" type="submit">Return to Game</button>
+            <button style="height:50px;width:100px" onclick="stopTimeout()" type="submit">Return to Game (X)</button>
         </form>
 
-<!--    <button style="height:50px;width:100px" onclick="stopTimeout()">END</button>-->
 
-  </div>
-</div>
+   <p style="color:blue; font-size:50px; "id = "output"></p>
 
+   <script>
+      let output = document.getElementById("output");
+      let clocktime = {{clocktime}}
+      function convertStoMs(clocktime) {
+                        let minutes = Math.floor(clocktime / 60);
+                        let seconds = Math.floor(clocktime % 60);
+                        output.innerHTML = '<br> ' + minutes +':' + seconds.toString().padStart(2, '0') + '';
+      }
+
+      convertStoMs( clocktime );
+
+   </script>
 
 </article>
 <aside>
@@ -263,6 +297,7 @@
 
         </tr>
         {% endfor %}
+
     </table>
 
 

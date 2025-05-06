@@ -45,91 +45,47 @@
        //
        document.addEventListener('DOMContentLoaded', (event) => {
             document.addEventListener('keydown', function(event) {
-                if (event.ctrlKey && event.key === 's') {
-                    event.preventDefault();
-                    pauseCountdown()
-                    // Perform your action here
-                }
-                // else if (event.key === ' ') {
-                //     event.preventDefault();
-                //     pauseCountdown()
-                //     // Perform another action here
-                // }
-
-               else if (event.key === 's') {
+                 if (event.key === 'n') {
                     event.preventDefault();
                     pauseCountdown()
                 }
-                // Away
-               else if (event.ctrlKey && event.key === 'm') {
+                // shared
+                else if (event.key === 'c') {
                     event.preventDefault();
-                    window.location.href = '/awaymajor';
+                    window.location.href = '/major';
                 }
-                else if (event.ctrlKey && event.key === 'g') {
+                else if (event.key === 'v') {
                     event.preventDefault();
-                    window.location.href = '/awaygoal';
+                    window.location.href = '/goal';
                     // Perform another action here
                 }
-                else if (event.ctrlKey && event.key === 'p') {
+                else if (event.key === 'b') {
                     event.preventDefault();
-                    window.location.href = '/awaypenalty';
+                    window.location.href = '/penalty';
                 }
-                else if (event.ctrlKey && event.key === 't') {
+
+                // Away
+                else if (event.key === 't') {
                     event.preventDefault();
                     window.location.href = '/awaytimeout';
                 }
-                else if (event.ctrlKey && event.key === 'c') {
+                else if (event.key === 'g') {
                     event.preventDefault();
                     window.location.href = '/awaycard';
                 }
                  //Home
-                else if (event.key === 'm') {
-                    event.preventDefault();
-                    window.location.href = '/homemajor';
-                }
-                else if (event.key === 'g') {
-                    event.preventDefault();
-                    window.location.href = '/homegoal';
-                    // Perform another action here
-                }
-                else if (event.key === 'p') {
-                    event.preventDefault();
-                    window.location.href = '/homepenalty';
-                }
-                else if ( event.key === 't') {
+                else if ( event.key === 'r') {
                      event.preventDefault();
-                    // fetch('/hometimeout', {
-                    //     method: 'POST',
-                    //     headers: {
-                    //         'Content-Type': 'application/json'
-                    //     },
-                    //     body: JSON.stringify({ key: 'value' })
-                    // })
-                    // .then(response => response.json())
-
                     window.location.href = '/hometimeout';
+                }
+                else if (event.key === 'f') {
+                    event.preventDefault();
+                    window.location.href = '/homecard';
                 }
 
             });
         });
-        //
-        // function pauseCountdown() {
-        //     $.ajax({
-        //         if (response.countdown_running) {
-        //                 url: '/pause_countdown',
-        //                 success: function(response) {
-        //                     updateCountdown();
-        //                 }
-        //             }
-        //         else {
-        //                 url: '/start_countdown',
-        //                 success: function(response) {
-        //                     updateCountdown();
-        //                 }
-        //
-        //             }
-        //     });
-        // }
+
         function pauseCountdown() {
             $.ajax({
                 url: '/pause_countdown',
@@ -262,7 +218,7 @@
       <h1>
 
           <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">  {{ home_coach.red }} </span>
-          <span class="{% if home_coach.yellow == 1 %}yellow{% else %}none{% endif %}">  {{ home_coach.yellow }} </span>
+          <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">  {{ home_coach.yellow }} </span>
           <span style="font-size: 30px; color: #333333 ;"> spacer </span>
           <span style="font-size: 30px; color: white;">{{ hometimeoutv }} </span>
           <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }} </span>
@@ -319,41 +275,41 @@
     <tr>
         <td>
               <form action="/homecard">
-            <button style="height:50px;width:120px" type="submit">    <u>C</u>ard</button>
+            <button style="height:50px;width:120px" type="submit">Card (F) </button>
             </form>
       </td>
         <td>
         <form action="/hometimeout">
-            <button style="height:50px;width:160px" type="submit"><u>T</u>imeout</button>
+            <button style="height:50px;width:160px" type="submit">Timeout (R)</button>
         </form>
       </td>
-            <td>
-              <form action="/homepenalty">
-            <button style="height:50px;width:200px" type="submit"><u>P</u>enalty</button>
-                  </form>
-      </td>
+<!--            <td>-->
+<!--              <form action="/homepenalty">-->
+<!--            <button style="height:50px;width:200px" type="submit"><u>P</u>enalty</button>-->
+<!--                  </form>-->
+<!--      </td>-->
     </tr>
 </table>
-<table>
-<tr>
+<!--<table>-->
+<!--<tr>-->
 
-        <td>
-              <form action="/homemajor">
-            <button style="height:50px;width:240px" type="submit"><u>M</u>ajor</button>
-</form>
+<!--        <td>-->
+<!--              <form action="/homemajor">-->
+<!--            <button style="height:50px;width:240px" type="submit"><u>M</u>ajor</button>-->
+<!--</form>-->
 
-      </td>
-        <td>
-                   <form action="/homegoal">
-            <button style="height:50px;width:240px" type="submit"><u>G</u>oal</button>
-<!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
-</form>
+<!--      </td>-->
+<!--        <td>-->
+<!--                   <form action="/homegoal">-->
+<!--            <button style="height:50px;width:240px" type="submit"><u>G</u>oal</button>-->
+<!--&lt;!&ndash;<input style="height:50px;width:200px" type="submit" value="Edit Settings" />&ndash;&gt;-->
+<!--</form>-->
 
-      </td>
+<!--      </td>-->
 
-    </tr>
+<!--    </tr>-->
 
-</table>
+<!--</table>-->
 </nav>
 
 <article>
@@ -376,17 +332,15 @@
         </tr>
 
     </table>
-
-
 <!--    <button style="height:50px;width:200px" onclick="startCountdown()">Start</button>-->
-    <button style="height:50px;width:300px" onclick="pauseCountdown()"><u>S</u>tart / Stop</button>
+    <button style="height:50px;width:300px" onclick="pauseCountdown()">Start / Stop (N)</button>
  <!--   <button style="height:50px;width:100px" onclick="resumeCountdown()">Resume</button> -->
     <button style="height:50px;width:50px" onclick="stopCountdown()">Reset</button>
 
-  </div>
-</div>
-<br>
-<br>
+
+
+
+
 <!--
   <table class="center"; style="text-align: center">
         <tr>
@@ -457,6 +411,32 @@
     </table>
         
       {% include 'messages.html' %}
+
+<table class="center"; style="text-align: center">
+<tr>
+
+        <td>
+              <form action="/major">
+            <button style="height:80px;width:300px" type="submit">Major (C)</button>
+</form>
+
+      </td>
+        <td>
+                   <form action="/goal">
+            <button style="height:80px;width:300px" type="submit">Goal (V)</button>
+<!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
+</form>
+
+      </td>
+       <td>
+              <form action="/penalty">
+            <button style="height:80px;width:300px" type="submit">Penalty (B)</button>
+                  </form>
+      </td>
+    </tr>
+
+</table>
+
 </article>
 
 
@@ -510,44 +490,44 @@
     <tr>
                 <td>
               <form action="/awaycard">
-            <button style="height:50px;width:120px" type="submit"><sub>ctrl</sub>    <u>C</u>ard</button>
+            <button style="height:50px;width:120px" type="submit">Card (G)</button>
         </form>
       </td>
 
             <td>
         <form action="/awaytimeout">
-            <button style="height:50px;width:160px" type="submit"><sub>ctrl</sub>    <u>T</u>imeout</button>
+            <button style="height:50px;width:160px" type="submit">Timeout (T)</button>
         </form>
       </td>
-            <td>
-              <form action="/awaypenalty">
-            <button style="height:50px;width:200px" type="submit"><sub>ctrl</sub>    <u>P</u>enalty</button>
-                  </form>
-      </td>
+<!--            <td>-->
+<!--              <form action="/awaypenalty">-->
+<!--            <button style="height:50px;width:200px" type="submit"><sub>ctrl</sub>    <u>P</u>enalty</button>-->
+<!--                  </form>-->
+<!--      </td>-->
     </tr>
 </table>
-    <table>
- <tr>
+<!--    <table>-->
+<!-- <tr>-->
 
-        <td>
-              <form action="/awaymajor">
-            <button style="height:50px;width:240px" type="submit"><sub>ctrl</sub>    <u>M</u>ajor</button>
-</form>
+<!--        <td>-->
+<!--              <form action="/awaymajor">-->
+<!--            <button style="height:50px;width:240px" type="submit"><sub>ctrl</sub>    <u>M</u>ajor</button>-->
+<!--</form>-->
 
-      </td>
-        <td>
-                   <form action="/awaygoal">
-            <button style="height:50px;width:240px" type="submit"><sub>ctrl</sub>    <u>G</u>oal</button>
-<!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
-</form>
+<!--      </td>-->
+<!--        <td>-->
+<!--                   <form action="/awaygoal">-->
+<!--            <button style="height:50px;width:240px" type="submit"><sub>ctrl</sub>    <u>G</u>oal</button>-->
+<!--&lt;!&ndash;<input style="height:50px;width:200px" type="submit" value="Edit Settings" />&ndash;&gt;-->
+<!--</form>-->
 
-      </td>
-</tr>
-     <tr>
+<!--      </td>-->
+<!--</tr>-->
+<!--     <tr>-->
 
 
-</tr>
-</table>
+<!--</tr>-->
+<!--</table>-->
 
 </aside>
 
