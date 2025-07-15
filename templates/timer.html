@@ -24,9 +24,15 @@
 
 </head>
 
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
     <script>
         function playSound() {
             var audio = new Audio('/static/airhorn.mp3');
+            audio.play();
+        }
+        function changeSound() {
+            var audio = new Audio('/static/airhorn-change.mp3');
             audio.play();
         }
         function playbell() {
@@ -82,6 +88,20 @@
                     event.preventDefault();
                     window.location.href = '/homecard';
                 }
+                else if (event.key === 'x') {
+                    event.preventDefault();
+                    window.location.href = '/clear';
+                }
+                else if (event.key === 'y') {
+                    event.preventDefault();
+                    possession();
+                }
+                else if (event.key === 'u') {
+                    event.preventDefault();
+                    reset20();
+                }
+
+
 
             });
         });
@@ -117,16 +137,26 @@
                 url: '/get_countdown_status',
                 success: function (response) {
                     let countdownElement = document.getElementById('countdown');
+                    let shotdownElement = document.getElementById('shotdown');
                     let timeLeft = response.elapsed_time;
+                    let shotLeft = response.elapsed_shot;
                     if (response.countdown_running) {
                         let minutes = Math.floor(timeLeft / 60);
                         let seconds = Math.floor(timeLeft % 60);
+                        let shotseconds = Math.floor(shotLeft % 60);
                         countdownElement.innerHTML = '<br> ' + minutes + ':' + seconds.toString().padStart(2, '0') + '';
+                        shotdownElement.innerHTML = '<br> ' + shotseconds.toString().padStart(2, '0') + '';
                         // countdownElement.innerHTML = 'Remaining Time: ' + seconds.toString().padStart(2, '0') + 's';
                         var quarter = {{ quarter }}
                         if (quarter < 4) {
                             if (timeLeft > 1) {
+                                if (shotLeft < 1) {
+                                    changeSound();
+                                    changeSound();
+                                    reset30();
+                                }
                                 setTimeout(updateCountdown, 1000);
+
                             } else {
                                 playSound()
                                 setTimeout(() => {
@@ -136,12 +166,27 @@
                             }
                         } else {
                             if (timeLeft > 61) {
+                                if (shotLeft < 1) {
+                                    changeSound();
+                                    changeSound();
+                                    reset30();
+                                }
                                 setTimeout(updateCountdown, 1000);
-                            } else if (timeLeft > 59) {
+                            } else if (timeLeft = 60) {
                                 playbell();
+                                // if shotLeft = 0 {
+                                //     playSound();
+                                //     possession()
+                                // }
                                 setTimeout(updateCountdown, 1000);
                             } else if (timeLeft > 1) {
+                                 if (shotLeft < 1) {
+                                    changeSound();
+                                    changeSound();
+                                    reset30();
+                                }
                                 setTimeout(updateCountdown, 1000);
+
                             } else {
                                 playSound();
                                 setTimeout(() => {
@@ -164,13 +209,65 @@
                     } else {
                         // countdownElement.innerHTML = '<br>Paused';
                         let timeLeft = response.elapsed_time;
+                        let shotLeft = response.elapsed_shot;
                         let minutes = Math.floor(timeLeft / 60);
                         let seconds = Math.floor(timeLeft % 60);
+                        let shotseconds = Math.floor(shotLeft % 60);
                         countdownElement.innerHTML = '<br> ' + minutes + ':' + seconds.toString().padStart(2, '0') + '';
+                        shotdownElement.innerHTML = '<br> ' + shotseconds.toString().padStart(2, '0') + '';
                     }
                 }
             });
         }
+
+
+        function reset20() {
+            $.ajax({
+                url: '/reset20',
+                success: function(response) {
+                    updateCountdown();
+                }
+            });
+        }
+
+
+        function force20() {
+            $.ajax({
+                url: '/force20',
+                success: function(response) {
+                    updateCountdown();
+                }
+            });
+        }
+        function force30() {
+            $.ajax({
+                url: '/force30',
+                success: function(response) {
+                    updateCountdown();
+                }
+            });
+        }
+
+
+
+        function possession() {
+            $.ajax({
+                url: '/possession',
+                success: function(response) {
+                    updateCountdown();
+                }
+            });
+        }
+
+        function reset30() {
+            $.ajax({
+                url: '/reset30',
+                success: function(response) {
+                    updateCountdown();
+                }
+            });
+        }
+
         function addmin() {
             $.ajax({
                 url: '/addmin',
@@ -209,11 +306,20 @@
         // }
         updateCountdown();
 
+
     </script>
+
 
 <body>
 
   <header>
+<!--  <div class="clock-display" id="shotdown">00</div>-->
+<!--   <div>-->
+<!--&lt;!&ndash;    <button id="reset-top-20">Reset to 20s</button>&ndash;&gt;-->
+<!--&lt;!&ndash;    <button id="reset-top-30">Reset to 30s</button>&ndash;&gt;-->
+<!--  </div>-->
+
+<!--      <td style="width:10%" rowspan="3">    <span style="color: blue  ; font-size:100px;""  id="shotdown"> </span>         </td>-->
 
       <h1>
 
@@ -332,12 +438,10 @@
         </tr>
 
     </table>
-<!--    <button style="height:50px;width:200px" onclick="startCountdown()">Start</button>-->
-    <button style="height:50px;width:300px" onclick="pauseCountdown()">Start / Stop (N)</button>
- <!--   <button style="height:50px;width:100px" onclick="resumeCountdown()">Resume</button> -->
-    <button style="height:50px;width:50px" onclick="stopCountdown()">Reset</button>
-
-
+<!--&lt;!&ndash;    <button style="height:50px;width:200px" onclick="startCountdown()">Start</button>&ndash;&gt;-->
+<!--    <button style="height:50px;width:300px" onclick="pauseCountdown()">Start / Stop (N)</button>-->
+<!-- &lt;!&ndash;   <button style="height:50px;width:100px" onclick="resumeCountdown()">Resume</button> &ndash;&gt;-->
+<!--    <button style="height:50px;width:50px" onclick="stopCountdown()">Reset</button>-->
 
 
 
@@ -380,7 +484,8 @@
         {% endfor %}
     </table>
  -->
-  <table class="center"; style="text-align: center">
+
+        <table class="center"; style="text-align: center">
         <tr>
             <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;Score&nbsp;&nbsp;</th>
             <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P1&nbsp;</th>
@@ -409,7 +514,23 @@
         </tr>
         {% endfor %}
     </table>
-        
+
+
+      <table class="center"; style="text-align: center">
+      <tr>
+
+          <th colspan="2" >      <button style="height:200px;width:200px" onclick="pauseCountdown()">Start / Stop (N)</button>   </th>
+          <th colspan="2" >    <button style="height:200px;width:100px" onclick="possession()">Possession Change (Y)</button>  </th>
+          <th colspan="3">       <span style="font-size: 300px; color: red;" id="shotdown">00</span>       </th>
+          <th colspan="2" >     <button style="height:200px;width:100px" onclick="reset20()">Short Time (U)</button>       </th>
+          <th colspan="1" width="100px"></th>
+          <th colspan="1" class="button-container">    <button style="height:50px;width:50px;font-size:10px;color:red " onclick="stopCountdown()">Reset</button> <button style="height:100px;width:50px" onclick="force20()">Pause short</button>
+               <button style="height:100px;width:50px" onclick="force30()">Pause long</button>
+          </th>
+
+      </tr>
+  </table>
+
       {% include 'messages.html' %}
 
 <table class="center"; style="text-align: center">
@@ -583,6 +704,7 @@
 </form>
 </td>
   </table>
+
 </footer>
 
 </body>

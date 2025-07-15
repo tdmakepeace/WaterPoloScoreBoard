@@ -1,8 +1,11 @@
+import errno
+
 from flask import Flask, render_template, request, redirect, url_for, jsonify,flash
 from flask import send_file
 import time, csv, math , sys
 from datetime import datetime, timedelta
-# import winsound
+from fpdf import FPDF
+
 import os
 import webview
 
@@ -21,6 +24,8 @@ app.config['SECRET_KEY'] = 'waterpolo'
 app.config['SESSION_REFRESH_EACH_REQUEST'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=webtimeout)
 
+# Session(app)
+
 # Initial scores for two teams
 
 scores = {
@@ -34,8 +39,8 @@ periodscores = {
     'Home': {'goals1': 0, 'majors1': 0, 'goals2': 0, 'majors2': 0,'goals3': 0, 'majors3': 0,'goals4': 0, 'majors4': 0},
     'Away': {'goals1': 0, 'majors1': 0, 'goals2': 0, 'majors2': 0,'goals3': 0, 'majors3': 0,'goals4': 0, 'majors4': 0}
 }
-home_data = {'home': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6', ''], ['7', ''], ['8', ''], ['9', ''], ['10', ''], ['11', ''], ['12', ''], ['13', '']]}
-away_data = {'away': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6', ''], ['7', ''], ['8', ''], ['9', ''], ['10', ''], ['11', ''], ['12', ''], ['13', '']]}
+home_data = {'home': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6', ''], ['7', ''], ['8', ''], ['9', ''], ['10', ''], ['11', ''], ['12', ''], ['13', ''], ['14', '']]}
+away_data = {'away': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6', ''], ['7', ''], ['8', ''], ['9', ''], ['10', ''], ['11', ''], ['12', ''], ['13', ''], ['14', '']]}
 
 # home_data = {
 #     'home': [['1', 'home1'], ['2', 'home2'], ['3', 'home3'], ['4', 'home4'], ['5', ''], ['6', ''], ['7', ''], ['8', ''],
@@ -67,7 +72,8 @@ teama = {
     10: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
     11: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
     12: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 }
+    13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    14: {'assists': 0, 'goals': 0, 'majors': 0, 'reds': 0}
 }
 
 teamb = {
@@ -83,7 +89,8 @@ teamb = {
     10: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
     11: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
     12: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 }
+    13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+    14: {'assists': 0, 'goals': 0, 'majors': 0, 'reds': 0}
 }
 quarter= 0
 direction = "increment"
@@ -92,11 +99,14 @@ awaytimeoutv = 0
 
 intervaltime = 2
 timeouttime = 1
-runningclock = "yes"
-gametime = 10
+runningclock = "no"
+gametime = 7
 location = 'New Malden'
 HomeTeam = 'Kingston Royals'
 AwayTeam = 'Away Team'
+
+shotclock = int(30)
+foulclock = int(20)
 
 
 filename = datetime.now().strftime(HomeTeam+'-%Y-%m-%d-%H-%M.csv')
@@ -105,6 +115,10 @@ compress_file = datetime.now().strftime(HomeTeam+'_END_'+'-%Y-%m-%d-%H-%M.csv')
 countdown_running = False
 start_time = 0
 elapsed_time = 0
+start_shot = 0
+elapsed_shot = 0
+clock_shot = shotclock
+remaining_shot = 0
 
 timeoutrunning = False
 starttimeout = 0
@@ -125,38 +139,43 @@ def index():
     global timeouttime, timeout
     timeouttime = 1
     timeout = timeouttime
-    return render_template('timer.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, home_coach=home_team_red, away_coach=away_team_red )
+    return render_template('timer.html', scores=scores, teama=teama, teamb=teamb, elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, home_coach=home_team_red, away_coach=away_team_red )
 
 @app.route('/display')
 def display():
-    return render_template('display.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, home_coach=home_team_red, away_coach=away_team_red )
+    return render_template('display.html', scores=scores, teama=teama, teamb=teamb, elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, home_coach=home_team_red, away_coach=away_team_red )
 
 @app.route('/start_countdown')
 def start_countdown():
-    global countdown_running, start_time, elapsed_time
+    global countdown_running, start_time, elapsed_time, start_shot, elapsed_shot
     countdown_running = True
     start_time = time.time() - elapsed_time
+    start_shot = time.time() - elapsed_shot
     return jsonify({'status': 'success'})
 
 @app.route('/stop_countdown')
 def stop_countdown():
-    global countdown_running, start_time, elapsed_time
+    global countdown_running, start_time, elapsed_time, start_shot, elapsed_shot, clock_shot
     countdown_running = False
+    clock_shot = shotclock
     start_time = 0
     elapsed_time = 0
+    start_shot = 0
+    elapsed_shot = 0
     return jsonify({'status': 'success'})
 
 @app.route('/pause_countdown')
 def pause_countdown():
-    global countdown_running, start_time, elapsed_time
+    global countdown_running, start_time, elapsed_time, start_shot, elapsed_shot
 
     if countdown_running:
         countdown_running = False
         elapsed_time = time.time() - start_time
+        elapsed_shot = time.time() - start_shot
     else:
         countdown_running = True
         start_time = time.time() - elapsed_time
-
+        start_shot = time.time() - elapsed_shot
     return jsonify({'status': 'success'})
 
 # @app.route('/pause_countdown')
@@ -169,24 +188,91 @@ def pause_countdown():
 
 @app.route('/resume_countdown')
 def resume_countdown():
-    global countdown_running, start_time
+    global countdown_running, start_time , start_shot
     countdown_running = True
     start_time = time.time() - elapsed_time
+    start_shot = time.time() - elapsed_shot
     return jsonify({'status': 'success'})
 
 @app.route('/get_countdown_status')
 def get_countdown_status():
-    global countdown_running, start_time, elapsed_time, remaining_time
+    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot , clock_shot
     if countdown_running:
         elapsed_time = time.time() - start_time
         remaining_time = max((gametime*60) - elapsed_time, 0)
-        return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
+        elapsed_shot = time.time() - start_shot
+        remaining_shot = max((clock_shot) - elapsed_shot, 0 )
+        return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
     else:
         # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
         # elapsed_time = time.time() - start_time
         remaining_time = max((gametime*60) - elapsed_time, 0)
-        return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
+        # elapsed_shot = time.time() - start_shot
+        remaining_shot = max((clock_shot) - elapsed_shot, 0 )
+        return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
 
+
+@app.route('/reset30')
+def reset30():
+    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot, shotclock
+    if countdown_running:
+        pause_countdown()
+    clock_shot = shotclock
+    remaining_shot = max((clock_shot) , 0)
+    elapsed_shot = 0
+    start_shot = 0
+    # start_countdown()
+    return jsonify({'status': 'success'})
+    # return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
+
+@app.route('/possession')
+def possession():
+    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
+    pause_countdown()
+    clock_shot = shotclock+1
+    remaining_shot = max((clock_shot) , 0)
+    elapsed_shot = 0
+    start_shot = 0
+    start_countdown()
+    return jsonify({'status': 'success'})
+    # return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
+
+
+@app.route('/reset20')
+def reset20():
+    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
+    if countdown_running:
+        pause_countdown()
+    if remaining_shot < 20:
+        clock_shot = foulclock+1
+        remaining_shot = max((clock_shot) , 0)
+        elapsed_shot = 0
+        start_shot = 0
+    start_countdown()
+    return jsonify({'status': 'success'})
+    # return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
+
+@app.route('/force20')
+def force20():
+    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot, foulclock
+    pause_countdown()
+    clock_shot = foulclock
+    remaining_shot = max((clock_shot) , 0)
+    elapsed_shot = 0
+    start_shot = 0
+    # start_countdown()
+    return jsonify({'status': 'success'})
+
+@app.route('/force30')
+def force30():
+    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot, shotclock
+    pause_countdown()
+    clock_shot = shotclock
+    remaining_shot = max((clock_shot) , 0)
+    elapsed_shot = 0
+    start_shot = 0
+    # start_countdown()
+    return jsonify({'status': 'success'})
 
 @app.route('/start_timeout')
 def start_timeout():
@@ -321,11 +407,12 @@ def awaycard():
 def goal():
     if countdown_running:
         if runningclock == "no":
-            pause_countdown()
+            reset30()
+        else:
+            reset30()
+            resume_countdown()
     else:
-        msg = 'clock not running'
-        flash(msg, "warning")
-
+        reset30()
     return render_template('goal.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
                            HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
@@ -334,10 +421,12 @@ def goal():
 def major():
     if countdown_running:
         if runningclock == "no":
-            pause_countdown()
+            reset20()
+        else:
+            reset20()
+            resume_countdown()
     else:
-        msg = 'clock not running'
-        flash(msg, "warning")
+        reset20()
 
     return render_template('major.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
@@ -348,10 +437,12 @@ def major():
 def penalty():
     if countdown_running:
         if runningclock == "no":
-            pause_countdown()
+            reset20()
+        else:
+            reset20()
+            resume_countdown()
     else:
-        msg = 'clock not running'
-        flash(msg, "warning")
+        reset20()
 
     return render_template('penalty.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
@@ -424,6 +515,7 @@ def updateteamacoach(id):
             # print('help2')
             if id == 1 :
                 home_coach['yellow'] = 1
+                home_team_red['yellow'] = home_team_red['yellow'] + 1
                 data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW', 'Coach','', 'Home']
                 writer.writerow(data)
 
@@ -437,6 +529,7 @@ def updateteamacoach(id):
         elif direction == 'decrement':
             if id == 1 :
                 home_coach['yellow'] = 0
+                home_team_red['yellow'] = home_team_red['yellow'] - 1
                 data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach','', 'Home']
                 writer.writerow(data)
             elif id == 2 :
@@ -473,6 +566,7 @@ def updateteambcoach(id):
             # print('help2')
             if id == 1 :
                 away_coach['yellow'] = 1
+                away_team_red['yellow'] = away_team_red['yellow'] + 1
                 data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW', 'Coach','', 'Away']
                 writer.writerow(data)
 
@@ -485,6 +579,7 @@ def updateteambcoach(id):
         elif direction == 'decrement':
             if id == 1 :
                 away_coach['yellow'] = 0
+                away_team_red['yellow'] = away_team_red['yellow'] - 1
                 data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach','', 'Away']
                 writer.writerow(data)
             elif id == 2 :
@@ -1062,9 +1157,8 @@ def period():
 
 @app.route('/clear', methods=['GET', 'POST'])
 def direction():
-    if request.method == 'POST':
-        global direction
-        direction = "decrement"
+    global direction
+    direction = "decrement"
     return redirect(url_for('index'))
 
 
@@ -1232,7 +1326,8 @@ def finish():
             data = i[0],i[1],i[2],i[3]
             writer.writerow(data)
 
-        header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'reds']
+        header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals',
+                  'majors', 'reds']
         writer.writerow(header)
 
         f.close()
@@ -1276,8 +1371,8 @@ def finish():
             if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
                 raise  # re-raise exception if a different error occurred...
 
+    return redirect(url_for('convert_csv_to_pdf'))
 
-    return redirect(url_for('index'))
 
 @app.route('/hometimeout')
 def hometimeout():
@@ -1525,7 +1620,7 @@ def help():
 
 @app.route('/save' , methods=['GET', 'POST'])
 def save():
-    global runningclock, gametime, location, HomeTeam, AwayTeam,  timeouttime, intervaltime
+    global runningclock, gametime, location, HomeTeam, AwayTeam,  timeouttime, intervaltime ,shotclock, foulclock
 
     game = int(request.form['game'])
     running = (request.form['running'])
@@ -1534,6 +1629,9 @@ def save():
     Loca = (request.form['Location'])
     Home = (request.form['Home'])
     Away = (request.form['Away'])
+    shot = int(request.form['shotclock'])
+    foul = int(request.form['foulclock'])
+
 
     # print(game,running,timeout,Loca,Home,Away)
     runningclock = running
@@ -1541,6 +1639,9 @@ def save():
     location = Loca
     HomeTeam = Home
     AwayTeam = Away
+    shotclock = shot
+    foulclock = foul
+
     # restart()
     return redirect(url_for('index'))
 
@@ -1592,7 +1693,6 @@ def saveawayplayers(user_id):
 
     # For GET requests, render the form with existing data
     existing_data = away_data.get(user_id, [])
-
     return render_template('awayteamsetup.html', user_id=user_id, data=existing_data)
 
 @app.route('/saverefdata/<user_id>' , methods=['GET', 'POST'])
@@ -1621,6 +1721,21 @@ def saverefdata(user_id):
     existing_data = ref_data.get(user_id, [])
 
     return render_template('refdata.html', user_id=user_id, data=existing_data)
+
+
+@app.route('/convert', methods=['GET'])
+def convert_csv_to_pdf():
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        with open(compress_file, 'rb') as f:
+            for line in f:
+                pdf.cell(200, 10, txt=line.decode('latin-1'), ln=True)
+        pdf_file_path = compress_file.rsplit('.', 1)[0] + '.pdf'
+        pdf.output(pdf_file_path)
+        return redirect(url_for('index'))
+
+
 
 
 @app.route('/download/<filename>', methods=['GET', 'POST'])
