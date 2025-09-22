@@ -10,6 +10,49 @@ import os
 import webview
 
 
+
+## Bluetooth ##
+from bleak import BleakClient, BleakScanner
+import asyncio
+
+
+## serial connected ##
+
+# import serial.tools.list_ports
+#
+# ports = serial.tools.list_ports.comports()
+# serialInst = serial.Serial()
+# portsList = []
+#
+# for one in ports:
+#     portsList.append(str(one))
+#     print(str(one))
+#
+# for port in (portsList):
+#     if "Arduino NANO Every" in port:
+#         print("test", port)
+#         target_char = "-"
+#         index = port.find(target_char)
+#
+#         if index != -1 and index + 1 + 5 <= len(port):
+#             substring = port[index + 2: index + 20]
+#             print(substring)  # Output: Home
+#             substring = port[3: index - 1]
+#             print(substring)  # Output: Home
+#             com = port[3: index - 1]
+#             use = "COM" + str(com)
+#
+#             serialInst.baudrate = 9600
+#             serialInst.port = use
+#             serialInst.open()
+#
+#     else:
+#             print("NO NANO found.")
+
+
+## End Serial connected ##
+
+
 webtimeout = 180
 # the host the webservice is hosted on, FQDN or IP is required.
 # 0.0.0.0 for all interfaces.
@@ -97,10 +140,12 @@ direction = "increment"
 hometimeoutv = 0
 awaytimeoutv = 0
 
-intervaltime = 2
-timeouttime = 1
+# All time is based on 30 second increments
+intervaltime = 4
+timeouttime = 2
 runningclock = "no"
-gametime = 7
+gametime = 14
+
 location = 'New Malden'
 HomeTeam = 'Kingston Royals'
 AwayTeam = 'Away Team'
@@ -133,11 +178,83 @@ timeout = timeouttime
 window = webview.create_window('WaterPolo Scoreboard',app )
 
 
+
+## Bluetooth code block ##
+UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
+RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+bluetoothname = "Nano33BLE"
+ble_client = None # global client
+
+
+async def init_ble():
+    global ble_client
+    devices = await BleakScanner.discover()
+    for d in devices:
+        print(f"Name: {d.name}, Address: {d.address}")
+    nano = next((d for d in devices if d.name and bluetoothname in d.name), None)
+    if not nano:
+        print("Nano33BLE not found.")
+        return
+
+    ble_client = BleakClient(nano.address)
+    await ble_client.connect()
+    print(f"Connected to {nano.name} at {nano.address}")
+
+
+
+async def send_ble_command(command: str):
+    global ble_client
+    # if ble_client is None or not ble_client.is_connected:
+    #     await init_ble()
+    if ble_client and ble_client.is_connected:
+        command = command + "\0"
+        await ble_client.write_gatt_char(RX_CHAR_UUID, command.encode())
+        print(f"Sent command: {command}")
+
+
+
+@app.route('/changeposs')
+def changeposs():
+    command = "CHANGE"
+    ## serial ##
+    #serialInst.write(command.encode('utf-8'))
+    # print(command)
+    ## Bluetooth ##
+    asyncio.run(send_ble_command("CHANGE"))
+
+    return jsonify({'status': 'success'})
+
+@app.route('/periodend')
+def periodend():
+    command = "END"
+    ## serial ##
+    #serialInst.write(command.encode('utf-8'))
+    # print(command)
+    ## Bluetooth ##
+    asyncio.run(send_ble_command("END"))
+    return jsonify({'status': 'success'})
+
+@app.route('/buzzer')
+def buzzer():
+    command = "BUZZER"
+    ## serial ##
+    #serialInst.write(command.encode('utf-8'))
+    # print(command)
+    ## Bluetooth ##
+
+    asyncio.run(send_ble_command("BUZZER"))
+#    send_ble_command("BUZZER")
+    return jsonify({'status': 'success'})
+
+## end of Bluetooth code block
+
+
 @app.route('/')
 def index():
     # print(home_coach, away_coach)
     global timeouttime, timeout
-    timeouttime = 1
+    timeouttime = 2
     timeout = timeouttime
     return render_template('timer.html', scores=scores, teama=teama, teamb=teamb, elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, home_coach=home_team_red, away_coach=away_team_red )
 
@@ -199,14 +316,14 @@ def get_countdown_status():
     global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot , clock_shot
     if countdown_running:
         elapsed_time = time.time() - start_time
-        remaining_time = max((gametime*60) - elapsed_time, 0)
+        remaining_time = max((gametime*30) - elapsed_time, 0)
         elapsed_shot = time.time() - start_shot
         remaining_shot = max((clock_shot) - elapsed_shot, 0 )
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
     else:
         # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
         # elapsed_time = time.time() - start_time
-        remaining_time = max((gametime*60) - elapsed_time, 0)
+        remaining_time = max((gametime*30) - elapsed_time, 0)
         # elapsed_shot = time.time() - start_shot
         remaining_shot = max((clock_shot) - elapsed_shot, 0 )
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
@@ -225,11 +342,13 @@ def reset30():
     return jsonify({'status': 'success'})
     # return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
 
+
+
 @app.route('/possession')
 def possession():
     global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
     pause_countdown()
-    clock_shot = shotclock+1
+    clock_shot = shotclock
     remaining_shot = max((clock_shot) , 0)
     elapsed_shot = 0
     start_shot = 0
@@ -243,14 +362,48 @@ def reset20():
     global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
     if countdown_running:
         pause_countdown()
-    if remaining_shot < 20:
-        clock_shot = foulclock+1
-        remaining_shot = max((clock_shot) , 0)
-        elapsed_shot = 0
-        start_shot = 0
-    start_countdown()
+        if remaining_shot < 20:
+            clock_shot = foulclock+1
+            remaining_shot = max((clock_shot) , 0)
+            elapsed_shot = 0
+            start_shot = 0
+        start_countdown()
+    else:
+        if remaining_shot < 20:
+            clock_shot = foulclock
+            remaining_shot = max((clock_shot) , 0)
+            elapsed_shot = 0
+            start_shot = 0
+        start_countdown()
+
     return jsonify({'status': 'success'})
     # return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
+
+@app.route('/pause20')
+def pause20():
+    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
+    if countdown_running:
+        pause_countdown()
+        if remaining_shot < 20:
+            clock_shot = foulclock
+            remaining_shot = max((clock_shot) , 0)
+            elapsed_shot = 0
+            start_shot = 0
+        start_countdown()
+        pause_countdown()
+    else:
+        if remaining_shot < 20:
+            clock_shot = foulclock
+            remaining_shot = max((clock_shot) , 0)
+            elapsed_shot = 0
+            start_shot = 0
+        start_countdown()
+        pause_countdown()
+
+    return jsonify({'status': 'success'})
+    # return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
+
+
 
 @app.route('/force20')
 def force20():
@@ -260,18 +413,20 @@ def force20():
     remaining_shot = max((clock_shot) , 0)
     elapsed_shot = 0
     start_shot = 0
-    # start_countdown()
+    start_countdown()
+    pause_countdown()
     return jsonify({'status': 'success'})
 
-@app.route('/force30')
-def force30():
+@app.route('/pause30')
+def pause30():
     global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot, shotclock
     pause_countdown()
     clock_shot = shotclock
     remaining_shot = max((clock_shot) , 0)
     elapsed_shot = 0
     start_shot = 0
-    # start_countdown()
+    start_countdown()
+    pause_countdown()
     return jsonify({'status': 'success'})
 
 @app.route('/start_timeout')
@@ -309,7 +464,7 @@ def get_timeout_status():
     global timeoutrunning, starttimeout, elapsedtimeout
     if timeoutrunning:
         elapsedtimeout = time.time() - starttimeout
-        remainingtimeout = max((timeout*60) - elapsedtimeout, 0)
+        remainingtimeout = max((timeout*30) - elapsedtimeout, 0)
         return jsonify({'timeout_running': timeoutrunning, 'elapsed_timeout': remainingtimeout})
     else:
         return jsonify({'timeout_running': timeoutrunning, 'elapsed_timeout': elapsedtimeout})
@@ -319,13 +474,13 @@ def addmin():
     global countdown_running, start_time, elapsed_time
     if countdown_running:
         elapsed_time = time.time() - start_time
-        remaining_time = max((gametime*60) - elapsed_time, 0)
+        remaining_time = max((gametime*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
     else:
         # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
         # elapsed_time = time.time() - start_time
         elapsed_time = elapsed_time - 60
-        remaining_time = max((gametime*60) - elapsed_time, 0)
+        remaining_time = max((gametime*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
 
 @app.route('/minmin')
@@ -333,13 +488,13 @@ def minmin():
     global countdown_running, start_time, elapsed_time
     if countdown_running:
         elapsed_time = time.time() - start_time
-        remaining_time = max((gametime*60) - elapsed_time, 0)
+        remaining_time = max((gametime*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
     else:
         # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
         # elapsed_time = time.time() - start_time
         elapsed_time = elapsed_time + 60
-        remaining_time = max((gametime*60) - elapsed_time, 0)
+        remaining_time = max((gametime*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
 
 @app.route('/addsec')
@@ -347,13 +502,13 @@ def addsec():
     global countdown_running, start_time, elapsed_time
     if countdown_running:
         elapsed_time = time.time() - start_time
-        remaining_time = max((gametime*60) - elapsed_time, 0)
+        remaining_time = max((gametime*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
     else:
         # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
         # elapsed_time = time.time() - start_time
         elapsed_time = elapsed_time - 1
-        remaining_time = max((gametime*60) - elapsed_time, 0)
+        remaining_time = max((gametime*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
 
 @app.route('/minsec')
@@ -361,13 +516,13 @@ def minsec():
     global countdown_running, start_time, elapsed_time
     if countdown_running:
         elapsed_time = time.time() - start_time
-        remaining_time = max((gametime*60) - elapsed_time, 0)
+        remaining_time = max((gametime*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
     else:
         # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
         # elapsed_time = time.time() - start_time
         elapsed_time = elapsed_time + 1
-        remaining_time = max((gametime*60) - elapsed_time, 0)
+        remaining_time = max((gametime*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
 
 
@@ -421,12 +576,12 @@ def goal():
 def major():
     if countdown_running:
         if runningclock == "no":
-            reset20()
+            pause20()
         else:
             reset20()
             resume_countdown()
     else:
-        reset20()
+        pause20()
 
     return render_template('major.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
@@ -437,12 +592,12 @@ def major():
 def penalty():
     if countdown_running:
         if runningclock == "no":
-            reset20()
+            pause20()
         else:
             reset20()
             resume_countdown()
     else:
-        reset20()
+        pause20()
 
     return render_template('penalty.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
@@ -498,7 +653,7 @@ def updateteamacoach(id):
         global countdown_running, start_time, elapsed_time,home_coach,away_coach
 
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
         # print('help1')
         # action = request.form['action']
         direction = str(direction)
@@ -550,7 +705,7 @@ def updateteambcoach(id):
         global countdown_running, start_time, elapsed_time ,home_coach,away_coach
 
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
         # print('help1')
         # action = request.form['action']
         direction = str(direction)
@@ -603,7 +758,7 @@ def updateteamacard(user_id):
 
 
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
         # print('help1')
         # action = request.form['action']
         direction = str(direction)
@@ -650,7 +805,7 @@ def updateteambcard(user_id):
 
 
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
         # print('help1')
         # action = request.form['action']
         direction = str(direction)
@@ -698,7 +853,7 @@ def updateteamagoal(user_id):
 
 
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
         # print('help1')
         # action = request.form['action']
         direction = str(direction)
@@ -755,7 +910,7 @@ def updateteamamajor(user_id):
         global direction
         global countdown_running, start_time, elapsed_time
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
         if direction == 'increment':
             if teama[user_id]['majors'] == 3:
                 teama[user_id]['majors'] = 0
@@ -814,7 +969,7 @@ def updateteamapenalty(user_id):
         global direction
         global countdown_running, start_time, elapsed_time
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
+        remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
         if direction == 'increment':
             if teama[user_id]['majors'] == 3:
                 teama[user_id]['majors'] = 0
@@ -875,7 +1030,7 @@ def updateteamapenalty(user_id):
 #         global countdown_running, start_time, elapsed_time
 #         if countdown_running:
 #             elapsed_time = time.time() - start_time
-#             remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+#             remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
 #
 #             # action = request.form['action']
 #
@@ -911,7 +1066,7 @@ def updateteambgoal(user_id):
         global direction
         global countdown_running, start_time, elapsed_time
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
 
         if direction == 'increment':
             teamb[user_id]['goals'] = teamb[user_id]['goals'] + 1
@@ -960,7 +1115,7 @@ def updateteambmajor(user_id):
         global direction
         global countdown_running, start_time, elapsed_time
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
 
         if direction == 'increment':
             if teamb[user_id]['majors'] == 3:
@@ -1019,7 +1174,7 @@ def updateteambpenalty(user_id):
         global direction
         global countdown_running, start_time, elapsed_time
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
+        remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
         if direction == 'increment':
             if teamb[user_id]['majors'] == 3:
                 teamb[user_id]['majors'] = 0
@@ -1083,7 +1238,7 @@ def updateteambpenalty(user_id):
 #         global countdown_running, start_time, elapsed_time
 #         if countdown_running:
 #             elapsed_time = time.time() - start_time
-#             remaining_time = math.floor(max(gametime*60 - elapsed_time, 0))
+#             remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
 #
 #             if direction == 'increment':
 #                 teamb[user_id]['assists'] = teamb[user_id]['assists'] + 1
@@ -1170,6 +1325,9 @@ def start():
 
         global quarter , scores, TeamHome, TeamAway,periodscores,teama,teamb
         global direction ,hometimeoutv, awaytimeoutv, filename
+        asyncio.run(init_ble())
+        asyncio.run(send_ble_command("TEST"))
+
         filename = datetime.now().strftime(HomeTeam + '-%Y-%m-%d-%H-%M.csv')
         now = datetime.now()  # current date and time
         timestamp = now.strftime("%d/%m/%Y, %H:%M:%S")
@@ -1233,7 +1391,8 @@ def start():
         10: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
         11: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
         12: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-        13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 }
+        13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        14: {'assists': 0, 'goals': 0, 'majors': 0, 'reds': 0}
         }
 
         teamb = {
@@ -1249,7 +1408,8 @@ def start():
         10: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
         11: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
         12: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-        13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 }
+        13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
+        14: {'assists': 0, 'goals': 0, 'majors': 0, 'reds': 0}
         }
         hometimeoutv = 0
         awaytimeoutv = 0
@@ -1262,7 +1422,7 @@ def finish():
     if  request.method == 'GET' or request.method == 'POST':
         global quarter
         # timestamp = datetime.now()
-
+        asyncio.run(send_ble_command("exit"))
         now = datetime.now()  # current date and time
         timestamp = now.strftime("%d/%m/%Y, %H:%M:%S")
 
@@ -1340,24 +1500,26 @@ def finish():
         #         if any(line) or any(field.strip() for field in line):
         #             secondfile.write(line)
         # f.close()
-
-        with open(running_file, newline='') as in_file:
-            with open(filename, 'a', newline='') as out_file:
-                writer = csv.writer(out_file)
-                for row in csv.reader(in_file):
-                    if row:
-                        writer.writerow(row)
-        f.close()
-
-
-
-        with open(filename, newline='') as in_file:
-            with open(compress_file, 'w', newline='') as out_file:
-                writer = csv.writer(out_file)
-                for row in csv.reader(in_file):
-                    if row:
-                        writer.writerow(row)
-        f.close()
+        try:
+            with open(running_file, newline='') as in_file:
+                with open(filename, 'a', newline='') as out_file:
+                    writer = csv.writer(out_file)
+                    for row in csv.reader(in_file):
+                        if row:
+                            writer.writerow(row)
+            f.close()
+        except :
+            print('finish')
+        try:
+            with open(filename, newline='') as in_file:
+                with open(compress_file, 'w', newline='') as out_file:
+                    writer = csv.writer(out_file)
+                    for row in csv.reader(in_file):
+                        if row:
+                            writer.writerow(row)
+            f.close()
+        except :
+            print('finish')
 
         try:
             os.remove(running_file)
@@ -1385,7 +1547,7 @@ def hometimeout():
     reason = 'Home Timeout'
     timeout = timeouttime
     # elapsed_time = time.time() - start_time
-    remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
+    remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
     if countdown_running:
         if direction == 'increment':
             pause_countdown()
@@ -1473,7 +1635,7 @@ def awaytimeout():
     # print(timeout)
     # print(timeouttime)
     # elapsed_time = time.time() - start_time
-    remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
+    remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
     if countdown_running:
         if direction == 'increment':
             awaytimeoutv = int(awaytimeoutv) + 1
@@ -1577,33 +1739,33 @@ def callinterval():
         reason = 'Break'
         timeout = timeouttime
         # elapsed_time = time.time() - start_time
-        # remaining_time = math.floor(max(gametime * 60 - elapsed_time, 0))
+        # remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
         quarter=quarter +1
         pause_countdown()
         time.sleep(1)
         stop_timeout()
-        if quarter == 5:
-            timestamp = datetime.now()
+        # if quarter == 5:
+        #     timestamp = datetime.now()
+        #
+        #     f = open(running_file, 'a')
+        #     writer = csv.writer(f)
+        #     header = ['Game Status at ', location, ' on the ', timestamp, 'end of quarter :', quarter - 1, ]
+        #     writer.writerow(header)
+        #
+        #     # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
+        #     # writer.writerow(header1)
+        #
+        #     data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'], 'Home Majors:',
+        #             scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
+        #     writer.writerow(data)
+        #
+        #     header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors',
+        #               'reds']
+        #     writer.writerow(header)
+        #
+        #     f.close()
 
-            f = open(running_file, 'a')
-            writer = csv.writer(f)
-            header = ['Game Status at ', location, ' on the ', timestamp, 'end of quarter :', quarter - 1, ]
-            writer.writerow(header)
-
-            # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
-            # writer.writerow(header1)
-
-            data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'], 'Home Majors:',
-                    scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
-            writer.writerow(data)
-
-            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors',
-                      'reds']
-            writer.writerow(header)
-
-            f.close()
-
-            return redirect(url_for('index'))
+            # return redirect(url_for('index'))
         return redirect(url_for('runinterval'))
 
     return redirect(url_for('index'))
@@ -1624,7 +1786,6 @@ def save():
 
     game = int(request.form['game'])
     running = (request.form['running'])
-    timeouttime = int(request.form['timeout'])
     intervaltime = int(request.form['interval'])
     Loca = (request.form['Location'])
     Home = (request.form['Home'])
@@ -1748,5 +1909,6 @@ def restart():
 
 
 if __name__ == '__main__':
+    asyncio.run(init_ble())
     # app.run(debug=True, host=webhost, port=webport)
     webview.start()

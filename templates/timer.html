@@ -34,6 +34,7 @@
         function changeSound() {
             var audio = new Audio('/static/airhorn-change.mp3');
             audio.play();
+
         }
         function playbell() {
             var audio = new Audio('/static/bell-ring.mp3');
@@ -44,6 +45,14 @@
                 url: '/start_countdown',
                 success: function(response) {
                     updateCountdown();
+                }
+            });
+        }
+        function buzzer() {
+            $.ajax({
+              url: '/buzzer',
+              success: function(response) {
+                    playSound()
                 }
             });
         }
@@ -100,6 +109,14 @@
                     event.preventDefault();
                     reset20();
                 }
+                else if (event.key === 'h') {
+                    event.preventDefault();
+                    pause30();
+                }
+                else if (event.key === 'j') {
+                    event.preventDefault();
+                    pause20();
+                }
 
 
 
@@ -140,6 +157,19 @@
                     let shotdownElement = document.getElementById('shotdown');
                     let timeLeft = response.elapsed_time;
                     let shotLeft = response.elapsed_shot;
+                    if (shotLeft <= timeLeft) {
+                        shotdownElement.style.color = "red";
+                      } else {
+                        shotdownElement.style.color = "white";
+                      }
+                    if (timeLeft > 60 ) {
+                        countdownElement.style.color = "blue";
+                      } else if (timeLeft > 30 ) {
+                        countdownElement.style.color = "orange";
+                      } else {
+                        countdownElement.style.color = "red";
+                      }
+
                     if (response.countdown_running) {
                         let minutes = Math.floor(timeLeft / 60);
                         let seconds = Math.floor(timeLeft % 60);
@@ -152,27 +182,41 @@
                             if (timeLeft > 1) {
                                 if (shotLeft < 1) {
                                     changeSound();
-                                    changeSound();
-                                    reset30();
+                                    $.ajax({
+                                        url: '/changeposs',
+                                        success: function(response) {
+                                            reset30();
+                                        }
+                                    });
                                 }
                                 setTimeout(updateCountdown, 1000);
 
                             } else {
                                 playSound()
+                                $.ajax({
+                                    url: '/periodend',
+                                    success: function(response) {
+                                        reset30();
+                                    }
+                                });
                                 setTimeout(() => {
                                     window.location.href = "/callinterval";
                                 }, 2000);
 
                             }
-                        } else {
+                        } else if (quarter = 4) {
                             if (timeLeft > 61) {
                                 if (shotLeft < 1) {
                                     changeSound();
-                                    changeSound();
-                                    reset30();
+                                    $.ajax({
+                                        url: '/changeposs',
+                                        success: function(response) {
+                                            reset30();
+                                        }
+                                    });
                                 }
                                 setTimeout(updateCountdown, 1000);
-                            } else if (timeLeft = 60) {
+                            } else if (timeLeft > 59) {
                                 playbell();
                                 // if shotLeft = 0 {
                                 //     playSound();
@@ -180,18 +224,29 @@
                                 // }
                                 setTimeout(updateCountdown, 1000);
                             } else if (timeLeft > 1) {
-                                 if (shotLeft < 1) {
+                                if (shotLeft < 1) {
                                     changeSound();
-                                    changeSound();
-                                    reset30();
+                                    $.ajax({
+                                        url: '/changeposs',
+                                        success: function(response) {
+                                            reset30();
+                                        }
+                                    });
                                 }
                                 setTimeout(updateCountdown, 1000);
 
                             } else {
-                                playSound();
+                                playSound()
+                                $.ajax({
+                                    url: '/periodend',
+                                    success: function(response) {
+                                        reset30();
+                                    }
+                                });
                                 setTimeout(() => {
                                     window.location.href = "/callinterval";
                                 }, 2000);
+
                             }
                         }
 
@@ -230,6 +285,14 @@
             });
         }
 
+        function pause20() {
+            $.ajax({
+                url: '/pause20',
+                success: function(response) {
+                    updateCountdown();
+                }
+            });
+        }
 
         function force20() {
             $.ajax({
@@ -239,9 +302,9 @@
                 }
             });
         }
-        function force30() {
+        function pause30() {
             $.ajax({
-                url: '/force30',
+                url: '/pause30',
                 success: function(response) {
                     updateCountdown();
                 }
@@ -423,7 +486,7 @@
     <table class="center" style="width:100%" >
         <tr>
             <td style="width:10%">    <button style="height:50px;width:50px" onclick="addmin()"> + </button>      </td>
-            <td style="width:80%" rowspan="3">    <span style="color: blue  ; font-size:300px;""  id="countdown"> </span>         </td>
+            <td style="width:80%" rowspan="3">    <span style="font-size:300px;"  id="countdown"> </span>         </td>
             <td style="width:10%" >    <button style="height:50px;width:50px" onclick="addsec()"> + </button>      </td>
         </tr>
         <tr>
@@ -519,14 +582,14 @@
       <table class="center"; style="text-align: center">
       <tr>
 
-          <th colspan="2" >      <button style="height:200px;width:200px" onclick="pauseCountdown()">Start / Stop (N)</button>   </th>
-          <th colspan="2" >    <button style="height:200px;width:100px" onclick="possession()">Possession Change (Y)</button>  </th>
-          <th colspan="3">       <span style="font-size: 300px; color: red;" id="shotdown">00</span>       </th>
-          <th colspan="2" >     <button style="height:200px;width:100px" onclick="reset20()">Short Time (U)</button>       </th>
-          <th colspan="1" width="100px"></th>
-          <th colspan="1" class="button-container">    <button style="height:50px;width:50px;font-size:10px;color:red " onclick="stopCountdown()">Reset</button> <button style="height:100px;width:50px" onclick="force20()">Pause short</button>
-               <button style="height:100px;width:50px" onclick="force30()">Pause long</button>
-          </th>
+          <th colspan="2" >      <button style="height:200px;width:150px" onclick="pauseCountdown()">Start / Stop (N)</button>   </th>
+          <th colspan="2" >    <button style="height:150px;width:150px" onclick="possession()">Running Change (Y)</button>  <button style="height:150px;width:150px" onclick="pause30()">Paused Change (H)</button> </th>
+<!--          <th colspan="3">       <span style="font-size: 300px; color: red;" id="shotdown">00</span>       </th>-->
+          <th colspan="3">       <span style="font-size: 300px;" id="shotdown">00</span>       </th>
+
+          <th colspan="2" >     <button style="height:150px;width:150px" onclick="reset20()">Shot (U)</button> <button style="height:150px;width:150px" onclick="pause20()">Corner (J)</button>       </th>
+          <th colspan="2" > <button style="height:100px;width:150px;font-size:10px;color:red " onclick="buzzer()">Buzzer</button> <button style="height:100px;width:150px" onclick="force20()">Force short</button> <button style="height:100px;width:150px;font-size:10px;color:red " onclick="stopCountdown()">Reset Clocks</button>       </th>
+
 
       </tr>
   </table>

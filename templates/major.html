@@ -167,6 +167,18 @@
                     .then(response => response.json())
                     window.location.href = '/';
                 }
+                else if (event.ctrlKey && event.key === 'h') {
+                    event.preventDefault();
+                    fetch('/updateteambmajor/9', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
                 else if (event.ctrlKey && event.key === 'y') {
                     event.preventDefault();
                     fetch('/updateteambmajor/10', {
@@ -191,7 +203,7 @@
                     .then(response => response.json())
                     window.location.href = '/';
                 }
-                else if (event.ctrlKey && event.key === 'i') {
+                else if (event.ctrlKey && event.key === 'j') {
                     event.preventDefault();
                     fetch('/updateteambmajor/12', {
                         method: 'POST',
@@ -371,6 +383,18 @@
                     .then(response => response.json())
                     window.location.href = '/';
                 }
+                else if (event.key === 'h') {
+                    event.preventDefault();
+                    fetch('/updateteamamajor/9', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
                 else if (event.key === 'y') {
                     event.preventDefault();
                     fetch('/updateteamamajor/10', {
@@ -395,7 +419,7 @@
                     .then(response => response.json())
                     window.location.href = '/';
                 }
-                else if (event.key === 'i') {
+                else if (event.key === 'j') {
                     event.preventDefault();
                     fetch('/updateteamamajor/12', {
                         method: 'POST',
@@ -418,6 +442,10 @@
                     })
                     .then(response => response.json())
                     window.location.href = '/';
+                }
+                else if (event.key === 'n') {
+                    event.preventDefault();
+                    pauseCountdown()
                 }
                 else if (event.key === 'x') {
                     event.preventDefault();
@@ -584,7 +612,7 @@
 
 
 <!--    <button style="height:50px;width:200px" onclick="startCountdown()">Start</button>-->
-    <button style="height:50px;width:300px" onclick="pauseCountdown()"><u>S</u>tart / Stop</button>
+    <button style="height:50px;width:300px" onclick="pauseCountdown()"><u>S</u>tart / Stop (N)</button>
  <!--   <button style="height:50px;width:100px" onclick="resumeCountdown()">Resume</button> -->
     <button style="height:50px;width:50px" onclick="stopCountdown()">Reset</button>
 

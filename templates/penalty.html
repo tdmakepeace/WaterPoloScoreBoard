@@ -167,6 +167,18 @@
                     .then(response => response.json())
                     window.location.href = '/';
                 }
+                else if (event.ctrlKey && event.key === 'h') {
+                    event.preventDefault();
+                    fetch('/updateteambpenalty/9', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
                 else if (event.ctrlKey && event.key === 'y') {
                     event.preventDefault();
                     fetch('/updateteambpenalty/10', {
@@ -191,7 +203,7 @@
                     .then(response => response.json())
                     window.location.href = '/';
                 }
-                else if (event.ctrlKey && event.key === 'i') {
+                else if (event.ctrlKey && event.key === 'j') {
                     event.preventDefault();
                     fetch('/updateteambpenalty/12', {
                         method: 'POST',
@@ -371,6 +383,18 @@
                     .then(response => response.json())
                     window.location.href = '/';
                 }
+                else if (event.key === 'h') {
+                    event.preventDefault();
+                    fetch('/updateteamapenalty/9', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ key: 'value' })
+                    })
+                    .then(response => response.json())
+                    window.location.href = '/';
+                }
                 else if (event.key === 'y') {
                     event.preventDefault();
                     fetch('/updateteamapenalty/10', {
@@ -395,7 +419,7 @@
                     .then(response => response.json())
                     window.location.href = '/';
                 }
-                else if (event.key === 'i') {
+                else if (event.key === 'j') {
                     event.preventDefault();
                     fetch('/updateteamapenalty/12', {
                         method: 'POST',
