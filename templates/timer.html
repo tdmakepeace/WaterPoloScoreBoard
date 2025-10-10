@@ -162,6 +162,7 @@
                       } else {
                         shotdownElement.style.color = "white";
                       }
+
                     if (timeLeft > 60 ) {
                         countdownElement.style.color = "blue";
                       } else if (timeLeft > 30 ) {
@@ -180,6 +181,17 @@
                         var quarter = {{ quarter }}
                         if (quarter < 4) {
                             if (timeLeft > 1) {
+                                if (timeLeft > shotLeft) {
+                                    $.ajax({
+                                        url: '/displayshotclock/' + shotseconds,
+                                        method: 'GET', // or 'POST' depending on your backend
+                                    });
+                                } else {
+                                   $.ajax({
+                                        url: '/displayshotclock/' + 0,
+                                        method: 'GET', // or 'POST' depending on your backend
+                                    });
+                                }
                                 if (shotLeft < 1) {
                                     changeSound();
                                     $.ajax({
@@ -194,6 +206,10 @@
                             } else {
                                 playSound()
                                 $.ajax({
+                                        url: '/displayshotclock/' + 0,
+                                        method: 'GET', // or 'POST' depending on your backend
+                                    });
+                                $.ajax({
                                     url: '/periodend',
                                     success: function(response) {
                                         reset30();
@@ -206,6 +222,17 @@
                             }
                         } else if (quarter = 4) {
                             if (timeLeft > 61) {
+                                if (timeLeft > shotLeft) {
+                                    $.ajax({
+                                        url: '/displayshotclock/' + shotseconds,
+                                        method: 'GET', // or 'POST' depending on your backend
+                                    });
+                                } else {
+                                   $.ajax({
+                                        url: '/displayshotclock/' + 0,
+                                        method: 'GET', // or 'POST' depending on your backend
+                                    });
+                                }
                                 if (shotLeft < 1) {
                                     changeSound();
                                     $.ajax({
@@ -237,6 +264,10 @@
 
                             } else {
                                 playSound()
+                                $.ajax({
+                                        url: '/displayshotclock/' + 0,
+                                        method: 'GET', // or 'POST' depending on your backend
+                                    });
                                 $.ajax({
                                     url: '/periodend',
                                     success: function(response) {
