@@ -193,7 +193,6 @@
                                     });
                                 }
                                 if (shotLeft < 1) {
-                                    changeSound();
                                     $.ajax({
                                         url: '/changeposs',
                                         success: function(response) {
@@ -205,10 +204,6 @@
 
                             } else {
                                 playSound()
-                                $.ajax({
-                                        url: '/displayshotclock/' + 0,
-                                        method: 'GET', // or 'POST' depending on your backend
-                                    });
                                 $.ajax({
                                     url: '/periodend',
                                     success: function(response) {
