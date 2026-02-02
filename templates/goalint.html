@@ -544,12 +544,71 @@
                 }
             });
         }
+
+                function pauseTimeout() {
+            $.ajax({
+                url: '/pause_timeout',
+                success: function(response) {
+                    updateTimeout();
+                }
+            });
+        }
+
+        function resumeTimeout() {
+            $.ajax({
+                url: '/resume_timeout',
+                success: function(response) {
+                    updateTimeout();
+                }
+            });
+        }
+
+        function stopTimeout() {
+            $.ajax({
+                url: '/stop_timeout',
+                success: function(response) {
+                    updateTimeout();
+                }
+            });
+        }
+
+        function updateTimeout() {
+            $.ajax({
+                url: '/get_timeout_status',
+                success: function(response) {
+                    let timeoutElement = document.getElementById('timeout');
+                    let timeLeft = response.elapsed_timeout;
+                    if (response.timeout_running) {
+                        let minutes = Math.floor(timeLeft / 60);
+                        let seconds = Math.floor(timeLeft % 60);
+                        timeoutElement.innerHTML = '<br> ' + minutes +':' + seconds.toString().padStart(2, '0') + '';
+                        // timeoutElement.innerHTML = 'Remaining Time: ' + seconds.toString().padStart(2, '0') + 's';
+                        if (timeLeft > 31) {
+                            setTimeout(updateTimeout, 1000);
+                        } else if  (timeLeft > 29) {
+                            playwhistle();
+                            setTimeout(updateTimeout, 1000);
+                        } else if (timeLeft > 1) {
+                            setTimeout(updateTimeout, 1000);
+                        } else {
+                            playSound();
+                            setTimeout(() => { window.location.href = "/returninterval"; }, 2000);
+                        }
+                    } else {
+                        timeoutElement.innerHTML = '<br>Paused';
+                    }
+                }
+            });
+        }
+
+
         function homegoal() {
             window.open('/homegoal', 'Popup', 'width=600,height=400');
             // Initial update of countdown display
         }
-        updateCountdown();
+        updateTimeout();
     </script>
+
 
 <body>
 
@@ -610,38 +669,18 @@
   </nav>
 
 <article>
+<br>
+    <br>
+<br>
+   <div> <span style="color: red;" id="timeout"> </span></div>
 
 
-    <table class="center" style="width:100%" >
-        <tr>
-            <td style="width:10%">    <button style="height:50px;width:50px" onclick="addmin()"> + </button>      </td>
-            <td style="width:80%" rowspan="3">    <span style="color: blue  ; font-size:300px;""  id="countdown"> </span>         </td>
-            <td style="width:10%" >    <button style="height:50px;width:50px" onclick="addsec()"> + </button>      </td>
-        </tr>
-        <tr>
-            <td>            </td>
-
-            <td>            </td>
-        </tr>
-                <tr>
-            <td>  <button style="height:50px;width:50px" onclick="minmin()"> - </button>          </td>
-
-            <td>  <button style="height:50px;width:50px" onclick="minsec()"> - </button>      </td>
-        </tr>
-
-    </table>
 
 
-<!--    <button style="height:50px;width:200px" onclick="startCountdown()">Start</button>-->
-    <button style="height:50px;width:300px" onclick="pauseCountdown()"><u>S</u>tart / Stop</button>
- <!--   <button style="height:50px;width:100px" onclick="resumeCountdown()">Resume</button> -->
-    <button style="height:50px;width:50px" onclick="stopCountdown()">Reset</button>
-
-  </div>
-</div>
 <br>
 <br>
-
+<br>
+<br>
   <table class="center"; style="text-align: center">
         <tr>
             <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;Score&nbsp;&nbsp;</th>
@@ -679,7 +718,7 @@
                 <th style="width:200px" > Goal Scorer </th>
 
 </td>
-                                <td>         <form action="/callinterval">
+                                <td>         <form action="/callintervalgoal">
             <button style="height:50px;width:200px" type="submit">Back (X)</button>
                 </form> </td>
         </table>

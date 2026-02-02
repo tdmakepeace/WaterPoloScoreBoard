@@ -193,6 +193,7 @@
                                     });
                                 }
                                 if (shotLeft < 1) {
+                                    playSound();
                                     $.ajax({
                                         url: '/changeposs',
                                         success: function(response) {
@@ -229,7 +230,7 @@
                                     });
                                 }
                                 if (shotLeft < 1) {
-                                    changeSound();
+                                    playSound();
                                     $.ajax({
                                         url: '/changeposs',
                                         success: function(response) {
@@ -247,7 +248,7 @@
                                 setTimeout(updateCountdown, 1000);
                             } else if (timeLeft > 1) {
                                 if (shotLeft < 1) {
-                                    changeSound();
+                                    playSound();
                                     $.ajax({
                                         url: '/changeposs',
                                         success: function(response) {
@@ -330,9 +331,14 @@
         }
         function pause30() {
             $.ajax({
-                url: '/pause30',
-                success: function(response) {
-                    updateCountdown();
+                url: '/reset30',
+                success: function(response) { // Add 1 second delay before calling updateCountdown
+                    setTimeout(function() {
+                        updateCountdown();
+                        }, 1000);
+                    },
+                error: function(xhr, status, error) {
+                    console.error("Pause request failed:", error);
                 }
             });
         }
@@ -460,7 +466,7 @@
             <td>{{ user_id }}</td>
             <td>{{ teama.goals }}</td>
             <td>{{ teama.majors }}</td>
-<!--            <td>{{ teama.assists }}</td>-->
+            <!--            <td>{{ teama.assists }}</td>-->
 
 
         </tr>
@@ -747,22 +753,22 @@
   <table>
       <td>
         <form method="POST" action="/start">
-            <button style="height:50px;width:200px" type="submit">Start Game</button>
+            <button style="height:50px;width:180px" type="submit">Start Game</button>
         </form>
       </td>
       <td>
         <form method="POST" action="/period">
-        <button style="height:50px;width:200px" type="submit">Next Period</button>
+        <button style="height:50px;width:150px" type="submit">Skip Period</button>
         </form>
         </td>
       <td>
         <form method="POST" action="/clear">
-            <button style="height:50px;width:200px" type="submit">Delete</button>
+            <button style="height:50px;width:180px" type="submit">Undo / Delete</button>
         </form>
       </td>
       <td>
         <form method="POST" action="/finish">
-            <button style="height:50px;width:200px" type="submit">Finish Game</button>
+            <button style="height:50px;width:150px" type="submit">Finish Game</button>
         </form>
       </td>
       <td>
@@ -770,19 +776,19 @@
 </td>
       <td>
         <form action="/settings">
-            <button style="height:50px;width:200px" type="submit">Edit Settings</button>
+            <button style="height:50px;width:180px" type="submit">Edit Settings</button>
 <!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
 </form>
       </td>
       <td>
         <form action="/callinterval">
-            <button style="height:50px;width:200px" type="submit" onclick="playSound()">interval</button>
+            <button style="height:50px;width:120px" type="submit" onclick="playSound()">Move to interval</button>
 <!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
 </form>
       </td>
           <td>
         <form action="/saverefdata/referee">
-            <button style="height:50px;width:150px" type="submit">Referees</button>
+            <button style="height:50px;width:120px" type="submit">Referees</button>
 <!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
 </form>
 </td>
@@ -792,6 +798,7 @@
 <!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
 </form>
 </td>
+
   </table>
 
 </footer>

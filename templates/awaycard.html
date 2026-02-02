@@ -370,10 +370,28 @@
 <article>
 
 
-    <div> <span style="color: red;" id="countdown"> </span></div>
+    <table class="center" style="width:100%" >
+        <tr>
+            <td style="width:10%">    <button style="height:50px;width:50px" onclick="addmin()"> + </button>      </td>
+            <td style="width:80%" rowspan="3">    <span style="color: blue  ; font-size:300px;""  id="countdown"> </span>         </td>
+            <td style="width:10%" >    <button style="height:50px;width:50px" onclick="addsec()"> + </button>      </td>
+        </tr>
+        <tr>
+            <td>            </td>
 
-    <button style="height:50px;width:200px" onclick="startCountdown()">Start</button>
-    <button style="height:50px;width:200px" onclick="pauseCountdown()">Pause</button>
+            <td>            </td>
+        </tr>
+                <tr>
+            <td>  <button style="height:50px;width:50px" onclick="minmin()"> - </button>          </td>
+
+            <td>  <button style="height:50px;width:50px" onclick="minsec()"> - </button>      </td>
+        </tr>
+
+    </table>
+
+
+<!--    <button style="height:50px;width:200px" onclick="startCountdown()">Start</button>-->
+    <button style="height:50px;width:300px" onclick="pauseCountdown()"><u>S</u>tart / Stop</button>
  <!--   <button style="height:50px;width:100px" onclick="resumeCountdown()">Resume</button> -->
     <button style="height:50px;width:50px" onclick="stopCountdown()">Reset</button>
 
@@ -381,7 +399,6 @@
 </div>
 <br>
 <br>
-
 
         <table>
         <tr>

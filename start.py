@@ -1,71 +1,89 @@
 import errno
-import struct
-from flask import Flask, render_template, request, redirect, url_for, jsonify,flash
-from flask import send_file
-import time, csv, math , sys
-from datetime import datetime, timedelta
-from fpdf import FPDF
-
+from time import sleep
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
+# from quart import Quart , render_template, request, redirect, url_for, jsonify, flash
+import time
+import csv
+import math
 import os
 import webview
-
-
+from datetime import datetime, timedelta
+from fpdf import FPDF
+from fpdf.enums import XPos, YPos
 
 ## Bluetooth ##
-from bleak import BleakClient, BleakScanner
+from bleak import BleakClient, BleakScanner , BleakError
 import asyncio
 
 
-## serial connected ##
+# Instead of nested dictionaries, use dataclasses
+from dataclasses import dataclass
 
-# import serial.tools.list_ports
-#
-# ports = serial.tools.list_ports.comports()
-# serialInst = serial.Serial()
-# portsList = []
-#
-# for one in ports:
-#     portsList.append(str(one))
-#     print(str(one))
-#
-# for port in (portsList):
-#     if "Arduino NANO Every" in port:
-#         print("test", port)
-#         target_char = "-"
-#         index = port.find(target_char)
-#
-#         if index != -1 and index + 1 + 5 <= len(port):
-#             substring = port[index + 2: index + 20]
-#             print(substring)  # Output: Home
-#             substring = port[3: index - 1]
-#             print(substring)  # Output: Home
-#             com = port[3: index - 1]
-#             use = "COM" + str(com)
-#
-#             serialInst.baudrate = 9600
-#             serialInst.port = use
-#             serialInst.open()
-#
-#     else:
-#             print("NO NANO found.")
+@dataclass
+class PlayerStats:
+    """Statistics for a single player."""
+    assists: int = 0
+    goals: int = 0
+    majors: int = 0
+    reds: int = 0
 
+@dataclass
+class PeriodScores:
+    """Period-by-period scoring."""
+    goals1: int = 0
+    majors1: int = 0
+    goals2: int = 0
+    majors2: int = 0
+    goals3: int = 0
+    majors3: int = 0
+    goals4: int = 0
+    majors4: int = 0
 
-## End Serial connected ##
+# Initialize teams
+teama = {i: PlayerStats() for i in range(1, 15)}
+teamb = {i: PlayerStats() for i in range(1, 15)}
 
+periodscores = { 'Home': PeriodScores() ,     'Away': PeriodScores() }
 
-webtimeout = 180
-# the host the webservice is hosted on, FQDN or IP is required.
-# 0.0.0.0 for all interfaces.
-webhost = '0.0.0.0'
+# Group related constants at the top
+class Config:
+    """Application configuration constants."""
+    WEB_TIMEOUT = 180
+    WEB_HOST = '0.0.0.0'
+    WEB_PORT = 5000
+    SESSION_TYPE = 'filesystem'
+    SECRET_KEY = 'waterpolo'
+    
+    # Game settings
+    # All time is based on 30 second increments
+    INTERVAL_TIME = 4
+    HALFTIME = 4
+    TIMEOUT_TIME = 2
+    GAME_TIME = 13
+    SHOT_CLOCK = 28
+    FOUL_CLOCK = SHOT_CLOCK -10
+    BLUETOOTH_CONNECT = 0
+    MAJORS = 9
 
-# the port the webservice is hosted on, default flask is 5000.
-webport = '5000' 
+    
+    # Bluetooth constants
+    UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
+    RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+    TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+    BLUETOOTH_NAME = ["Nano33BLE" , "WaterPolo_1" , "WaterPolo_2"]
+    
+    # Default values
+    DEFAULT_LOCATION = 'New Malden'
+    DEFAULT_HOME_TEAM = 'Kingston Royals'
+    DEFAULT_AWAY_TEAM = 'Away Team'
 
 app = Flask(__name__, static_url_path='/static')
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SECRET_KEY'] = 'waterpolo'
+# app = Quart(__name__, static_url_path='/static')
+app.config['SESSION_TYPE'] = Config.SESSION_TYPE
+app.config['SECRET_KEY'] = Config.SECRET_KEY
 app.config['SESSION_REFRESH_EACH_REQUEST'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=webtimeout)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=Config.WEB_TIMEOUT)
+# app.config['SERVER_NAME'] = "0.0.0.0:5000"
 
 # Session(app)
 
@@ -75,95 +93,41 @@ scores = {
     'Home': {'goals': 0, 'majors': 0},
     'Away': {'goals': 0, 'majors': 0}
 }
+
 TeamHome = scores['Home']
 TeamAway = scores['Away']
 
-periodscores = {
-    'Home': {'goals1': 0, 'majors1': 0, 'goals2': 0, 'majors2': 0,'goals3': 0, 'majors3': 0,'goals4': 0, 'majors4': 0},
-    'Away': {'goals1': 0, 'majors1': 0, 'goals2': 0, 'majors2': 0,'goals3': 0, 'majors3': 0,'goals4': 0, 'majors4': 0}
-}
+# PLAYERS NAMES
 home_data = {'home': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6', ''], ['7', ''], ['8', ''], ['9', ''], ['10', ''], ['11', ''], ['12', ''], ['13', ''], ['14', '']]}
 away_data = {'away': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6', ''], ['7', ''], ['8', ''], ['9', ''], ['10', ''], ['11', ''], ['12', ''], ['13', ''], ['14', '']]}
 
-# home_data = {
-#     'home': [['1', 'home1'], ['2', 'home2'], ['3', 'home3'], ['4', 'home4'], ['5', ''], ['6', ''], ['7', ''], ['8', ''],
-#              ['9', ''],
-#              ['10', ''], ['11', ''], ['12', ''], ['13', '']]}
-# away_data = {
-#     'away': [['1', 'away1'], ['2', 'away2'], ['3', 'away3'], ['4', 'fred'], ['5', ''], ['6', ''], ['7', ''], ['8', ''],
-#              ['9', ''],
-#              ['10', ''], ['11', ''], ['12', ''], ['13', '']]}
-
+# REFEREE NAME AND EXPENCES
 ref_data = {'referee': [['1', '','',''], ['2', '','','']]}
 
+# CARDS
 home_coach = {'red': 0 , 'yellow': 0}
 away_coach = {'red': 0 , 'yellow': 0}
 
 home_team_red = {'red': 0 , 'yellow': 0}
 away_team_red = {'red': 0 , 'yellow': 0}
 
-teama = {
-    1: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    2: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    3: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    4: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    5: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    6: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    7: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    8: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    9: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    10: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    11: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    12: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    14: {'assists': 0, 'goals': 0, 'majors': 0, 'reds': 0}
-}
+runningclock = "no"
 
-teamb = {
-    1: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    2: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    3: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    4: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    5: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    6: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    7: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    8: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    9: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    10: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    11: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    12: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    13: {'assists': 0, 'goals': 0, 'majors': 0 , 'reds': 0 },
-    14: {'assists': 0, 'goals': 0, 'majors': 0, 'reds': 0}
-}
+
+filename = datetime.now().strftime(Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '-%Y-%m-%d-%H-%M.csv')
+filenamebak = filename + '.bak'
+running_file = datetime.now().strftime('temp' + '-%Y-%m-%d-%H-%M.csv')
+compress_file = datetime.now().strftime(Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '_END_' + '-%Y-%m-%d-%H-%M.csv')
+countdown_running = False
 quarter= 0
 direction = "increment"
 hometimeoutv = 0
 awaytimeoutv = 0
-
-# All time is based on 30 second increments
-intervaltime = 4
-halftime = 4
-timeouttime = 2
-runningclock = "no"
-gametime = 13
-
-location = 'New Malden'
-HomeTeam = 'Kingston Royals'
-AwayTeam = 'Away Team'
-
-shotclock = int(28)
-foulclock = shotclock - 10
-
-
-filename = datetime.now().strftime(HomeTeam+'-%Y-%m-%d-%H-%M.csv')
-running_file = datetime.now().strftime('temp'+'-%Y-%m-%d-%H-%M.csv')
-compress_file = datetime.now().strftime(HomeTeam+'_END_'+'-%Y-%m-%d-%H-%M.csv')
-countdown_running = False
 start_time = 0
 elapsed_time = 0
 start_shot = 0
 elapsed_shot = 0
-clock_shot = shotclock
+clock_shot = Config.SHOT_CLOCK
 remaining_shot = 0
 
 timeoutrunning = False
@@ -171,117 +135,198 @@ starttimeout = 0
 elapsedtimeout = 0
 
 reason = 'Timeout'
-timeout = timeouttime
-
-
-# timestamp = datetime.now()
-
-window = webview.create_window('WaterPolo Scoreboard',app )
-
+timeout = Config.TIMEOUT_TIME
+BLUETOOTH_CONNECT = Config.BLUETOOTH_CONNECT
+window = webview.create_window('WaterPolo Scoreboard', app)
 
 
 ## Bluetooth code block ##
-UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
-RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
-TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
-bluetoothname = "Nano33BLE"
-ble_client = None # global client
+ble_client = None  # global client
+ble_clients = []
+# async def init_ble():
+#     global ble_client
+#     devices = await BleakScanner.discover()
+#     for d in devices:
+#         print(f"Name: {d.name}, Address: {d.address}")
+#     nano = next((d for d in devices if d.name and Config.BLUETOOTH_NAME in d.name), None)
+#     if not nano:
+#         print(f"{Config.BLUETOOTH_NAME} not found.")
+#         return
+#
+#     ble_client = BleakClient(nano.address)
+#     await ble_client.connect()
+#     print(f"Connected to {nano.name} at {nano.address}")
 
 
 async def init_ble():
-    global ble_client
-    devices = await BleakScanner.discover()
-    for d in devices:
-        print(f"Name: {d.name}, Address: {d.address}")
-    nano = next((d for d in devices if d.name and bluetoothname in d.name), None)
-    if not nano:
-        print("Nano33BLE not found.")
+    global ble_clients
+    devices = await BleakScanner.discover(timeout=5.0)
+    targets = [
+        d for d in devices if d.name and any(name in d.name for name in Config.BLUETOOTH_NAME)
+    ]
+
+    if not targets:
+        print(f"None of {Config.BLUETOOTH_NAME} found.")
         return
 
-    ble_client = BleakClient(nano.address)
-    await ble_client.connect()
-    print(f"Connected to {nano.name} at {nano.address}")
+    ble_clients = []  # reset before reconnecting
+    for d in targets:
+        client = BleakClient(d.address)
+        await client.connect()
+        print(f"Connected to {d.name} at {d.address}")
+        ble_clients.append(client)
+    # print(ble_clients)
+    return ble_clients   # now returns the actual list
 
 
+# async def dis_ble():
+#     global ble_client
+#     await ble_client.disconnect()
+#     print(f"Disconnected bluetooth")
+
+async def dis_ble():
+    global ble_clients
+    for client in ble_clients:
+        # print(client)
+        try:
+            if client.is_connected:
+                await client.disconnect()
+                print(f"Disconnected safely from {client.address}")
+            else:
+                print(f"Already disconnected from {client.address}, skipping.")
+        except BleakError as e:
+            print(f"Error during disconnect from {client.address}: {e}")
+        except Exception as e:
+            print(f"Unexpected error with {client.address}: {e}")
+
+    # Clear the list once all are disconnected
+    ble_clients = []
+    return ble_clients
+
+
+# async def send_ble_command(command: str):
+#     global ble_client
+#     if Config.BLUETOOTH_CONNECT == 1:
+#         if ble_client and ble_client.is_connected:
+#             command = command + "\0"
+#             await ble_client.write_gatt_char(Config.RX_CHAR_UUID, command.encode())
+#
+#
+#
+# async def send_ble_int(value: str):
+#     global ble_client
+#     if Config.BLUETOOTH_CONNECT == 1:
+#         if ble_client and ble_client.is_connected:
+#             command = str(value) + "\0"
+#             await ble_client.write_gatt_char(Config.RX_CHAR_UUID, command.encode('utf-8'))
+
+
+# async def send_ble_command(command: str):
+#     global ble_clients
+#     for client in ble_clients:
+#         if client and client.is_connected:
+#             try:
+#                 cmd = command + "\0"
+#                 await client.write_gatt_char(Config.RX_CHAR_UUID, cmd.encode('utf-8'))
+#                 # print(f"Sent command '{command}' to {client.address}")
+#             except Exception as e:
+#                 print(f"Error sending command to {client.address}: {e}")
 
 async def send_ble_command(command: str):
-    global ble_client
-    # if ble_client is None or not ble_client.is_connected:
-    #     await init_ble()
-    if ble_client and ble_client.is_connected:
-        command = command + "\0"
-        await ble_client.write_gatt_char(RX_CHAR_UUID, command.encode())
-       # print(f"Sent command: {command}")
+    global ble_clients
+    for client in ble_clients:
+        if client and client.is_connected:
+            try:
+                cmd = command + "\0"
+                await client.write_gatt_char(Config.RX_CHAR_UUID, cmd.encode("utf-8"))
+                # print(f"Sent command '{command}' to {client.address}")
+            except Exception as e:
+                # Log the error with more context
+                print(f"[ERROR] Failed to send '{command}' to {client.address}: {e}")
+                # Optionally: disconnect or remove the client if it's broken
+                try:
+                    await client.disconnect()
+                except Exception:
+                    pass
 
 async def send_ble_int(value: str):
-    global ble_client
-    # if ble_client is None or not ble_client.is_connected:
-    #     await init_ble()
-    if ble_client and ble_client.is_connected:
-        #command = struct.pack('B', value)
-        command = str(value) + "\0"
-        # await ble_client.write_gatt_char(RX_CHAR_UUID, command.encode())
-        await ble_client.write_gatt_char(RX_CHAR_UUID, command.encode('utf-8'))
-      #  print(f"Sent command out: {command}")
+    global ble_clients
+
+    for client in ble_clients:
+        if client and client.is_connected:
+            try:
+                cmd = str(value) + "\0"
+                await client.write_gatt_char(Config.RX_CHAR_UUID, cmd.encode('utf-8'))
+                # print(f"Sent int '{value}' to {client.address}")
+            except Exception as e:
+                print(f"Error sending int to {client.address}: {e}")
+                try:
+                    await client.disconnect()
+                except Exception:
+                    pass
 
 @app.route('/changeposs')
 def changeposs():
     command = "CHANGE"
-    ## serial ##
-    #serialInst.write(command.encode('utf-8'))
-    # print(command)
-    ## Bluetooth ##
-    asyncio.run(send_ble_command("CHANGE"))
-
+    asyncio.run(send_ble_command(command))
     return jsonify({'status': 'success'})
+
 
 @app.route('/periodend')
 def periodend():
     command = "END"
-    ## serial ##
-    #serialInst.write(command.encode('utf-8'))
-    # print(command)
-    ## Bluetooth ##
-    asyncio.run(send_ble_command("END"))
+    asyncio.run(send_ble_command(command))
     return jsonify({'status': 'success'})
+
 
 @app.route('/buzzer')
 def buzzer():
     command = "BUZZER"
-    ## serial ##
-    #serialInst.write(command.encode('utf-8'))
-    # print(command)
-    ## Bluetooth ##
-
-    asyncio.run(send_ble_command("BUZZER"))
-#    send_ble_command("BUZZER")
+    asyncio.run(send_ble_command(command))
     return jsonify({'status': 'success'})
 
-##### Toby Test ####
+# @app.route('/displayshotclock/<int:shot>')
+# def displayshotclock(shot):
+#     command = shot
+#     # print(f"Sent command to int: {command}")
+#     asyncio.run(send_ble_int(command))
+#     return jsonify({'status': 'success'})
+
 @app.route('/displayshotclock/<int:shot>')
 def displayshotclock(shot):
     command = shot
-    print(f"Sent command to int: {command}")
-    asyncio.run(send_ble_int(command))
-    return jsonify({'status': 'success'})
-
+    try:
+        asyncio.run(send_ble_int(command))
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        # Log the error and return a controlled response
+        print(f"Error in displayshotclock route: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 ## end of Bluetooth code block
 
-##### Toby Test ####
 
 
 @app.route('/')
 def index():
-    # print(home_coach, away_coach)
-    global timeouttime, timeout
-    timeouttime = 2
-    timeout = timeouttime
-    return render_template('timer.html', scores=scores, teama=teama, teamb=teamb, elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, home_coach=home_team_red, away_coach=away_team_red )
+    return render_template('timer.html', scores=scores, teama=teama, teamb=teamb,
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red)
 
 @app.route('/display')
 def display():
-    return render_template('display.html', scores=scores, teama=teama, teamb=teamb, elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, home_coach=home_team_red, away_coach=away_team_red )
+    return render_template('display.html', scores=scores, teama=teama, teamb=teamb, 
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, 
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red)
 
+
+
+# CLOCK CONTROLS
 @app.route('/start_countdown')
 def start_countdown():
     global countdown_running, start_time, elapsed_time, start_shot, elapsed_shot
@@ -290,16 +335,18 @@ def start_countdown():
     start_shot = time.time() - elapsed_shot
     return jsonify({'status': 'success'})
 
+
 @app.route('/stop_countdown')
 def stop_countdown():
     global countdown_running, start_time, elapsed_time, start_shot, elapsed_shot, clock_shot
     countdown_running = False
-    clock_shot = shotclock
+    clock_shot = Config.SHOT_CLOCK
     start_time = 0
     elapsed_time = 0
     start_shot = 0
     elapsed_shot = 0
     return jsonify({'status': 'success'})
+
 
 @app.route('/pause_countdown')
 def pause_countdown():
@@ -314,13 +361,6 @@ def pause_countdown():
         start_time = time.time() - elapsed_time
         start_shot = time.time() - elapsed_shot
     return jsonify({'status': 'success'})
-
-# @app.route('/pause_countdown')
-# def pause_countdown():
-#     global countdown_running, start_time, elapsed_time
-#     countdown_running = False
-#     elapsed_time = time.time() - start_time
-#     return jsonify({'status': 'success'})
 
 
 @app.route('/resume_countdown')
@@ -343,14 +383,14 @@ def get_countdown_status():
     global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot , clock_shot
     if countdown_running:
         elapsed_time = time.time() - start_time
-        remaining_time = max((gametime*30) - elapsed_time, 0)
+        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
         elapsed_shot = time.time() - start_shot
         remaining_shot = max((clock_shot) - elapsed_shot, 0 )
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
     else:
         # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
         # elapsed_time = time.time() - start_time
-        remaining_time = max((gametime*30) - elapsed_time, 0)
+        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
         # elapsed_shot = time.time() - start_shot
         remaining_shot = max((clock_shot) - elapsed_shot, 0 )
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
@@ -358,38 +398,35 @@ def get_countdown_status():
 
 @app.route('/reset30')
 def reset30():
-    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot, shotclock
+    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
     if countdown_running:
         pause_countdown()
-    clock_shot = shotclock
+    clock_shot = max((Config.SHOT_CLOCK),0)
     remaining_shot = max((clock_shot) , 0)
     elapsed_shot = 0
     start_shot = 0
     # start_countdown()
-    command = remaining_shot
-    print(f"Sent command to int: {command}")
+    command = str(remaining_shot)
+    # print(f"Sent command to int: {command}")
     asyncio.run(send_ble_int(command))
 
     return jsonify({'status': 'success'})
-    # return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
-
 
 
 @app.route('/possession')
 def possession():
     global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
     pause_countdown()
-    clock_shot = shotclock
+    clock_shot = max((Config.SHOT_CLOCK),0)+1
     remaining_shot = max((clock_shot) , 0)
     elapsed_shot = 0
     start_shot = 0
     start_countdown()
-    command = remaining_shot
-    print(f"Sent command to int: {command}")
+    command = str(remaining_shot -1)
+    # print(f"Sent command to int: {command}")
     asyncio.run(send_ble_int(command))
 
     return jsonify({'status': 'success'})
-    # return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
 
 
 @app.route('/reset20')
@@ -398,23 +435,22 @@ def reset20():
     if countdown_running:
         pause_countdown()
         if remaining_shot < 20:
-            clock_shot = foulclock+1
+            clock_shot = max((Config.FOUL_CLOCK),0)+1
             remaining_shot = max((clock_shot) , 0)
             elapsed_shot = 0
             start_shot = 0
         start_countdown()
     else:
         if remaining_shot < 20:
-            clock_shot = foulclock
+            clock_shot = max((Config.FOUL_CLOCK),0)+1
             remaining_shot = max((clock_shot) , 0)
             elapsed_shot = 0
             start_shot = 0
         start_countdown()
-    command = remaining_shot
-    print(f"Sent command to int: {command}")
+    command = str(remaining_shot-1)
+    # print(f"Sent command to int: {command}")
     asyncio.run(send_ble_int(command))
     return jsonify({'status': 'success'})
-    # return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
 
 @app.route('/pause20')
 def pause20():
@@ -422,22 +458,18 @@ def pause20():
     if countdown_running:
         pause_countdown()
         if remaining_shot < 20:
-            clock_shot = foulclock
+            clock_shot = max((Config.FOUL_CLOCK),0)
             remaining_shot = max((clock_shot) , 0)
             elapsed_shot = 0
             start_shot = 0
-        start_countdown()
-        pause_countdown()
     else:
         if remaining_shot < 20:
-            clock_shot = foulclock
+            clock_shot = max((Config.FOUL_CLOCK),0)
             remaining_shot = max((clock_shot) , 0)
             elapsed_shot = 0
             start_shot = 0
-        start_countdown()
-        pause_countdown()
-    command = remaining_shot
-    print(f"Sent command to int: {command}")
+    command = str(remaining_shot)
+    # print(f"Sent command to int: {command}")
     asyncio.run(send_ble_int(command))
     return jsonify({'status': 'success'})
     # return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
@@ -446,38 +478,35 @@ def pause20():
 
 @app.route('/force20')
 def force20():
-    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot, foulclock
-    pause_countdown()
-    clock_shot = foulclock
+    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
+    if countdown_running:
+        pause_countdown()
+    clock_shot = max((Config.FOUL_CLOCK),0)
     remaining_shot = max((clock_shot) , 0)
     elapsed_shot = 0
     start_shot = 0
-    start_countdown()
-    pause_countdown()
-    command = remaining_shot
-    print(f"Sent command to int: {command}")
+    command = str(remaining_shot)
+    # print(f"Sent command to int: {command}")
     asyncio.run(send_ble_int(command))
     return jsonify({'status': 'success'})
 
 @app.route('/pause30')
 def pause30():
-    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot, shotclock
-    pause_countdown()
-    clock_shot = shotclock
+    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
+    if countdown_running:
+        pause_countdown()
+    clock_shot = max((Config.SHOT_CLOCK),0)
     remaining_shot = max((clock_shot) , 0)
     elapsed_shot = 0
     start_shot = 0
-    start_countdown()
-    pause_countdown()
-    command = remaining_shot
-    print(f"Sent command to int: {command}")
+    command = str(remaining_shot)
+    # print(f"Sent command to int: {command}")
     asyncio.run(send_ble_int(command))
     return jsonify({'status': 'success'})
 
 @app.route('/start_timeout')
 def start_timeout():
     global timeoutrunning, starttimeout, elapsedtimeout
-    # timeout = timeouttime
     timeoutrunning = True
     elapsedtimeout = 0
     starttimeout = time.time() - elapsedtimeout
@@ -514,18 +543,19 @@ def get_timeout_status():
     else:
         return jsonify({'timeout_running': timeoutrunning, 'elapsed_timeout': elapsedtimeout})
 
+
+# END CLOCK CONTROLS
+
 @app.route('/addmin')
 def addmin():
     global countdown_running, start_time, elapsed_time
     if countdown_running:
         elapsed_time = time.time() - start_time
-        remaining_time = max((gametime*30) - elapsed_time, 0)
+        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
     else:
-        # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
-        # elapsed_time = time.time() - start_time
         elapsed_time = elapsed_time - 60
-        remaining_time = max((gametime*30) - elapsed_time, 0)
+        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
 
 @app.route('/minmin')
@@ -533,13 +563,11 @@ def minmin():
     global countdown_running, start_time, elapsed_time
     if countdown_running:
         elapsed_time = time.time() - start_time
-        remaining_time = max((gametime*30) - elapsed_time, 0)
+        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
     else:
-        # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
-        # elapsed_time = time.time() - start_time
         elapsed_time = elapsed_time + 60
-        remaining_time = max((gametime*30) - elapsed_time, 0)
+        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
 
 @app.route('/addsec')
@@ -547,13 +575,13 @@ def addsec():
     global countdown_running, start_time, elapsed_time
     if countdown_running:
         elapsed_time = time.time() - start_time
-        remaining_time = max((gametime*30) - elapsed_time, 0)
+        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
     else:
         # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
         # elapsed_time = time.time() - start_time
         elapsed_time = elapsed_time - 1
-        remaining_time = max((gametime*30) - elapsed_time, 0)
+        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
 
 @app.route('/minsec')
@@ -561,21 +589,21 @@ def minsec():
     global countdown_running, start_time, elapsed_time
     if countdown_running:
         elapsed_time = time.time() - start_time
-        remaining_time = max((gametime*30) - elapsed_time, 0)
+        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
     else:
-        # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
-        # elapsed_time = time.time() - start_time
         elapsed_time = elapsed_time + 1
-        remaining_time = max((gametime*30) - elapsed_time, 0)
+        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
         return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time})
 
 
 
-###### url
+###### MAIN APP
 
 @app.route('/homecard')
 def homecard():
+    if quarter == 0 :
+        return redirect(url_for('index'))
     if countdown_running:
         if runningclock == "no":
             pause_countdown()
@@ -585,11 +613,13 @@ def homecard():
 
     return render_template('homecard.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
+                           HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv,
                            awaytimeoutv=awaytimeoutv, filename=filename)
 
 @app.route('/awaycard')
 def awaycard():
+    if quarter == 0 :
+        return redirect(url_for('index'))
     if countdown_running:
         if runningclock == "no":
             pause_countdown()
@@ -599,12 +629,14 @@ def awaycard():
 
     return render_template('awaycard.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
+                           HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv,
                            awaytimeoutv=awaytimeoutv, filename=filename)
 
 
 @app.route('/goal')
 def goal():
+    if quarter == 0 :
+        return redirect(url_for('index'))
     if countdown_running:
         if runningclock == "no":
             reset30()
@@ -615,7 +647,7 @@ def goal():
         reset30()
     return render_template('goal.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
+                           HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv,
                            awaytimeoutv=awaytimeoutv, filename=filename)
 
 @app.route('/goalint')
@@ -630,7 +662,7 @@ def goalint():
         reset30()
     return render_template('goalint.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
+                           HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv,
                            awaytimeoutv=awaytimeoutv, filename=filename)
 
 
@@ -638,6 +670,8 @@ def goalint():
 
 @app.route('/major')
 def major():
+    if quarter == 0 :
+        return redirect(url_for('index'))
     if countdown_running:
         if runningclock == "no":
             pause20()
@@ -649,11 +683,13 @@ def major():
 
     return render_template('major.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
+                           HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv,
                            awaytimeoutv=awaytimeoutv, filename=filename)
 
 @app.route('/penalty')
 def penalty():
+    if quarter == 0 :
+        return redirect(url_for('index'))
     if countdown_running:
         if runningclock == "no":
             pause20()
@@ -665,59 +701,19 @@ def penalty():
 
     return render_template('penalty.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
+                           HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv,
                            awaytimeoutv=awaytimeoutv, filename=filename)
-
-# @app.route('/awaygoal')
-# def awaygoal():
-#     if countdown_running:
-#         if runningclock == "no":
-#             pause_countdown()
-#     else:
-#         msg = 'clock not running'
-#         flash(msg, "warning")
-#
-#     return render_template('awaygoal.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
-#                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-#                            HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
-#                            awaytimeoutv=awaytimeoutv, filename=filename)
-# @app.route('/awaymajor')
-# def awaymajor():
-#     if countdown_running:
-#         if runningclock == "no":
-#             pause_countdown()
-#     else:
-#         msg = 'clock not running'
-#         flash(msg, "warning")
-#
-#     return render_template('awaymajor.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
-#                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-#                            HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
-#                            awaytimeoutv=awaytimeoutv, filename=filename)
-#
-# @app.route('/awaypenalty')
-# def awaypenalty():
-#     if countdown_running:
-#         if runningclock == "no":
-#             pause_countdown()
-#     else:
-#         msg = 'clock not running'
-#         flash(msg, "warning")
-#
-#     return render_template('awaypenalty.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
-#                            TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-#                            HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv,
-#                            awaytimeoutv=awaytimeoutv, filename=filename)
 
 
 @app.route('/updateteamacoach/<int:id>', methods=['GET', 'POST'])
 def updateteamacoach(id):
+    global quarter, direction
+    global countdown_running, start_time, elapsed_time, home_coach, away_coach
+    if quarter == 0 :
+        return redirect(url_for('index'))
     if request.method == 'POST':
-        global quarter, direction
-        global countdown_running, start_time, elapsed_time,home_coach,away_coach
-
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
         # print('help1')
         # action = request.form['action']
         direction = str(direction)
@@ -764,12 +760,15 @@ def updateteamacoach(id):
 
 @app.route('/updateteambcoach/<int:id>', methods=['GET', 'POST'])
 def updateteambcoach(id):
+    global quarter, direction
+    global countdown_running, start_time, elapsed_time, home_coach, away_coach
+    if quarter == 0 :
+        return redirect(url_for('index'))
     if request.method == 'POST':
-        global quarter, direction
-        global countdown_running, start_time, elapsed_time ,home_coach,away_coach
+
 
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
         # print('help1')
         # action = request.form['action']
         direction = str(direction)
@@ -816,13 +815,16 @@ def updateteambcoach(id):
 
 @app.route('/updateteamacard/<int:user_id>', methods=['GET', 'POST'])
 def updateteamacard(user_id):
+    global quarter, direction
+    global countdown_running, start_time, elapsed_time
+    if quarter == 0 :
+        return redirect(url_for('index'))
     if request.method == 'POST':
-        global quarter, direction
-        global countdown_running, start_time, elapsed_time
+
 
 
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
         # print('help1')
         # action = request.form['action']
         direction = str(direction)
@@ -847,29 +849,22 @@ def updateteamacard(user_id):
             writer.writerow(data)
 
             direction = "increment"
-
-
-        # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-
         f.close()
-        # print(quarter)
-        # print(periodscores)
-        # print(direction)
-        # print(runningclock)
-        # print(user_id)
-        # print(teama)
 
     return redirect(url_for('index'))
 
 @app.route('/updateteambcard/<int:user_id>', methods=['GET', 'POST'])
 def updateteambcard(user_id):
+    global quarter, direction
+    global countdown_running, start_time, elapsed_time
+    if quarter == 0 :
+        return redirect(url_for('index'))
     if request.method == 'POST':
-        global quarter, direction
-        global countdown_running, start_time, elapsed_time
+
 
 
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
         # print('help1')
         # action = request.form['action']
         direction = str(direction)
@@ -894,16 +889,8 @@ def updateteambcard(user_id):
             writer.writerow(data)
 
             direction = "increment"
-
-
-        # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        # print(teamb)
         f.close()
-        # print(quarter)
-        # print(periodscores)
-        # print(direction)
-        # print(runningclock)
-        # print(user_id)
+
 
     return redirect(url_for('index'))
 
@@ -911,24 +898,29 @@ def updateteambcard(user_id):
 
 @app.route('/updateteamagoal/<int:user_id>', methods=['GET', 'POST'])
 def updateteamagoal(user_id):
+    """
+    Update goal count for a home team player.
+    
+    Args:
+        user_id: Integer player number (1-14)
+        
+    Returns:
+        Redirect to index page
+    """
+    global quarter, direction
+    global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
-        global quarter, direction
-        global countdown_running, start_time, elapsed_time
+
 
 
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
-        # print('help1')
-        # action = request.form['action']
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
         direction = str(direction)
-        # action = "increment"
         if direction == 'increment':
-            # print('help2')
             teama[user_id]['goals'] = teama[user_id]['goals'] + 1
             scores['Home']['goals'] = scores['Home']['goals'] + 1
             if quarter == 1:
                 periodscores['Home']['goals1'] = periodscores['Home']['goals1'] + 1
-                # print('help3')
             elif quarter == 2:
                 periodscores['Home']['goals2'] = periodscores['Home']['goals2'] + 1
             elif quarter == 3:
@@ -938,7 +930,6 @@ def updateteamagoal(user_id):
         elif direction == 'decrement':
             teama[user_id]['goals'] = teama[user_id]['goals'] - 1
             scores['Home']['goals'] = scores['Home']['goals'] - 1
-
             if quarter == 1:
                 periodscores['Home']['goals1'] = periodscores['Home']['goals1'] - 1
             elif quarter == 2:
@@ -948,43 +939,30 @@ def updateteamagoal(user_id):
             elif quarter == 4:
                 periodscores['Home']['goals4'] = periodscores['Home']['goals4'] - 1
             direction = "increment"
-
         td_str = str(timedelta(seconds=remaining_time))
         x = td_str.split(':')
         f = open(running_file, 'a')
         writer = csv.writer(f)
-        # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
         data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , user_id , home_data['home'][user_id - 1][1], 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
         writer.writerow(data)
         f.close()
-        # print(quarter)
-        # print(periodscores)
-        # print(direction)
-        # print(runningclock)
-        # print(user_id)
+
 
     return redirect(url_for('index'))
 
 @app.route('/updateteamintagoal/<int:user_id>', methods=['GET', 'POST'])
 def updateteamintagoal(user_id):
+    global quarter, direction
+    global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
-        global quarter, direction
-        global countdown_running, start_time, elapsed_time
 
-
-        # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
-        # print('help1')
-        # action = request.form['action']
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
         direction = str(direction)
-        # action = "increment"
         if direction == 'increment':
-            # print('help2')
             teama[user_id]['goals'] = teama[user_id]['goals'] + 1
             scores['Home']['goals'] = scores['Home']['goals'] + 1
             if quarter == 1:
                 periodscores['Home']['goals1'] = periodscores['Home']['goals1'] + 1
-                # print('help3')
             elif quarter == 2:
                 periodscores['Home']['goals2'] = periodscores['Home']['goals2'] + 1
             elif quarter == 3:
@@ -994,7 +972,6 @@ def updateteamintagoal(user_id):
         elif direction == 'decrement':
             teama[user_id]['goals'] = teama[user_id]['goals'] - 1
             scores['Home']['goals'] = scores['Home']['goals'] - 1
-
             if quarter == 1:
                 periodscores['Home']['goals1'] = periodscores['Home']['goals1'] - 1
             elif quarter == 2:
@@ -1009,31 +986,25 @@ def updateteamintagoal(user_id):
         x = td_str.split(':')
         f = open(running_file, 'a')
         writer = csv.writer(f)
-        # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
         data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , user_id , home_data['home'][user_id - 1][1], 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
         writer.writerow(data)
         f.close()
-        # print(quarter)
-        # print(periodscores)
-        # print(direction)
-        # print(runningclock)
-        # print(user_id)
 
-    return redirect(url_for('interval'))
+    # callintervalgoal
+    return redirect(url_for('runintervalgoal'))
+    # return redirect(url_for('interval'))
 
 @app.route('/updateteamamajor/<int:user_id>', methods=['GET', 'POST'])
 def updateteamamajor(user_id):
+    global quarter
+    global direction
+    global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
-        # action = request.form['action']
-        global quarter
-        global direction
-        global countdown_running, start_time, elapsed_time
-        # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
         if direction == 'increment':
-            if teama[user_id]['majors'] == 3:
+            if teama[user_id]['majors'] == Config.MAJORS:
                 teama[user_id]['majors'] = 0
-                scores['Home']['majors'] = scores['Home']['majors'] - 3
+                scores['Home']['majors'] = scores['Home']['majors'] - Config.MAJORS
                 if quarter == 1:
                     periodscores['Home']['majors1'] = periodscores['Home']['majors1'] -3
                 elif quarter == 2:
@@ -1082,17 +1053,18 @@ def updateteamamajor(user_id):
 
 @app.route('/updateteamapenalty/<int:user_id>', methods=['GET', 'POST'])
 def updateteamapenalty(user_id):
+    global quarter
+    global direction
+    global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
         # action = request.form['action']
-        global quarter
-        global direction
-        global countdown_running, start_time, elapsed_time
+
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
+        remaining_time = math.floor(max(Config.GAME_TIME * 30 - elapsed_time, 0))
         if direction == 'increment':
-            if teama[user_id]['majors'] == 3:
+            if teama[user_id]['majors'] == Config.MAJORS:
                 teama[user_id]['majors'] = 0
-                scores['Home']['majors'] = scores['Home']['majors'] - 3
+                scores['Home']['majors'] = scores['Home']['majors'] - Config.MAJORS
                 if quarter == 1:
                     periodscores['Home']['majors1'] = periodscores['Home']['majors1'] - 3
                 elif quarter == 2:
@@ -1139,53 +1111,16 @@ def updateteamapenalty(user_id):
 
     return redirect(url_for('index'))
 
-
-
-# @app.route('/updateteamaassists/<int:user_id>', methods=['GET', 'POST'])
-# def updateteamaassists(user_id):
-#     if request.method == 'POST':
-#         global quarter
-#         global direction
-#         global countdown_running, start_time, elapsed_time
-#         if countdown_running:
-#             elapsed_time = time.time() - start_time
-#             remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
-#
-#             # action = request.form['action']
-#
-#             if direction == 'increment':
-#                 teama[user_id]['assists'] = teama[user_id]['assists'] + 1
-#             elif direction == 'decrement':
-#                 teama[user_id]['assists'] = teama[user_id]['assists'] - 1
-#             direction = "increment"
-#
-#             td_str = str(timedelta(seconds=remaining_time))
-#             x = td_str.split(':')
-#
-#             f = open(running_file, 'a')
-#             writer = csv.writer(f)
-#             # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-#             data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Assists', user_id, 'Home',
-#             teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['assists']]
-#             writer.writerow(data)
-#             f.close()
-#
-#         else:
-#             msg = 'clock not running'
-#             flash(msg, "warning")
-#         return redirect(url_for('index'))
-#
-#     return redirect(url_for('index'))
-
 @app.route('/updateteambgoal/<int:user_id>', methods=['GET', 'POST'])
 def updateteambgoal(user_id):
+    global quarter
+    global direction
+    global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
         # action = request.form['action']
-        global quarter
-        global direction
-        global countdown_running, start_time, elapsed_time
+
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
 
         if direction == 'increment':
             teamb[user_id]['goals'] = teamb[user_id]['goals'] + 1
@@ -1226,13 +1161,14 @@ def updateteambgoal(user_id):
 
 @app.route('/updateteamintbgoal/<int:user_id>', methods=['GET', 'POST'])
 def updateteamintbgoal(user_id):
+    global quarter
+    global direction
+    global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
         # action = request.form['action']
-        global quarter
-        global direction
-        global countdown_running, start_time, elapsed_time
+
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
 
         if direction == 'increment':
             teamb[user_id]['goals'] = teamb[user_id]['goals'] + 1
@@ -1269,24 +1205,25 @@ def updateteamintbgoal(user_id):
         writer.writerow(data)
         f.close()
 
-    return redirect(url_for('interval'))
+    return redirect(url_for('runintervalgoal'))
 
 
 @app.route('/updateteambmajor/<int:user_id>', methods=['GET', 'POST'])
 def updateteambmajor(user_id):
+    global quarter
+    global direction
+    global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
         # direction = request.form['action']
 
-        global quarter
-        global direction
-        global countdown_running, start_time, elapsed_time
+
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
 
         if direction == 'increment':
-            if teamb[user_id]['majors'] == 3:
+            if teamb[user_id]['majors'] == Config.MAJORS:
                 teamb[user_id]['majors'] = 0
-                scores['Away']['majors'] = scores['Away']['majors'] - 3
+                scores['Away']['majors'] = scores['Away']['majors'] - Config.MAJORS
                 if quarter == 1:
                     periodscores['Away']['majors1'] = periodscores['Away']['majors1'] -3
                 elif quarter == 2:
@@ -1334,17 +1271,18 @@ def updateteambmajor(user_id):
 
 @app.route('/updateteambpenalty/<int:user_id>', methods=['GET', 'POST'])
 def updateteambpenalty(user_id):
+    global quarter
+    global direction
+    global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
         # action = request.form['action']
-        global quarter
-        global direction
-        global countdown_running, start_time, elapsed_time
+
         # elapsed_time = time.time() - start_time
-        remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
+        remaining_time = math.floor(max(Config.GAME_TIME * 30 - elapsed_time, 0))
         if direction == 'increment':
-            if teamb[user_id]['majors'] == 3:
+            if teamb[user_id]['majors'] == Config.MAJORS:
                 teamb[user_id]['majors'] = 0
-                scores['Away']['majors'] = scores['Away']['majors'] - 3
+                scores['Away']['majors'] = scores['Away']['majors'] - Config.MAJORS
                 if quarter == 1:
                     periodscores['Away']['majors1'] = periodscores['Away']['majors1'] - 3
                 elif quarter == 2:
@@ -1393,43 +1331,6 @@ def updateteambpenalty(user_id):
 
 
 
-
-# @app.route('/updateteambassists/<int:user_id>', methods=['GET', 'POST'])
-# def updateteambassists(user_id):
-#     if request.method == 'POST':
-#         # action = request.form['action']
-#
-#         global quarter
-#         global direction
-#         global countdown_running, start_time, elapsed_time
-#         if countdown_running:
-#             elapsed_time = time.time() - start_time
-#             remaining_time = math.floor(max(gametime*30 - elapsed_time, 0))
-#
-#             if direction == 'increment':
-#                 teamb[user_id]['assists'] = teamb[user_id]['assists'] + 1
-#
-#             elif direction == 'decrement':
-#                 teamb[user_id]['assists'] = teamb[user_id]['assists'] - 1
-#                 direction = "increment"
-#
-#             td_str = str(timedelta(seconds=remaining_time))
-#             x = td_str.split(':')
-#
-#             f = open(running_file, 'a')
-#             writer = csv.writer(f)
-#             # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-#             data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Assist', user_id, 'Away',
-#             teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['assists']]
-#             writer.writerow(data)
-#             f.close()
-#         else:
-#             msg = 'clock not running'
-#             flash(msg, "warning")
-#         return redirect(url_for('index'))
-#
-#     return redirect(url_for('index'))
-
 @app.route('/period', methods=['GET', 'POST'])
 def period():
     if request.method == 'POST':
@@ -1440,7 +1341,7 @@ def period():
 
             f = open(running_file, 'a')
             writer = csv.writer(f)
-            header = ['Game Status at ', location, ' on the ', timestamp, 'end of quarter :' ,quarter -1, ]
+            header = ['Game Status at ', Config.DEFAULT_LOCATION, ' on the ', timestamp, 'end of quarter :' ,quarter -1, ]
             writer.writerow(header)
 
             # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
@@ -1459,7 +1360,7 @@ def period():
 
             f = open(running_file, 'a')
             writer = csv.writer(f)
-            header = ['Game Status at ', location, ' on the ', timestamp, 'end of quarter :' ,quarter -1, ]
+            header = ['Game Status at ', Config.DEFAULT_LOCATION, ' on the ', timestamp, 'end of quarter :' ,quarter -1, ]
             writer.writerow(header)
 
             # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
@@ -1482,53 +1383,41 @@ def direction():
     direction = "decrement"
     return redirect(url_for('index'))
 
+@app.route('/connectble', methods=['GET', 'POST'])
+def connectble():
+    global BLUETOOTH_CONNECT
+    asyncio.run(init_ble())
+    sleep(1)
+    asyncio.run(send_ble_command("TEST"))
+    BLUETOOTH_CONNECT = 1
+    return redirect(url_for('index'))
 
 
+@app.route('/disconnectble', methods=['GET', 'POST'])
+def disconnectble():
+    global BLUETOOTH_CONNECT
+    asyncio.run(send_ble_command("exit"))
+    BLUETOOTH_CONNECT = 0
+    asyncio.run(dis_ble())
+    return redirect(url_for('index'))
 
 @app.route('/start', methods=['GET', 'POST'])
 def start():
+    global quarter, scores, TeamHome, TeamAway, periodscores, teama, teamb
+    global direction, hometimeoutv, awaytimeoutv, filename
     if request.method == 'POST':
 
-        global quarter , scores, TeamHome, TeamAway,periodscores,teama,teamb
-        global direction ,hometimeoutv, awaytimeoutv, filename
-        asyncio.run(init_ble())
+
         asyncio.run(send_ble_command("TEST"))
 
-        filename = datetime.now().strftime(HomeTeam + '-%Y-%m-%d-%H-%M.csv')
+        filename = datetime.now().strftime(
+            Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '-%Y-%m-%d-%H-%M.csv')
         now = datetime.now()  # current date and time
         timestamp = now.strftime("%d/%m/%Y, %H:%M:%S")
 
         direction = "increment"
         # print(direction)
         quarter = int(1)
-        header = ['New Game Held at ',location,' on the ',timestamp]
-        f = open(filename, 'w')
-        writer = csv.writer(f)
-        writer.writerow(header)
-
-        #
-        # header2 = ['Home Team: ', HomeTeam ]
-        # writer.writerow(header2)
-        # header2 = ['Hatnumber','Player']
-        # writer.writerow(header2)
-        # for i in home_data['home'] :
-        #     data = i[0],i[1]
-        #     writer.writerow(data)
-        #
-        # header2 = ['Away Team: ', AwayTeam ]
-        # writer.writerow(header2)
-        # header2 = ['Hatnumber','Player']
-        # writer.writerow(header2)
-        # for i in away_data['away'] :
-        #     data = i[0],i[1]
-        #     writer.writerow(data)
-
-
-        # header = ['Quarter', 'Min','Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'team', 'goals', 'majors', 'assists']
-        # writer.writerow(header)
-
-        f.close()
-
 
         scores = {
         'Home': {'goals': 0, 'majors': 0},
@@ -1580,15 +1469,55 @@ def start():
         hometimeoutv = 0
         awaytimeoutv = 0
 
+        header = ['New Game Held at ',Config.DEFAULT_LOCATION,' on the ',timestamp]
+        f = open(filename, 'w')
+        writer = csv.writer(f)
+        writer.writerow(header)
+
+        f.close()
+
+        f = open(filenamebak, 'w')
+        writer = csv.writer(f)
+
+        header2 = ['Home Team: ', Config.DEFAULT_HOME_TEAM]
+        writer.writerow(header2)
+        header2 = ['Home Player', 'name', 'goals', 'majors', 'reds']
+
+        writer.writerow(header2)
+        for user_id in teama:
+            data = [user_id, home_data['home'][user_id - 1][1], teama[user_id]['goals'], teama[user_id]['majors'],
+                    teama[user_id]['reds']]
+            writer.writerow(data)
+
+        header2 = ['Away Team: ', Config.DEFAULT_AWAY_TEAM]
+        writer.writerow(header2)
+        header2 = ['Away Player', 'name', 'goals', 'majors', 'reds']
+        writer.writerow(header2)
+        for user_id in teamb:
+            data = [user_id, away_data['away'][user_id - 1][1], teamb[user_id]['goals'], teamb[user_id]['majors'],
+                    teamb[user_id]['reds']]
+            writer.writerow(data)
+
+        header2 = ['Referees: ']
+        writer.writerow(header2)
+        header2 = ['Hatnumber', 'Name', 'Club', 'Expences']
+        writer.writerow(header2)
+        for i in ref_data['referee']:
+            data = i[0], i[1], i[2], i[3]
+            writer.writerow(data)
+        f.close()
+
+
     return redirect(url_for('index'))
 
 
 @app.route('/finish', methods=['GET', 'POST'])
 def finish():
+    global quarter
     if  request.method == 'GET' or request.method == 'POST':
-        global quarter
+
         # timestamp = datetime.now()
-        command = 0
+        command = str(0)
         # print(f"Sent command to int: {command}")
         asyncio.run(send_ble_int(command))
         asyncio.run(send_ble_command("exit"))
@@ -1597,7 +1526,7 @@ def finish():
 
         f = open(filename, 'a')
         writer = csv.writer(f)
-        header = ['Game Over at ', location, ' on the ', timestamp]
+        header = ['Game Over at ', Config.DEFAULT_LOCATION, ' on the ', timestamp]
         writer.writerow(header)
         header = ['Home: ', scores['Home']['goals'] , 'Away :' , scores['Away']['goals']]
         writer.writerow(header)
@@ -1614,15 +1543,8 @@ def finish():
             data = [team , 'Majors', periodscores[team]['majors1'], periodscores[team]['majors2'], periodscores[team]['majors3'], periodscores[team]['majors4']]
             writer.writerow(data)
 
-        header2 = ['Home Team: ', HomeTeam ]
+        header2 = ['Home Team: ', Config.DEFAULT_HOME_TEAM ]
         writer.writerow(header2)
-        # header2 = ['Hatnumber','Player']
-        # writer.writerow(header2)
-        # for i in home_data['home'] :
-        #     data = i[0],i[1]
-        #     writer.writerow(data)
-
-
         header2 = ['Home Player','name', 'goals', 'majors', 'reds']
 
         writer.writerow(header2)
@@ -1632,15 +1554,8 @@ def finish():
             writer.writerow(data)
 
 
-        header2 = ['Away Team: ', AwayTeam ]
+        header2 = ['Away Team: ', Config.DEFAULT_AWAY_TEAM ]
         writer.writerow(header2)
-        # header2 = ['Hatnumber','Player']
-        # writer.writerow(header2)
-        # for i in away_data['away'] :
-        #     data = i[0],i[1]
-        #     writer.writerow(data)
-
-
         header2 = ['Away Player','name', 'goals', 'majors', 'reds']
         writer.writerow(header2)
         for user_id in teamb:
@@ -1661,14 +1576,6 @@ def finish():
 
         f.close()
 
-        # with open(running_file, 'r') as firstfile, open(filename, 'a') as secondfile:
-        #
-        #     # read content from first file
-        #     for line in firstfile:
-        #         # append content to second file
-        #         if any(line) or any(field.strip() for field in line):
-        #             secondfile.write(line)
-        # f.close()
         try:
             with open(running_file, newline='') as in_file:
                 with open(filename, 'a', newline='') as out_file:
@@ -1707,16 +1614,17 @@ def finish():
 
 @app.route('/hometimeout')
 def hometimeout():
-
     global hometimeoutv
     global quarter
     global direction
     global countdown_running, start_time, elapsed_time
-    global timeout, reason ,timeouttime
+    global timeout, reason
+    if quarter == 0 :
+        return redirect(url_for('index'))
     reason = 'Home Timeout'
-    timeout = timeouttime
+    timeout = Config.TIMEOUT_TIME
     # elapsed_time = time.time() - start_time
-    remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
+    remaining_time = math.floor(max(Config.GAME_TIME * 30 - elapsed_time, 0))
     if countdown_running:
         if direction == 'increment':
             pause_countdown()
@@ -1793,18 +1701,19 @@ def hometimeout():
 
 @app.route('/awaytimeout')
 def awaytimeout():
-
     global awaytimeoutv
     global quarter
     global direction
     global countdown_running, start_time, elapsed_time
-    global timeout, reason, timeouttime
+    global timeout, reason
+    if quarter == 0 :
+        return redirect(url_for('index'))
     reason = 'Away Timeout'
-    timeout = timeouttime
+    timeout = Config.TIMEOUT_TIME
     # print(timeout)
     # print(timeouttime)
     # elapsed_time = time.time() - start_time
-    remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
+    remaining_time = math.floor(max(Config.GAME_TIME * 30 - elapsed_time, 0))
     if countdown_running:
         if direction == 'increment':
             awaytimeoutv = int(awaytimeoutv) + 1
@@ -1861,25 +1770,37 @@ def awaytimeout():
 
 @app.route('/timeout')
 def timeout():
-    global  timeout , timeouttime
-    timeout = timeouttime
+    global  timeout
+    timeout = Config.TIMEOUT_TIME
     start_timeout()
-    return render_template('timeout.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, clocktime=remaining_time)
+    return render_template('timeout.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, clocktime=remaining_time)
 @app.route('/runinterval')
 def runinterval():
     global timeout
     if quarter == 3 :
-        timeout = halftime
+        timeout = Config.HALFTIME
     else:
-        timeout = intervaltime
+        timeout = Config.INTERVAL_TIME
 
     start_timeout()
-    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
+    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
+
+
+@app.route('/runintervalgoal')
+def runintervalgoal():
+    global timeout
+    # if quarter == 3 :
+    #     timeout = Config.HALFTIME
+    # else:
+    #     timeout = Config.INTERVAL_TIME
+
+    # start_timeout()
+    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
 
 @app.route('/interval')
 def interval():
     start_timeout()
-    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
+    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
 
 
 
@@ -1891,7 +1812,7 @@ def returninterval():
 
     f = open(running_file, 'a')
     writer = csv.writer(f)
-    header = ['Game Status at ', location, ' on the ', timestamp, 'end of quarter :', quarter - 1, ]
+    header = ['Game Status at ', Config.DEFAULT_LOCATION, ' on the ', timestamp, 'end of quarter :', quarter - 1, ]
     writer.writerow(header)
 
     # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
@@ -1917,44 +1838,38 @@ def callinterval():
         global countdown_running, start_time, elapsed_time
         global timeout, reason ,intervaltime
         reason = 'Break'
-        timeout = timeouttime
+        timeout = Config.TIMEOUT_TIME
         # elapsed_time = time.time() - start_time
         # remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
         quarter=quarter +1
         pause_countdown()
         time.sleep(1)
         stop_timeout()
-        # if quarter == 5:
-        #     timestamp = datetime.now()
-        #
-        #     f = open(running_file, 'a')
-        #     writer = csv.writer(f)
-        #     header = ['Game Status at ', location, ' on the ', timestamp, 'end of quarter :', quarter - 1, ]
-        #     writer.writerow(header)
-        #
-        #     # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
-        #     # writer.writerow(header1)
-        #
-        #     data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'], 'Home Majors:',
-        #             scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
-        #     writer.writerow(data)
-        #
-        #     header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors',
-        #               'reds']
-        #     writer.writerow(header)
-        #
-        #     f.close()
-
-            # return redirect(url_for('index'))
         return redirect(url_for('runinterval'))
 
     return redirect(url_for('index'))
 
+@app.route('/callintervalgoal', methods=['GET', 'POST'])
+def callintervalgoal():
+    if request.method == 'GET':
+        global quarter
+        global countdown_running, start_time, elapsed_time
+        global timeout, reason ,intervaltime
+        # reason = 'Break'
+        # timeout = Config.TIMEOUT_TIME
+        # # elapsed_time = time.time() - start_time
+        # # remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
+        # quarter=quarter +1
+        # pause_countdown()
+        # time.sleep(1)
+        # stop_timeout()
+        return redirect(url_for('runintervalgoal'))
+
+    return redirect(url_for('index'))
 
 @app.route('/settings')
 def settings():
-    # return render_template('setup.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=HomeTeam, AwayTeam=AwayTeam)
-    return render_template('setup.html' , HomeTeam=HomeTeam, AwayTeam=AwayTeam, location=location)
+    return render_template('setup.html' , HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION , ble_clients=ble_clients  )
 
 @app.route('/help')
 def help():
@@ -1962,27 +1877,17 @@ def help():
 
 @app.route('/save' , methods=['GET', 'POST'])
 def save():
-    global runningclock, gametime, location, HomeTeam, AwayTeam,  timeouttime, intervaltime ,halftime, shotclock, foulclock
 
-    game = int(request.form['game'])
-    intervaltime = int(request.form['interval'])
-    halftime = int(request.form['half'])
-    Loca = (request.form['Location'])
-    Home = (request.form['Home'])
-    Away = (request.form['Away'])
-    shot = int(request.form['shotclock'])
+    Config.GAME_TIME = int(request.form['game'])
+    Config.INTERVAL_TIME = int(request.form['interval'])
+    Config.HALFTIME = int(request.form['half'])
+    Config.DEFAULT_LOCATION = (request.form['Location'])
+    Config.DEFAULT_HOME_TEAM = (request.form['Home'])
+    Config.DEFAULT_AWAY_TEAM = (request.form['Away'])
+    Config.SHOT_CLOCK = int(request.form['shotclock'])
+    Config.MAJORS = int(request.form['majors'])
+    Config.BLUETOOTH_NAME = str(request.form['ble'])
 
-
-    # print(game,running,timeout,Loca,Home,Away)
-#    runningclock = running
-    gametime = game
-    location = Loca
-    HomeTeam = Home
-    AwayTeam = Away
-    shotclock = shot
-    foulclock = shotclock - 10
-
-    # restart()
     return redirect(url_for('index'))
 
 
@@ -2062,32 +1967,35 @@ def saverefdata(user_id):
 
     return render_template('refdata.html', user_id=user_id, data=existing_data)
 
-
 @app.route('/convert', methods=['GET'])
 def convert_csv_to_pdf():
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=12)
-        with open(compress_file, 'rb') as f:
-            for line in f:
-                pdf.cell(200, 10, txt=line.decode('latin-1'), ln=True)
-        pdf_file_path = compress_file.rsplit('.', 1)[0] + '.pdf'
-        pdf.output(pdf_file_path)
-        return redirect(url_for('index'))
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("helvetica", size=10)
 
+    with open(compress_file, 'r', encoding='utf-8', newline='') as f:
+        csv_reader = csv.reader(f)
+        for row in csv_reader:
+            # Join CSV columns with proper spacing
+            line_text = ' | '.join(str(cell) for cell in row)
 
+            # Handle long lines - split if necessary
+            if pdf.get_string_width(line_text) > 190:  # Page width minus margins
+                # For long lines, use multi_cell
+                pdf.multi_cell(0, 10, txt=line_text, border=0)
+            else:
+                pdf.cell(0, 10, text=line_text, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
-
-@app.route('/download/<filename>', methods=['GET', 'POST'])
-def download(filename):
-    return send_file(filename, as_attachment=True)
-
-def restart():
-    # print('Restarting script...')
-    os.execv(sys.executable, ['python3 start.py'] + sys.argv)
+    pdf_file_path = compress_file.rsplit('.', 1)[0] + '.pdf'
+    pdf.output(pdf_file_path)
+    return redirect(url_for('index'))
 
 
 if __name__ == '__main__':
-    # app.run(debug=True, host=webhost, port=webport)
+    # asyncio.run(init_ble())
+    # app.run(debug=True, host=Config.WEB_HOST, port=Config.WEB_PORT)
     webview.start()
-    asyncio.run(init_ble())
+    # webview.start(gui='edgechromium', debug=True, private_mode=True, run_on_main_thread=False)
+
+    # asyncio.run(init_ble())
+
