@@ -7,7 +7,7 @@
   },
   {
    "optionDest": "filenames",
-   "value": "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/start.py"
+   "value": "C:/Users/tmakepea/OneDrive - Advanced Micro Devices Inc/Documents/waterpolo/WaterPoloScoreBoard/start.py"
   },
   {
    "optionDest": "onefile",
@@ -15,11 +15,11 @@
   },
   {
    "optionDest": "console",
-   "value": false
+   "value": true
   },
   {
    "optionDest": "icon_file",
-   "value": "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/static/Water Polo Logo.ico"
+   "value": "C:/Users/tmakepea/OneDrive - Advanced Micro Devices Inc/Documents/waterpolo/WaterPoloScoreBoard/static/Water Polo Logo.ico"
   },
   {
    "optionDest": "clean_build",
@@ -55,11 +55,11 @@
   },
   {
    "optionDest": "datas",
-   "value": "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/static;static/"
+   "value": "C:\\Users\\tmakepea\\OneDrive - Advanced Micro Devices Inc\\Documents\\waterpolo\\WaterPoloScoreBoard\\static;static/"
   },
   {
    "optionDest": "datas",
-   "value": "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/templates;templates/"
+   "value": "C:\\Users\\tmakepea\\OneDrive - Advanced Micro Devices Inc\\Documents\\waterpolo\\WaterPoloScoreBoard\\templates;templates/"
   }
  ],
  "nonPyinstallerOptions": {
