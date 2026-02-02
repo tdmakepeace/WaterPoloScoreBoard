@@ -2,150 +2,43 @@
 <html>
 <head>
     <title>Development Waterpolo Scoresheet</title>
- <link rel="stylesheet" href="../static/style.css">
-<script src="static/jquery.min.js">
-  </script>
-
+    <link rel="stylesheet" href="../static/style.css">
+    <script src="static/jquery.min.js"></script>
 </head>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            document.addEventListener('keydown', function(event) {
-                if (event.ctrlKey && event.key === '1') {
-                    event.preventDefault();
-                    fetch('/updateteambgoal/1', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '2') {
-                    event.preventDefault();
-                    fetch('/updateteambgoal/2', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '3') {
-                    event.preventDefault();
-                    fetch('/updateteambgoal/3', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === 'r') {
-                    event.preventDefault();
-                    fetch('/updateteambgoal/2', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === 't') {
-                    event.preventDefault();
-                    fetch('/updateteambgoal/3', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '4') {
-                    event.preventDefault();
-                    fetch('/updateteambgoal/4', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '5') {
-                    event.preventDefault();
-                    fetch('/updateteambgoal/5', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '6') {
-                    event.preventDefault();
-                    fetch('/updateteambgoal/6', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '7') {
-                    event.preventDefault();
-                    fetch('/updateteambgoal/7', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === 'f') {
-                    event.preventDefault();
-                    fetch('/updateteambgoal/6', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === 'g') {
-                    event.preventDefault();
-                    fetch('/updateteambgoal/7', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '8') {
-                    event.preventDefault();
-                    fetch('/updateteambgoal/8', {
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        function updateGoal(player, team) {
+            const url = team === 'home' ? `/updateteamagoal/${player}` : `/updateteambgoal/${player}`;
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ key: 'value' })
+            })
+            .then(response => response.json())
+            .then(() => { window.location.href = '/'; });
+        }
+
+        document.addEventListener('keydown', function(event) {
+            const homeKeys = {'1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '0': 10, '-': 11, '=': 12, 'q': 13};
+            const awayKeys = {'1': 1, '2': 2, '3': 3, 'r': 2, 't': 3, '4': 4, '5': 5, '6': 6, '7': 7, 'f': 6, 'g': 7, '8': 8, '9': 9, 'h': 9, 'y': 10, 'u': 11, 'j': 12};
+
+            if (homeKeys[event.key] && !event.ctrlKey) {
+                event.preventDefault();
+                updateGoal(homeKeys[event.key], 'home');
+            }
+            else if (awayKeys[event.key] && event.ctrlKey) {
+                event.preventDefault();
+                updateGoal(awayKeys[event.key], 'away');
+            }
+            else if (event.key === 'b') {
+                event.preventDefault();
+                window.location.href = '/';
+            }
+        });
+    });
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'

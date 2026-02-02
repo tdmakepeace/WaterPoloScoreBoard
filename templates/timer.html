@@ -3,9 +3,7 @@
 <head>
     <title>Development Waterpolo Scoresheet</title>
     <link rel="stylesheet" href="../static/style.css">
-    <script src="static/jquery.min.js">
-  </script>
-
+    <script src="static/jquery.min.js"></script>
     <style>
         .red {
             color: red;
@@ -20,8 +18,6 @@
             font-size: 30px;
         }
     </style>
-
-
 </head>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
@@ -31,11 +27,12 @@
             var audio = new Audio('/static/airhorn.mp3');
             audio.play();
         }
+
         function changeSound() {
             var audio = new Audio('/static/airhorn-change.mp3');
             audio.play();
-
         }
+
         function playbell() {
             var audio = new Audio('/static/bell-ring.mp3');
             audio.play();
@@ -48,23 +45,21 @@
                 }
             });
         }
+
         function buzzer() {
             $.ajax({
-              url: '/buzzer',
-              success: function(response) {
-                    playSound()
+                url: '/buzzer',
+                success: function(response) {
+                    playSound();
                 }
             });
         }
-
-       //
-       document.addEventListener('DOMContentLoaded', (event) => {
+        document.addEventListener('DOMContentLoaded', (event) => {
             document.addEventListener('keydown', function(event) {
-                 if (event.key === 'n') {
+                if (event.key === 'n') {
                     event.preventDefault();
-                    pauseCountdown()
+                    pauseCountdown();
                 }
-                // shared
                 else if (event.key === 'c') {
                     event.preventDefault();
                     window.location.href = '/major';
@@ -72,14 +67,11 @@
                 else if (event.key === 'v') {
                     event.preventDefault();
                     window.location.href = '/goal';
-                    // Perform another action here
                 }
                 else if (event.key === 'b') {
                     event.preventDefault();
                     window.location.href = '/penalty';
                 }
-
-                // Away
                 else if (event.key === 't') {
                     event.preventDefault();
                     window.location.href = '/awaytimeout';
@@ -88,9 +80,8 @@
                     event.preventDefault();
                     window.location.href = '/awaycard';
                 }
-                 //Home
-                else if ( event.key === 'r') {
-                     event.preventDefault();
+                else if (event.key === 'r') {
+                    event.preventDefault();
                     window.location.href = '/hometimeout';
                 }
                 else if (event.key === 'f') {
@@ -406,402 +397,252 @@
 
 
 <body>
-
-  <header>
-<!--  <div class="clock-display" id="shotdown">00</div>-->
-<!--   <div>-->
-<!--&lt;!&ndash;    <button id="reset-top-20">Reset to 20s</button>&ndash;&gt;-->
-<!--&lt;!&ndash;    <button id="reset-top-30">Reset to 30s</button>&ndash;&gt;-->
-<!--  </div>-->
-
-<!--      <td style="width:10%" rowspan="3">    <span style="color: blue  ; font-size:100px;""  id="shotdown"> </span>         </td>-->
-
-      <h1>
-
-          <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">  {{ home_coach.red }} </span>
-          <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">  {{ home_coach.yellow }} </span>
-          <span style="font-size: 30px; color: #333333 ;"> spacer </span>
-          <span style="font-size: 30px; color: white;">{{ hometimeoutv }} </span>
-          <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }} </span>
-          <span style="font-size: 100px; color: grey; width: 1000px ;">{{location}}</span>
-              <span style="font-size: 300px; color: Yellow;">  {{ TeamAway['goals'] }}</span>
-          <span style="font-size: 30px; color: white;">{{ awaytimeoutv }} </span>
-          <span style="font-size: 30px; color: #333333 ;"> spacer </span>
-          <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">  {{ away_coach.yellow }} </span>
-          <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">  {{ away_coach.red }} </span>
+    <header>
+        <h1>
+            <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach.red }}</span>
+            <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
+            <span style="font-size: 30px; color: #333333;">spacer</span>
+            <span style="font-size: 30px; color: white;">{{ hometimeoutv }}</span>
+            <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }}</span>
+            <span style="font-size: 100px; color: grey; width: 1000px;">{{location}}</span>
+            <span style="font-size: 300px; color: Yellow;">{{ TeamAway['goals'] }}</span>
+            <span style="font-size: 30px; color: white;">{{ awaytimeoutv }}</span>
+            <span style="font-size: 30px; color: #333333;">spacer</span>
+            <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
+            <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach.red }}</span>
+        </h1>
+    </header>
 
 
-      </h1>
-  </header>
-
-
-  <nav>
-<!--    <h6>Home Team</h6>-->
-    <table class="center" style="width:100%"  >
-        <tr>
-    <th colspan="4"> <form action="/savehomeplayers/home"><button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " type="submit">{{HomeTeam}}</button> </form></th>
-</tr>
-        <tr>
-    <th> Player&nbsp;&nbsp;&nbsp;</th>
-    <th> <small>Goals&nbsp;</small></th>
-    <th> <small>Majors</small></th>
-<!--    <th> <small>Assists</small></th>-->
-        </tr>
-        {% for user_id, teama in teama.items() %}
-        <tr class="custom-text" style="background-color:
-            {% if teama.reds  == 1 %}
-              black;
-            {% elif teama.majors  == 1 %}
-                #00ff00;
-            {% elif teama.majors == 2 %}
-                #ff9933;
-            {% elif teama.majors >= 3 %}
-                #ff3300; /* Add more conditions as needed */
-            {% else %}
-                white; /* Fallback color */
-            {% endif %}
-
-
-        ">
-            <td>{{ user_id }}</td>
-            <td>{{ teama.goals }}</td>
-            <td>{{ teama.majors }}</td>
-            <!--            <td>{{ teama.assists }}</td>-->
-
-
-        </tr>
-        {% endfor %}
-    </table>
-<table>
-    <tr>
-        <td>
-              <form action="/homecard">
-            <button style="height:50px;width:120px" type="submit">Card (F) </button>
-            </form>
-      </td>
-        <td>
-        <form action="/hometimeout">
-            <button style="height:50px;width:160px" type="submit">Timeout (R)</button>
-        </form>
-      </td>
-<!--            <td>-->
-<!--              <form action="/homepenalty">-->
-<!--            <button style="height:50px;width:200px" type="submit"><u>P</u>enalty</button>-->
-<!--                  </form>-->
-<!--      </td>-->
-    </tr>
-</table>
-<!--<table>-->
-<!--<tr>-->
-
-<!--        <td>-->
-<!--              <form action="/homemajor">-->
-<!--            <button style="height:50px;width:240px" type="submit"><u>M</u>ajor</button>-->
-<!--</form>-->
-
-<!--      </td>-->
-<!--        <td>-->
-<!--                   <form action="/homegoal">-->
-<!--            <button style="height:50px;width:240px" type="submit"><u>G</u>oal</button>-->
-<!--&lt;!&ndash;<input style="height:50px;width:200px" type="submit" value="Edit Settings" />&ndash;&gt;-->
-<!--</form>-->
-
-<!--      </td>-->
-
-<!--    </tr>-->
-
-<!--</table>-->
-</nav>
-
-<article>
-
-    <table class="center" style="width:100%" >
-        <tr>
-            <td style="width:10%">    <button style="height:50px;width:50px" onclick="addmin()"> + </button>      </td>
-            <td style="width:80%" rowspan="3">    <span style="font-size:300px;"  id="countdown"> </span>         </td>
-            <td style="width:10%" >    <button style="height:50px;width:50px" onclick="addsec()"> + </button>      </td>
-        </tr>
-        <tr>
-            <td>            </td>
-
-            <td>            </td>
-        </tr>
-                <tr>
-            <td>  <button style="height:50px;width:50px" onclick="minmin()"> - </button>          </td>
-
-            <td>  <button style="height:50px;width:50px" onclick="minsec()"> - </button>      </td>
-        </tr>
-
-    </table>
-<!--&lt;!&ndash;    <button style="height:50px;width:200px" onclick="startCountdown()">Start</button>&ndash;&gt;-->
-<!--    <button style="height:50px;width:300px" onclick="pauseCountdown()">Start / Stop (N)</button>-->
-<!-- &lt;!&ndash;   <button style="height:50px;width:100px" onclick="resumeCountdown()">Resume</button> &ndash;&gt;-->
-<!--    <button style="height:50px;width:50px" onclick="stopCountdown()">Reset</button>-->
-
-
-
-<!--
-  <table class="center"; style="text-align: center">
-        <tr>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;Score&nbsp;&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P1&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P2&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P3&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P4&nbsp;</th>
-        </tr>
-          {% for team_id, scores in periodscores.items() %}
-        <tr>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ team_id }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals1 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals2 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals3 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals4 }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-
-      <table style="text-align: center">
-        <tr>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">Majors&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P1&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P2&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P3&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P4&nbsp;</th>
-        </tr>
-          {% for user_id, scores in periodscores.items() %}
-        <tr>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ user_id }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors1 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors2 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors3 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors4 }}</td>
-        </tr>
-        {% endfor %}
-    </table>
- -->
-
-        <table class="center"; style="text-align: center">
-        <tr>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;Score&nbsp;&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P1&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P2&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P3&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P4&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">Majors&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P1&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P2&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P3&nbsp;</th>
-            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P4&nbsp;</th>
-    
-        </tr>
-          {% for team_id, scores in periodscores.items() %}
-        <tr>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ team_id }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals1 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals2 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals3 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals4 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ team_id }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors1 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors2 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors3 }}</td>
-            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors4 }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-
-
-      <table class="center"; style="text-align: center">
-      <tr>
-
-          <th colspan="2" >      <button style="height:200px;width:150px" onclick="pauseCountdown()">Start / Stop (N)</button>   </th>
-          <th colspan="2" >    <button style="height:150px;width:150px" onclick="possession()">Running Change (Y)</button>  <button style="height:150px;width:150px" onclick="pause30()">Paused Change (H)</button> </th>
-<!--          <th colspan="3">       <span style="font-size: 300px; color: red;" id="shotdown">00</span>       </th>-->
-          <th colspan="3">       <span style="font-size: 300px;" id="shotdown">00</span>       </th>
-
-          <th colspan="2" >     <button style="height:150px;width:150px" onclick="reset20()">Shot (U)</button> <button style="height:150px;width:150px" onclick="pause20()">Corner (J)</button>       </th>
-          <th colspan="2" > <button style="height:100px;width:150px;font-size:10px;color:red " onclick="buzzer()">Buzzer</button> <button style="height:100px;width:150px" onclick="force20()">Force short</button> <button style="height:100px;width:150px;font-size:10px;color:red " onclick="stopCountdown()">Reset Clocks</button>       </th>
-
-
-      </tr>
-  </table>
-
-      {% include 'messages.html' %}
-
-<table class="center"; style="text-align: center">
-<tr>
-
-        <td>
-              <form action="/major">
-            <button style="height:80px;width:300px" type="submit">Major (C)</button>
-</form>
-
-      </td>
-        <td>
-                   <form action="/goal">
-            <button style="height:80px;width:300px" type="submit">Goal (V)</button>
-<!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
-</form>
-
-      </td>
-       <td>
-              <form action="/penalty">
-            <button style="height:80px;width:300px" type="submit">Penalty (B)</button>
-                  </form>
-      </td>
-    </tr>
-
-</table>
-
-</article>
-
-
-
-<aside>
-<!--    <h6>Away Team</h6>-->
-    <table class="center" style="width:100%"  >
-        <tr>
-    <th colspan="4"> <form action="/saveawayplayers/away"><button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " type="submit">{{AwayTeam}}</button> </form> </th>
-</tr>
-        <tr>
-    <th> Player&nbsp;&nbsp;&nbsp;</th>
-    <th> <small>Goals&nbsp;</small></th>
-    <th> <small>Majors</small></th>
-<!--    <th> <small>Assists</small></th>-->
-
-        </tr>
-        {% for user_id, teamb in teamb.items() %}
-        <tr class="custom-text" style="background-color:
-            {% if teamb.reds  == 1 %}
-              black;
-            {% elif teamb.majors  == 1 %}
-                #00ff00;
-            {% elif teamb.majors == 2 %}
-                #ff9933;
-            {% elif teamb.majors >= 3 %}
-                #ff3300; /* Add more conditions as needed */
-            {% else %}
-                white; /* Fallback color */
-            {% endif %}
-        ">
-            <td>{{ user_id }}</td>
-            <td>{{ teamb.goals }}</td>
-            <td>{{ teamb.majors }}</td>
-<!--            <td>{{ teama.assists }}</td>-->
-
-
-        </tr>
-        {% endfor %}
-    </table>
-
-<!--       <form method="POST" action="/action">-->
-<!--                 <select name="action" id="action">-->
-<!--                    <option value="increment">increment</option>-->
-<!--                    <option value="decrement">decrement</option>-->
-<!--                </select>-->
-<!--         <button type="submit">action</button>-->
-<!--   </form>-->
-
-<table>
-    <tr>
+    <nav>
+        <table class="center" style="width:100%">
+            <tr>
+                <th colspan="4">
+                    <form action="/savehomeplayers/home">
+                        <button style="height:30px;width:300px;font-size: 25px;font-weight: bold;" type="submit">{{HomeTeam}}</button>
+                    </form>
+                </th>
+            </tr>
+            <tr>
+                <th>Player&nbsp;&nbsp;&nbsp;</th>
+                <th><small>Goals&nbsp;</small></th>
+                <th><small>Majors</small></th>
+            </tr>
+            {% for user_id, teama in teama.items() %}
+            <tr class="custom-text" style="background-color:
+                {% if teama.reds == 1 %}
+                    black;
+                {% elif teama.majors == 1 %}
+                    #00ff00;
+                {% elif teama.majors == 2 %}
+                    #ff9933;
+                {% elif teama.majors >= 3 %}
+                    #ff3300;
+                {% else %}
+                    white;
+                {% endif %}
+            ">
+                <td>{{ user_id }}</td>
+                <td>{{ teama.goals }}</td>
+                <td>{{ teama.majors }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <table>
+            <tr>
                 <td>
-              <form action="/awaycard">
-            <button style="height:50px;width:120px" type="submit">Card (G)</button>
-        </form>
-      </td>
+                    <form action="/homecard">
+                        <button style="height:50px;width:120px" type="submit">Card (F)</button>
+                    </form>
+                </td>
+                <td>
+                    <form action="/hometimeout">
+                        <button style="height:50px;width:160px" type="submit">Timeout (R)</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    </nav>
 
-            <td>
-        <form action="/awaytimeout">
-            <button style="height:50px;width:160px" type="submit">Timeout (T)</button>
-        </form>
-      </td>
-<!--            <td>-->
-<!--              <form action="/awaypenalty">-->
-<!--            <button style="height:50px;width:200px" type="submit"><sub>ctrl</sub>    <u>P</u>enalty</button>-->
-<!--                  </form>-->
-<!--      </td>-->
-    </tr>
-</table>
-<!--    <table>-->
-<!-- <tr>-->
+    <article>
+        <table class="center" style="width:100%">
+            <tr>
+                <td style="width:10%"><button style="height:50px;width:50px" onclick="addmin()">+</button></td>
+                <td style="width:80%" rowspan="3"><span style="font-size:300px;" id="countdown"></span></td>
+                <td style="width:10%"><button style="height:50px;width:50px" onclick="addsec()">+</button></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><button style="height:50px;width:50px" onclick="minmin()">-</button></td>
+                <td><button style="height:50px;width:50px" onclick="minsec()">-</button></td>
+            </tr>
+        </table>
 
-<!--        <td>-->
-<!--              <form action="/awaymajor">-->
-<!--            <button style="height:50px;width:240px" type="submit"><sub>ctrl</sub>    <u>M</u>ajor</button>-->
-<!--</form>-->
+        <table class="center" style="text-align: center">
+            <tr>
+                <th style="background-color:rgb(128,128,128); font-size: 30px;">&nbsp;Score&nbsp;&nbsp;</th>
+                <th style="background-color:rgb(128,128,128); font-size: 30px;">&nbsp;P1&nbsp;</th>
+                <th style="background-color:rgb(128,128,128); font-size: 30px;">&nbsp;P2&nbsp;</th>
+                <th style="background-color:rgb(128,128,128); font-size: 30px;">&nbsp;P3&nbsp;</th>
+                <th style="background-color:rgb(128,128,128); font-size: 30px;">&nbsp;P4&nbsp;</th>
+                <th style="background-color:rgb(128,128,128); font-size: 30px;">Majors&nbsp;</th>
+                <th style="background-color:rgb(128,128,128); font-size: 30px;">&nbsp;P1&nbsp;</th>
+                <th style="background-color:rgb(128,128,128); font-size: 30px;">&nbsp;P2&nbsp;</th>
+                <th style="background-color:rgb(128,128,128); font-size: 30px;">&nbsp;P3&nbsp;</th>
+                <th style="background-color:rgb(128,128,128); font-size: 30px;">&nbsp;P4&nbsp;</th>
+            </tr>
+            {% for team_id, scores in periodscores.items() %}
+            <tr>
+                <td style="background-color:powderblue; font-size: 30px;">{{ team_id }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.goals1 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.goals2 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.goals3 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.goals4 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ team_id }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.majors1 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.majors2 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.majors3 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.majors4 }}</td>
+            </tr>
+            {% endfor %}
+        </table>
 
-<!--      </td>-->
-<!--        <td>-->
-<!--                   <form action="/awaygoal">-->
-<!--            <button style="height:50px;width:240px" type="submit"><sub>ctrl</sub>    <u>G</u>oal</button>-->
-<!--&lt;!&ndash;<input style="height:50px;width:200px" type="submit" value="Edit Settings" />&ndash;&gt;-->
-<!--</form>-->
+        <table class="center" style="text-align: center">
+            <tr>
+                <th colspan="2"><button style="height:200px;width:150px" onclick="pauseCountdown()">Start / Stop (N)</button></th>
+                <th colspan="2"><button style="height:150px;width:150px" onclick="possession()">Running Change (Y)</button> <button style="height:150px;width:150px" onclick="pause30()">Paused Change (H)</button></th>
+                <th colspan="3"><span style="font-size: 300px;" id="shotdown">00</span></th>
+                <th colspan="2"><button style="height:150px;width:150px" onclick="reset20()">Shot (U)</button> <button style="height:150px;width:150px" onclick="pause20()">Corner (J)</button></th>
+                <th colspan="2"><button style="height:100px;width:150px;font-size:10px;color:red" onclick="buzzer()">Buzzer</button> <button style="height:100px;width:150px" onclick="force20()">Force short</button> <button style="height:100px;width:150px;font-size:10px;color:red" onclick="stopCountdown()">Reset Clocks</button></th>
+            </tr>
+        </table>
 
-<!--      </td>-->
-<!--</tr>-->
-<!--     <tr>-->
+        {% include 'messages.html' %}
+
+        <table class="center" style="text-align: center">
+            <tr>
+                <td>
+                    <form action="/major">
+                        <button style="height:80px;width:300px" type="submit">Major (C)</button>
+                    </form>
+                </td>
+                <td>
+                    <form action="/goal">
+                        <button style="height:80px;width:300px" type="submit">Goal (V)</button>
+                    </form>
+                </td>
+                <td>
+                    <form action="/penalty">
+                        <button style="height:80px;width:300px" type="submit">Penalty (B)</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    </article>
 
 
-<!--</tr>-->
-<!--</table>-->
 
-</aside>
+    <aside>
+        <table class="center" style="width:100%">
+            <tr>
+                <th colspan="4">
+                    <form action="/saveawayplayers/away">
+                        <button style="height:30px;width:300px;font-size: 25px;font-weight: bold;" type="submit">{{AwayTeam}}</button>
+                    </form>
+                </th>
+            </tr>
+            <tr>
+                <th>Player&nbsp;&nbsp;&nbsp;</th>
+                <th><small>Goals&nbsp;</small></th>
+                <th><small>Majors</small></th>
+            </tr>
+            {% for user_id, teamb in teamb.items() %}
+            <tr class="custom-text" style="background-color:
+                {% if teamb.reds == 1 %}
+                    black;
+                {% elif teamb.majors == 1 %}
+                    #00ff00;
+                {% elif teamb.majors == 2 %}
+                    #ff9933;
+                {% elif teamb.majors >= 3 %}
+                    #ff3300;
+                {% else %}
+                    white;
+                {% endif %}
+            ">
+                <td>{{ user_id }}</td>
+                <td>{{ teamb.goals }}</td>
+                <td>{{ teamb.majors }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <table>
+            <tr>
+                <td>
+                    <form action="/awaycard">
+                        <button style="height:50px;width:120px" type="submit">Card (G)</button>
+                    </form>
+                </td>
+                <td>
+                    <form action="/awaytimeout">
+                        <button style="height:50px;width:160px" type="submit">Timeout (T)</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    </aside>
 
-<footer>
-
-
-  <table>
-      <td>
-        <form method="POST" action="/start">
-            <button style="height:50px;width:180px" type="submit">Start Game</button>
-        </form>
-      </td>
-      <td>
-        <form method="POST" action="/period">
-        <button style="height:50px;width:150px" type="submit">Skip Period</button>
-        </form>
-        </td>
-      <td>
-        <form method="POST" action="/clear">
-            <button style="height:50px;width:180px" type="submit">Undo / Delete</button>
-        </form>
-      </td>
-      <td>
-        <form method="POST" action="/finish">
-            <button style="height:50px;width:150px" type="submit">Finish Game</button>
-        </form>
-      </td>
-      <td>
-      <span style="font-size: 50px; padding: 10px; color: white;"> Quarter:  {{ quarter }} </span>
-</td>
-      <td>
-        <form action="/settings">
-            <button style="height:50px;width:180px" type="submit">Edit Settings</button>
-<!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
-</form>
-      </td>
-      <td>
-        <form action="/callinterval">
-            <button style="height:50px;width:120px" type="submit" onclick="playSound()">Move to interval</button>
-<!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
-</form>
-      </td>
-          <td>
-        <form action="/saverefdata/referee">
-            <button style="height:50px;width:120px" type="submit">Referees</button>
-<!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
-</form>
-</td>
-               <td>
-        <form action="/help">
-            <button style="height:50px;width:50px" type="submit">help</button>
-<!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
-</form>
-</td>
-
-  </table>
-
-</footer>
-
+    <footer>
+        <table>
+            <tr>
+                <td>
+                    <form method="POST" action="/start">
+                        <button style="height:50px;width:180px" type="submit">Start Game</button>
+                    </form>
+                </td>
+                <td>
+                    <form method="POST" action="/period">
+                        <button style="height:50px;width:150px" type="submit">Skip Period</button>
+                    </form>
+                </td>
+                <td>
+                    <form method="POST" action="/clear">
+                        <button style="height:50px;width:180px" type="submit">Undo / Delete</button>
+                    </form>
+                </td>
+                <td>
+                    <form method="POST" action="/finish">
+                        <button style="height:50px;width:150px" type="submit">Finish Game</button>
+                    </form>
+                </td>
+                <td>
+                    <span style="font-size: 50px; padding: 10px; color: white;">Quarter: {{ quarter }}</span>
+                </td>
+                <td>
+                    <form action="/settings">
+                        <button style="height:50px;width:180px" type="submit">Edit Settings</button>
+                    </form>
+                </td>
+                <td>
+                    <form action="/callinterval">
+                        <button style="height:50px;width:120px" type="submit" onclick="playSound()">Move to interval</button>
+                    </form>
+                </td>
+                <td>
+                    <form action="/saverefdata/referee">
+                        <button style="height:50px;width:120px" type="submit">Referees</button>
+                    </form>
+                </td>
+                <td>
+                    <form action="/help">
+                        <button style="height:50px;width:50px" type="submit">help</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    </footer>
 </body>
 </html>

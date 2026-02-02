@@ -2,272 +2,129 @@
 <html>
 <head>
     <title>Development Waterpolo Scoresheet</title>
-
-
-       <style>
-        /* Basic styling for the layout */
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            display: grid;
-            grid-template-columns: 1fr 2fr 1fr; /* Divides the screen into three columns */
-            grid-template-rows: 200px 1fr; /* Adds a top section of 100px height */
-            grid-template-areas:
-                "header header header"
-                "left main right"
-                "footer footer footer"; /* Defines areas for the content */
-            height: 100vh; /* Full height of the viewport */
-         }
-
-        header {
-            grid-area: header; /* Places the header in the 'header' area */
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            line-height: 200px; /* Vertically centers the text */
-        }
-
-        nav {
-            grid-area: left; /* Places the left content in the 'left' area */
-            background-color: #f2f2f2;
-            padding: 10px;
-            font-size: 30px
-        }
-
-        article {
-            grid-area: main; /* Places the main content in the 'main' area */
-            text-align: center;
-            color: #333;
-            padding: 20px;
-            line-height: 50px;
-            font-size: 150px ;
-        }
-
-        aside {
-            grid-area: right; /* Places the right content in the 'right' area */
-            background-color: #f2f2f2;
-            padding: 10px;
-            font-size: 30px
-        }
-        footer {
-            grid-area: footer; /* Places the header in the 'header' area */
-            background-color: #333;
-            color: #fff;
-            padding: 30px;
-            font-size: 30px
-            /*!*text-align: center;*!*/
-            /*line-height: 200px; !* Vertically centers the text *!*/
-        }
-        .custom-text {
-            padding: 20px;
-            font-size: 24px;
-            border-radius: 5px;
-        }
-        table, th, td {
-          border:1px solid black;
-          border-collapse: collapse;
-        }
-    </style>
-<script src="static/jquery.min.js">
-  </script>
-
+    <link rel="stylesheet" href="../static/style.css">
+    <script src="static/jquery.min.js"></script>
 </head>
 <body>
+    <header>
+        <h1>
+            <span style="font-size: 120px; color: grey;">&nbsp;&nbsp;&nbsp;Scoreboard&nbsp;&nbsp;Settings&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        </h1>
+    </header>
 
-  <header>
+    <article class="center">
+        <form method="POST" action="/save">
+            <table class="center" style="width:100%">
+                <tr>
+                    <td style="background-color:darkgray; font-size: 35px;">Settings</td>
+                    <td style="background-color:lightgray; font-size: 35px;">Values</td>
+                </tr>
+                <tr>
+                    <td style="background-color:gray; font-size: 35px;">Game Time</td>
+                    <td style="background-color:gray; font-size: 35px;">
+                        <select name="game" id="game">
+                            <option value=14>7 Min</option>
+                            <option value=13>6:30 Min</option>
+                            <option value=12>6 Min</option>
+                            <option value=11>5:30 Min</option>
+                            <option value=10>5 Min</option>
+                            <option value=15>7:30 Min</option>
+                            <option value=16>8 Min</option>
+                            <option value=17>8:30 Min</option>
+                            <option value=18>9 Min</option>
+                            <option value=19>9:30 Min</option>
+                            <option value=20>10 Min</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="background-color:gray; font-size: 35px;">Interval</td>
+                    <td style="background-color:gray; font-size: 35px;">
+                        <select name="interval" id="interval">
+                            <option value=4>2</option>
+                            <option value=2>1</option>
+                            <option value=3>1.5</option>
+                            <option value=4>2</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="background-color:gray; font-size: 35px;">Half Time</td>
+                    <td style="background-color:gray; font-size: 35px;">
+                        <select name="half" id="half">
+                            <option value=4>2</option>
+                            <option value=2>1</option>
+                            <option value=3>1.5</option>
+                            <option value=4>2</option>
+                            <option value=5>2.5</option>
+                            <option value=6>3</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="background-color:gray; font-size: 35px;">Shot Clock</td>
+                    <td style="background-color:gray; font-size: 35px;">
+                        <select name="shotclock" id="shotclock">
+                            <option value=28>28</option>
+                            <option value=30>30</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="background-color:gray; font-size: 35px;">Max Majors</td>
+                    <td style="background-color:gray; font-size: 35px;">
+                        <select name="majors" id="majors">
+                            <option value=3>3</option>
+                            <option value=4>4</option>
+                            <option value=5>5</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="background-color:gray; font-size: 35px;">
+                        <label for="Location">Location&nbsp;&nbsp;&nbsp;:</label>
+                        <input type="text" id="Location" name="Location" value="{{location}}"><br>
+                        <label for="Home">Home Team:</label>
+                        <input type="text" id="Home" name="Home" value="{{HomeTeam}}"><br>
+                        <label for="Away">Away Team:</label>
+                        <input type="text" id="away" name="Away" value="{{AwayTeam}}"><br>
+                    </td>
+                </tr>
+            </table>
+            <button style="height:80px;width:200px" type="submit">Save</button>
+        </form>
+    </article>
 
-      <h1>
-          <span style="font-size: 120px; color: grey;">&nbsp;&nbsp;&nbsp;Scoreboard&nbsp;&nbsp;Settings&nbsp;&nbsp;&nbsp;&nbsp; </span>
-      </h1>
-  </header>
-<article class="center"; >
-
-<form method="POST" action="/save">
-      <table class="center" style="width:100%">
-        <tr>
-            <td style="background-color:darkgray;  font-size: 35px;">Settings</td>
-            <td style="background-color:lightgray;  font-size: 35px;" >Values</td>
-        </tr>
-<!--        <tr>-->
-<!--      <td style="background-color:gray;  font-size: 35px;">Running Clock  </td>-->
-<!--          <td style="background-color:gray;  font-size: 35px;">-->
-
-<!--            <select name="running" id="running">-->
-<!--&lt;!&ndash;                    <option value=1>First Quarter</option>&ndash;&gt;-->
-<!--                <option value="no">No</option>-->
-<!--                <option value="yes">Yes</option>-->
-
-<!--            </select>-->
-<!--      </td>-->
-<!--          </tr>-->
-          <tr>
-      <td style="background-color:gray;  font-size: 35px;">Game Time  </td>
-          <td style="background-color:gray;  font-size: 35px;">
-
-            <select name="game" id="game">
-<!--                    <option value=1>First Quarter</option>-->
-
-                    <option value=14>7 Min</option>
-                    <option value=13>6:30 Min</option>
-                    <option value=12>6 Min</option>
-                    <option value=11>5:30 Min</option>
-                    <option value=10>5 Min</option>
-                    <option value=15>7:30 Min</option>
-                    <option value=16>8 Min</option>
-                    <option value=17>8:30 Min</option>
-                    <option value=18>9 Min</option>
-                    <option value=19>9:30 Min</option>
-                    <option value=20>10 Min</option>
-
-            </select>
-      </td>
-              </tr>
-
-          <tr>
-<!--                <td style="background-color:gray;  font-size: 35px;">Timeout  </td>-->
-<!--          <td style="background-color:gray;  font-size: 35px;">-->
-
-<!--            <select name="timeout" id="timeout">-->
-<!--&lt;!&ndash;                    <option value=1>First Quarter</option>&ndash;&gt;-->
-<!--                    <option value=2>1</option>-->
-<!--                    <option value=3>1.5</option>-->
-<!--                    <option value=4>2</option>-->
-
-
-<!--            </select>-->
-<!--      </td>-->
-              </tr>
-
-                    <tr>
-                <td style="background-color:gray;  font-size: 35px;">Interval</td>
-          <td style="background-color:gray;  font-size: 35px;">
-
-            <select name="interval" id="interval">
-<!--                    <option value=1>First Quarter</option>-->
-                    <option value=4>2</option>
-                    <option value=2>1</option>
-                    <option value=3>1.5</option>
-                    <option value=4>2</option>
-            </select>
-      </td>
-              </tr>
-                    <tr>
-                <td style="background-color:gray;  font-size: 35px;">Half Time</td>
-          <td style="background-color:gray;  font-size: 35px;">
-
-            <select name="half" id="half">
-<!--                    <option value=1>First Quarter</option>-->
-                    <option value=4>2</option>
-                    <option value=2>1</option>
-                    <option value=3>1.5</option>
-                    <option value=4>2</option>
-                    <option value=5>2.5</option>
-                    <option value=6>3</option>
-
-            </select>
-      </td>
-              </tr>
-
-
-                              <tr>
-                <td style="background-color:gray;  font-size: 35px;">Shot Clock</td>
-          <td style="background-color:gray;  font-size: 35px;">
-
-            <select name="shotclock" id="shotclock">
-<!--                    <option value=1>First Quarter</option>-->
-                <option value=28>28</option>
-                <option value=30>30</option>
-
-
-
-
-            </select>
-      </td>
-              </tr>
-                             <tr>
-                <td style="background-color:gray;  font-size: 35px;">Max Majors</td>
-          <td style="background-color:gray;  font-size: 35px;">
-
-            <select name="majors" id="majors">
-                <option value=3>3</option>
-                <option value=4>4</option>
-                <option value=5>5</option>
-
-
-
-
-            </select>
-      </td>
-              </tr>
-
-                  <tr>
-          <td colspan="2" style="background-color:gray;  font-size: 35px;">
-<label for="Location">Location   &nbsp;&nbsp;&nbsp; :</label>
-<input type="text" id="Location" name="Location" value="{{location}}"><br>
-<label for="Home">Home Team:</label>
-<input type="text" id="Home" name="Home" value="{{HomeTeam}}"><br>
-<label for="Away">Away Team:</label>
-<input type="text" id="away" name="Away" value="{{AwayTeam}}"><br>
-      </td>
-          </tr>
-
-      </table>
-        <button style="height:80px;width:200px" type="submit">Save</button>
-</form>
-
-
-</article>
-
-<footer>
-
-
-    <table class="center" style="width:100%" >
-        <tr>
-            <td style="width:15%" rowspan="2">  <form method="GET" action="/">
-            <button style="height:80px;width:200px" type="submit">Return to Game</button>
-        </form>    </td>
-            <td style="width:10%" rowspan="2">
-        <form action="/connectble">
-            <button style="height:80px;width:200px" type="submit">Connect</button>
-<!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
-</form>
-</td>
-</td>
-               <td style="width:10%" rowspan="2">
-        <form action="/disconnectble">
-            <button style="height:80px;width:200px" type="submit">Disconnect</button>
-<!--<input style="height:50px;width:200px" type="submit" value="Edit Settings" />-->
-</form>
-</td>
-             <td style="width:15%" rowspan="2">  <form method="GET" action="/settings">
-            <button style="height:80px;width:200px" type="submit">refresh</button>
-        </form>    </td>
-
-            <td style="width:80%" >   This program was developed by Toby Makepeace from Kingston Royals WaterPolo Club      </td>
-
-        </tr>
-        <tr>
-            <td>     To contact email toby.krjwp@gmail.com, happy to customise for club donation       </td>
-        </tr>
-
-    </table>
-
-  <table>
-      <td>
-          <tr>
-
-          </tr>
-      </td>
-
-  </table>
-
-
-
-     <span style="font-size: 20px; color: grey;">&nbsp;{{ble_clients}}&nbsp;&nbsp;&nbsp;&nbsp; </span>
-
-</footer>
-
-
+    <footer>
+        <table class="center" style="width:100%">
+            <tr>
+                <td style="width:15%" rowspan="2">
+                    <form method="GET" action="/">
+                        <button style="height:80px;width:200px" type="submit">Return to Game</button>
+                    </form>
+                </td>
+                <td style="width:10%" rowspan="2">
+                    <form action="/connectble">
+                        <button style="height:80px;width:200px" type="submit">Connect</button>
+                    </form>
+                </td>
+                <td style="width:10%" rowspan="2">
+                    <form action="/disconnectble">
+                        <button style="height:80px;width:200px" type="submit">Disconnect</button>
+                    </form>
+                </td>
+                <td style="width:15%" rowspan="2">
+                    <form method="GET" action="/settings">
+                        <button style="height:80px;width:200px" type="submit">refresh</button>
+                    </form>
+                </td>
+                <td style="width:80%">This program was developed by Toby Makepeace from Kingston Royals WaterPolo Club</td>
+            </tr>
+            <tr>
+                <td>To contact email toby.krjwp@gmail.com, happy to customise for club donation</td>
+            </tr>
+        </table>
+        <span style="font-size: 20px; color: grey;">&nbsp;{{ble_clients}}&nbsp;&nbsp;&nbsp;&nbsp;</span>
+    </footer>
 </body>
 </html>
