@@ -600,6 +600,24 @@ def minsec():
 
 ###### MAIN APP
 
+@app.route('/card')
+def card():
+    if quarter == 0 :
+        return redirect(url_for('index'))
+    if countdown_running:
+        if runningclock == "no":
+            pause_countdown()
+    else:
+        msg = 'clock not running'
+        flash(msg, "warning")
+
+    return render_template('card.html', scores=scores, teama=teama, teamb=teamb,
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red)
+
 @app.route('/homecard')
 def homecard():
     if quarter == 0 :
@@ -611,10 +629,13 @@ def homecard():
         msg = 'clock not running'
         flash(msg, "warning")
 
-    return render_template('homecard.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
-                           TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv,
-                           awaytimeoutv=awaytimeoutv, filename=filename)
+    return render_template('homecard.html', scores=scores, teama=teama, teamb=teamb,
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red)
+
 
 @app.route('/awaycard')
 def awaycard():
@@ -627,10 +648,13 @@ def awaycard():
         msg = 'clock not running'
         flash(msg, "warning")
 
-    return render_template('awaycard.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
-                           TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv,
-                           awaytimeoutv=awaytimeoutv, filename=filename)
+    return render_template('awaycard.html', scores=scores, teama=teama, teamb=teamb,
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red)
+
 
 
 @app.route('/goal')
@@ -645,10 +669,13 @@ def goal():
             resume_countdown()
     else:
         reset30()
-    return render_template('goal.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
-                           TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv,
-                           awaytimeoutv=awaytimeoutv, filename=filename)
+    return render_template('goal.html', scores=scores, teama=teama, teamb=teamb,
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red)
+
 
 @app.route('/goalint')
 def goalint():
@@ -660,10 +687,13 @@ def goalint():
             return_countdown()
     else:
         reset30()
-    return render_template('goalint.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
-                           TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv,
-                           awaytimeoutv=awaytimeoutv, filename=filename)
+    return render_template('goalint.html', scores=scores, teama=teama, teamb=teamb,
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red)
+
 
 
 
@@ -681,10 +711,13 @@ def major():
     else:
         pause20()
 
-    return render_template('major.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
-                           TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv,
-                           awaytimeoutv=awaytimeoutv, filename=filename)
+    return render_template('major.html', scores=scores, teama=teama, teamb=teamb,
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red)
+
 
 @app.route('/penalty')
 def penalty():
@@ -699,15 +732,21 @@ def penalty():
     else:
         pause20()
 
-    return render_template('penalty.html', scores=scores, teama=teama, teamb=teamb, elapsed_time=elapsed_time,
-                           TeamHome=TeamHome, TeamAway=TeamAway, periodscores=periodscores, quarter=quarter,
-                           HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv,
-                           awaytimeoutv=awaytimeoutv, filename=filename)
+    return render_template('penalty.html', scores=scores, teama=teama, teamb=teamb,
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red)
 
 
-@app.route('/updateteamacoach/<int:id>', methods=['GET', 'POST'])
-def updateteamacoach(id):
-    global quarter, direction
+
+
+
+@app.route('/updateteamacoach/<direction>/<int:id>', methods=['GET', 'POST'])
+def updateteamacoach(direction,id):
+
+    global quarter
     global countdown_running, start_time, elapsed_time, home_coach, away_coach
     if quarter == 0 :
         return redirect(url_for('index'))
@@ -758,9 +797,10 @@ def updateteamacoach(id):
 
     return redirect(url_for('index'))
 
-@app.route('/updateteambcoach/<int:id>', methods=['GET', 'POST'])
-def updateteambcoach(id):
-    global quarter, direction
+
+@app.route('/updateteambcoach/<direction>/<int:id>', methods=['GET', 'POST'])
+def updateteambcoach(direction,id):
+    global quarter
     global countdown_running, start_time, elapsed_time, home_coach, away_coach
     if quarter == 0 :
         return redirect(url_for('index'))
@@ -813,9 +853,9 @@ def updateteambcoach(id):
 
 
 
-@app.route('/updateteamacard/<int:user_id>', methods=['GET', 'POST'])
-def updateteamacard(user_id):
-    global quarter, direction
+@app.route('/updateteamacard/<direction>/<int:user_id>', methods=['GET', 'POST'])
+def updateteamacard(direction,user_id):
+    global quarter
     global countdown_running, start_time, elapsed_time
     if quarter == 0 :
         return redirect(url_for('index'))
@@ -836,13 +876,13 @@ def updateteamacard(user_id):
         # print(teama)
         if direction == 'increment':
             # print('help2')
-            teama[user_id]['reds'] = teama[user_id]['reds'] + 1
+            teama[user_id]['reds'] = 1
             home_team_red['red'] = home_team_red['red']  + 1
             data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', user_id, home_data['home'][user_id - 1][1], 'Home',
                     teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
         elif direction == 'decrement':
-            teama[user_id]['reds'] = teama[user_id]['reds'] - 1
+            teama[user_id]['reds'] = 0
             home_team_red['red'] = home_team_red['red'] - 1
             data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', user_id, home_data['home'][user_id - 1][1], 'Home',
                     teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
@@ -853,9 +893,9 @@ def updateteamacard(user_id):
 
     return redirect(url_for('index'))
 
-@app.route('/updateteambcard/<int:user_id>', methods=['GET', 'POST'])
-def updateteambcard(user_id):
-    global quarter, direction
+@app.route('/updateteambcard/<direction>/<int:user_id>', methods=['GET', 'POST'])
+def updateteambcard(direction, user_id):
+    global quarter
     global countdown_running, start_time, elapsed_time
     if quarter == 0 :
         return redirect(url_for('index'))
@@ -876,16 +916,16 @@ def updateteambcard(user_id):
         # print(teamb)
         if direction == 'increment':
             # print('help2')
-            teamb[user_id]['reds'] = teamb[user_id]['reds'] + 1
+            teamb[user_id]['reds'] = 1
             away_team_red['red'] = away_team_red['red'] + 1
             data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', user_id, away_data['away'][user_id - 1][1], 'Away',
-                    teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+                    teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
             writer.writerow(data)
         elif direction == 'decrement':
-            teamb[user_id]['red'] = teamb[user_id]['reds'] - 1
+            teamb[user_id]['reds'] = 0
             away_team_red['red'] = away_team_red['red'] - 1
             data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', user_id, away_data['away'][user_id - 1][1], 'Away',
-                    teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+                    teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
             writer.writerow(data)
 
             direction = "increment"
@@ -950,9 +990,61 @@ def updateteamagoal(user_id):
 
     return redirect(url_for('index'))
 
-@app.route('/updateteamintagoal/<int:user_id>', methods=['GET', 'POST'])
-def updateteamintagoal(user_id):
-    global quarter, direction
+@app.route('/updateteamagoal/<string:direction>/<int:user_id>', methods=['GET', 'POST'])
+def updateteamagoal_direction(direction,user_id):
+    """
+    Update goal count for a home team player.
+    
+    Args:
+        user_id: Integer player number (1-14)
+        
+    Returns:
+        Redirect to index page
+    """
+    global quarter
+    global countdown_running, start_time, elapsed_time
+    if request.method == 'POST':
+        # elapsed_time = time.time() - start_time
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
+        direction = str(direction)
+        if direction == 'increment':
+            teama[user_id]['goals'] = teama[user_id]['goals'] + 1
+            scores['Home']['goals'] = scores['Home']['goals'] + 1
+            if quarter == 1:
+                periodscores['Home']['goals1'] = periodscores['Home']['goals1'] + 1
+            elif quarter == 2:
+                periodscores['Home']['goals2'] = periodscores['Home']['goals2'] + 1
+            elif quarter == 3:
+                periodscores['Home']['goals3'] = periodscores['Home']['goals3'] + 1
+            elif quarter == 4:
+                periodscores['Home']['goals4'] = periodscores['Home']['goals4'] + 1
+        elif direction == 'decrement':
+            teama[user_id]['goals'] = teama[user_id]['goals'] - 1
+            scores['Home']['goals'] = scores['Home']['goals'] - 1
+            if quarter == 1:
+                periodscores['Home']['goals1'] = periodscores['Home']['goals1'] - 1
+            elif quarter == 2:
+                periodscores['Home']['goals2'] = periodscores['Home']['goals2'] - 1
+            elif quarter == 3:
+                periodscores['Home']['goals3'] = periodscores['Home']['goals3'] - 1
+            elif quarter == 4:
+                periodscores['Home']['goals4'] = periodscores['Home']['goals4'] - 1
+            direction = "increment"
+        td_str = str(timedelta(seconds=remaining_time))
+        x = td_str.split(':')
+        f = open(running_file, 'a')
+        writer = csv.writer(f)
+        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , user_id , home_data['home'][user_id - 1][1], 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
+        writer.writerow(data)
+        f.close()
+
+
+    return redirect(url_for('index'))
+
+
+@app.route('/updateteamaintgoal/<direction>/<int:user_id>', methods=['GET', 'POST'])
+def updateteamaintgoal(direction,user_id):
+    global quarter
     global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
 
@@ -991,13 +1083,12 @@ def updateteamintagoal(user_id):
         f.close()
 
     # callintervalgoal
-    return redirect(url_for('runintervalgoal'))
+    return redirect(url_for('callintervalgoal'))
     # return redirect(url_for('interval'))
 
-@app.route('/updateteamamajor/<int:user_id>', methods=['GET', 'POST'])
-def updateteamamajor(user_id):
+@app.route('/updateteamamajor/<string:direction>/<int:user_id>', methods=['GET', 'POST'])
+def updateteamamajor(direction,user_id):
     global quarter
-    global direction
     global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
         remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
@@ -1051,10 +1142,9 @@ def updateteamamajor(user_id):
     return redirect(url_for('index'))
 
 
-@app.route('/updateteamapenalty/<int:user_id>', methods=['GET', 'POST'])
-def updateteamapenalty(user_id):
+@app.route('/updateteamapenalty/<string:direction>/<int:user_id>', methods=['GET', 'POST'])
+def updateteamapenalty(direction,user_id):
     global quarter
-    global direction
     global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
         # action = request.form['action']
@@ -1111,10 +1201,57 @@ def updateteamapenalty(user_id):
 
     return redirect(url_for('index'))
 
-@app.route('/updateteambgoal/<int:user_id>', methods=['GET', 'POST'])
-def updateteambgoal(user_id):
+# @app.route('/updateteambgoal/<int:user_id>', methods=['GET', 'POST'])
+# def updateteambgoal(user_id):
+#     global quarter
+#     global direction
+#     global countdown_running, start_time, elapsed_time
+#     if request.method == 'POST':
+#         # action = request.form['action']
+
+#         # elapsed_time = time.time() - start_time
+#         remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
+
+#         if direction == 'increment':
+#             teamb[user_id]['goals'] = teamb[user_id]['goals'] + 1
+#             scores['Away']['goals'] = scores['Away']['goals'] + 1
+#             if quarter == 1:
+#                 periodscores['Away']['goals1'] = periodscores['Away']['goals1'] + 1
+#             elif quarter == 2:
+#                 periodscores['Away']['goals2'] = periodscores['Away']['goals2'] + 1
+#             elif quarter == 3:
+#                 periodscores['Away']['goals3'] = periodscores['Away']['goals3'] + 1
+#             elif quarter == 4:
+#                 periodscores['Away']['goals4'] = periodscores['Away']['goals4'] + 1
+#         elif direction == 'decrement':
+#             teamb[user_id]['goals'] = teamb[user_id]['goals'] - 1
+#             scores['Away']['goals'] = scores['Away']['goals'] - 1
+#             if quarter == 1:
+#                 periodscores['Away']['goals1'] = periodscores['Away']['goals1'] - 1
+#             elif quarter == 2:
+#                 periodscores['Away']['goals2'] = periodscores['Away']['goals2'] - 1
+#             elif quarter == 3:
+#                 periodscores['Away']['goals3'] = periodscores['Away']['goals3'] - 1
+#             elif quarter == 4:
+#                 periodscores['Away']['goals4'] = periodscores['Away']['goals4'] - 1
+#             direction = "increment"
+
+#         td_str = str(timedelta(seconds=remaining_time))
+#         x = td_str.split(':')
+
+#         f = open(running_file, 'a')
+#         writer = csv.writer(f)
+#         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+#         data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', user_id, away_data['away'][user_id - 1][1], 'Away',
+#         teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+#         writer.writerow(data)
+#         f.close()
+
+#     return redirect(url_for('index'))
+
+@app.route('/updateteambgoal/<string:direction>/<int:user_id>', methods=['GET', 'POST'])
+def updateteambgoal_direction(direction, user_id):
     global quarter
-    global direction
     global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
         # action = request.form['action']
@@ -1159,10 +1296,11 @@ def updateteambgoal(user_id):
 
     return redirect(url_for('index'))
 
-@app.route('/updateteamintbgoal/<int:user_id>', methods=['GET', 'POST'])
-def updateteamintbgoal(user_id):
+
+
+@app.route('/updateteambintgoal/<string:direction>/<int:user_id>', methods=['GET', 'POST'])
+def updateteambintgoal(direction,user_id):
     global quarter
-    global direction
     global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
         # action = request.form['action']
@@ -1208,10 +1346,9 @@ def updateteamintbgoal(user_id):
     return redirect(url_for('runintervalgoal'))
 
 
-@app.route('/updateteambmajor/<int:user_id>', methods=['GET', 'POST'])
-def updateteambmajor(user_id):
+@app.route('/updateteambmajor/<string:direction>/<int:user_id>', methods=['GET', 'POST'])
+def updateteambmajor(direction,user_id):
     global quarter
-    global direction
     global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
         # direction = request.form['action']
@@ -1269,10 +1406,9 @@ def updateteambmajor(user_id):
 
     return redirect(url_for('index'))
 
-@app.route('/updateteambpenalty/<int:user_id>', methods=['GET', 'POST'])
-def updateteambpenalty(user_id):
+@app.route('/updateteambpenalty/<string:direction>/<int:user_id>', methods=['GET', 'POST'])
+def updateteambpenalty(direction,user_id):
     global quarter
-    global direction
     global countdown_running, start_time, elapsed_time
     if request.method == 'POST':
         # action = request.form['action']
@@ -1747,9 +1883,27 @@ def awaytimeout():
             direction = "increment"
 
     else:
-        msg = 'clock not running'
-        flash(msg, "warning")
-        if direction == 'decrement':
+        # msg = 'clock was not running'
+        # flash(msg, "warning")
+        if direction == 'increment':
+            awaytimeoutv = int(awaytimeoutv) + 1
+            # print(hometimeoutv)
+            td_str = str(timedelta(seconds=remaining_time))
+            x = td_str.split(':')
+
+            f = open(running_file, 'a')
+            writer = csv.writer(f)
+            # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout',
+            awaytimeoutv, 'Away']
+            writer.writerow(data)
+            f.close()
+            # pause_countdown()
+            time.sleep(1)
+            start_timeout()
+            return redirect(url_for('timeout'))
+        
+        elif direction == 'decrement':
             awaytimeoutv = int(awaytimeoutv) - 1
             # print(awaytimeoutv)
             td_str = str(timedelta(seconds=remaining_time))
@@ -1773,7 +1927,13 @@ def timeout():
     global  timeout
     timeout = Config.TIMEOUT_TIME
     start_timeout()
-    return render_template('timeout.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename, clocktime=remaining_time)
+    return render_template('timeout.html', scores=scores, teama=teama, teamb=teamb,
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red,                        
+                           elapsed_timeout=elapsedtimeout, clocktime=remaining_time)
 @app.route('/runinterval')
 def runinterval():
     global timeout
@@ -1783,7 +1943,13 @@ def runinterval():
         timeout = Config.INTERVAL_TIME
 
     start_timeout()
-    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
+    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb,
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red)
+
 
 
 @app.route('/runintervalgoal')
@@ -1795,12 +1961,23 @@ def runintervalgoal():
     #     timeout = Config.INTERVAL_TIME
 
     # start_timeout()
-    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
+    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb,
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red)
+
 
 @app.route('/interval')
 def interval():
     start_timeout()
-    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb, elapsed_timeout=elapsedtimeout, TeamHome=TeamHome, TeamAway=TeamAway ,periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv , filename=filename)
+    return render_template('interval.html', scores=scores, teama=teama, teamb=teamb,
+                           elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
+                           periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
+                           AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
+                           hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
+                           home_coach=home_team_red, away_coach=away_team_red)
 
 
 
@@ -1992,10 +2169,6 @@ def convert_csv_to_pdf():
 
 
 if __name__ == '__main__':
-    # asyncio.run(init_ble())
     # app.run(debug=True, host=Config.WEB_HOST, port=Config.WEB_PORT)
     webview.start()
-    # webview.start(gui='edgechromium', debug=True, private_mode=True, run_on_main_thread=False)
-
-    # asyncio.run(init_ble())
-
+    

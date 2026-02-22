@@ -182,18 +182,21 @@
 
 
 <body>
-  <header>
-
-      <h1>
-
-          <span style="font-size: 30px; color: white;">{{ hometimeoutv }} </span>
-          <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }} </span>
-          <span style="font-size: 100px; color: grey; width: 1000px ;">{{location}}</span>
-              <span style="font-size: 300px; color: Yellow;">  {{ TeamAway['goals'] }}</span>
-          <span style="font-size: 30px; color: white;">{{ awaytimeoutv }} </span>
-
-      </h1>
-  </header>
+    <header>
+        <h1>
+            <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach.red }}</span>
+            <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
+            <span style="font-size: 30px; color: #333333;">spacer</span>
+            <span style="font-size: 30px; color: white;">{{ hometimeoutv }}</span>
+            <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }}</span>
+            <span style="font-size: 100px; color: grey; width: 1000px;">{{location}}</span>
+            <span style="font-size: 300px; color: Yellow;">{{ TeamAway['goals'] }}</span>
+            <span style="font-size: 30px; color: white;">{{ awaytimeoutv }}</span>
+            <span style="font-size: 30px; color: #333333;">spacer</span>
+            <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
+            <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach.red }}</span>
+        </h1>
+    </header>
 
 
   <nav>

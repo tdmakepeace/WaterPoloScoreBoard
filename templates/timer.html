@@ -54,7 +54,7 @@
                 }
             });
         }
-        document.addEventListener('DOMContentLoaded', (event) => {
+      document.addEventListener('DOMContentLoaded', (event) => {
             document.addEventListener('keydown', function(event) {
                 if (event.key === 'n') {
                     event.preventDefault();
@@ -76,17 +76,17 @@
                     event.preventDefault();
                     window.location.href = '/awaytimeout';
                 }
-                else if (event.key === 'g') {
+                else if (event.key === 'f') {
                     event.preventDefault();
-                    window.location.href = '/awaycard';
+                    window.location.href = '/card';
                 }
                 else if (event.key === 'r') {
                     event.preventDefault();
                     window.location.href = '/hometimeout';
                 }
-                else if (event.key === 'f') {
+                else if (event.key === 'g') {
                     event.preventDefault();
-                    window.location.href = '/homecard';
+                    buzzer();
                 }
                 else if (event.key === 'x') {
                     event.preventDefault();
@@ -451,7 +451,7 @@
         <table>
             <tr>
                 <td>
-                    <form action="/homecard">
+                    <form action="/card">
                         <button style="height:50px;width:120px" type="submit">Card (F)</button>
                     </form>
                 </td>
@@ -468,7 +468,7 @@
         <table class="center" style="width:100%">
             <tr>
                 <td style="width:10%"><button style="height:50px;width:50px" onclick="addmin()">+</button></td>
-                <td style="width:80%" rowspan="3"><span style="font-size:300px;" id="countdown"></span></td>
+                <td style="width:80%" rowspan="3"><span style="font-size:300px;color:blue;" id="countdown"></span></td>
                 <td style="width:10%"><button style="height:50px;width:50px" onclick="addsec()">+</button></td>
             </tr>
             <tr>
@@ -516,7 +516,7 @@
                 <th colspan="2"><button style="height:150px;width:150px" onclick="possession()">Running Change (Y)</button> <button style="height:150px;width:150px" onclick="pause30()">Paused Change (H)</button></th>
                 <th colspan="3"><span style="font-size: 300px;" id="shotdown">00</span></th>
                 <th colspan="2"><button style="height:150px;width:150px" onclick="reset20()">Shot (U)</button> <button style="height:150px;width:150px" onclick="pause20()">Corner (J)</button></th>
-                <th colspan="2"><button style="height:100px;width:150px;font-size:10px;color:red" onclick="buzzer()">Buzzer</button> <button style="height:100px;width:150px" onclick="force20()">Force short</button> <button style="height:100px;width:150px;font-size:10px;color:red" onclick="stopCountdown()">Reset Clocks</button></th>
+                <th colspan="2"><button style="height:100px;width:150px;font-size:10px;color:red" onclick="buzzer()">Buzzer (G)</button> <button style="height:100px;width:150px" onclick="force20()">Force short</button> <button style="height:100px;width:150px;font-size:10px;color:red" onclick="stopCountdown()">Reset Clocks</button></th>
             </tr>
         </table>
 
@@ -582,8 +582,8 @@
         <table>
             <tr>
                 <td>
-                    <form action="/awaycard">
-                        <button style="height:50px;width:120px" type="submit">Card (G)</button>
+                    <form action="/card">
+                        <button style="height:50px;width:120px" type="submit">Card (F)</button>
                     </form>
                 </td>
                 <td>

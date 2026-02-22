@@ -7,36 +7,39 @@
 </head>
 
 <script>
-    document.addEventListener('DOMContentLoaded', (event) => {
-        function updateCard(number) {
-            fetch(`/updateteamacard/${number}`, {
+        document.addEventListener('DOMContentLoaded', (event) => {
+        function updateGoal(player, team) {
+            const url = team === 'increment' ? `/updateteamacard/increment/${player}` : `/updateteamacard/decrement/${player}`;
+            fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ key: 'value' })
+                body: JSON.stringify({})
             })
-            .then(response => response.json())
-            .then(() => { window.location.href = '/'; });
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                window.location.href = '/';
+            });
         }
+        const playerKeys = {'1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,  '8': 8, '9': 9, '0': 10, '-': 11, '=': 12, 'q': 13, 'w': 14, 'r': 2, 't': 3, 'f': 6, 'g': 7, 'h': 9, 'y': 10, 'u': 11, 'j': 12,  'c': 13, 'v': 14};
 
         document.addEventListener('keydown', function(event) {
-            const keyMap = {
-                '1': 1, '2': 2, '3': 3, '4': 4, '5': 5,
-                '6': 6, '7': 7, '8': 8, '9': 9, '0': 10,
-                '-': 11, '=': 12
-            };
-
-            if (keyMap[event.key]) {
+            const key = event.key.toLowerCase();
+            if (!event.ctrlKey && (key in playerKeys)) {
                 event.preventDefault();
-                updateCard(keyMap[event.key]);
-            }
-            else if (event.key === 'b') {
+                updateGoal(playerKeys[key], 'increment');
+            } else if (event.ctrlKey && (key in playerKeys)) {
+                event.preventDefault();
+                updateGoal(playerKeys[key], 'decrement');
+            } else if (key === 'x') {
                 event.preventDefault();
                 window.location.href = '/';
             }
         });
-    });
+    }); 
     function playSound() {
         var audio = new Audio('/static/airhorn.mp3');
         audio.play();
@@ -90,11 +93,17 @@
 <body>
     <header>
         <h1>
+            <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach.red }}</span>
+            <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
+            <span style="font-size: 30px; color: #333333;">spacer</span>
             <span style="font-size: 30px; color: white;">{{ hometimeoutv }}</span>
-            <span style="font-size: 200px; color: white;">{{ TeamHome['goals'] }}</span>
+            <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }}</span>
             <span style="font-size: 100px; color: grey; width: 1000px;">{{location}}</span>
-            <span style="font-size: 200px; color: blue;">{{ TeamAway['goals'] }}</span>
+            <span style="font-size: 300px; color: Yellow;">{{ TeamAway['goals'] }}</span>
             <span style="font-size: 30px; color: white;">{{ awaytimeoutv }}</span>
+            <span style="font-size: 30px; color: #333333;">spacer</span>
+            <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
+            <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach.red }}</span>
         </h1>
     </header>
 
@@ -164,27 +173,28 @@
         </table>
         <table>
             <tr>
-                <td><form method="POST" action="/updateteamacard/1"><button style="height:50px;width:120px" type="submit">1</button></form></td>
-                <td><form method="POST" action="/updateteamacard/2"><button style="height:50px;width:120px" type="submit">2</button></form></td>
-                <td><form method="POST" action="/updateteamacard/3"><button style="height:50px;width:120px" type="submit">3</button></form></td>
-                <td><form method="POST" action="/updateteamacard/4"><button style="height:50px;width:120px" type="submit">4</button></form></td>
-                <td><form method="POST" action="/updateteamacard/5"><button style="height:50px;width:120px" type="submit">5</button></form></td>
-                <td><form method="POST" action="/updateteamacard/6"><button style="height:50px;width:120px" type="submit">6</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/1"><button style="height:50px;width:120px" type="submit">1</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/2"><button style="height:50px;width:120px" type="submit">2</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/3"><button style="height:50px;width:120px" type="submit">3</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/4"><button style="height:50px;width:120px" type="submit">4</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/5"><button style="height:50px;width:120px" type="submit">5</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/6"><button style="height:50px;width:120px" type="submit">6</button></form></td>
             </tr>
         </table>
         <table>
             <tr>
-                <td><form method="POST" action="/updateteamacard/7"><button style="height:50px;width:120px" type="submit">7</button></form></td>
-                <td><form method="POST" action="/updateteamacard/8"><button style="height:50px;width:120px" type="submit">8</button></form></td>
-                <td><form method="POST" action="/updateteamacard/9"><button style="height:50px;width:120px" type="submit">9</button></form></td>
-                <td><form method="POST" action="/updateteamacard/10"><button style="height:50px;width:120px" type="submit">10</button></form></td>
-                <td><form method="POST" action="/updateteamacard/11"><button style="height:50px;width:120px" type="submit">11</button></form></td>
-                <td><form method="POST" action="/updateteamacard/12"><button style="height:50px;width:120px" type="submit">12</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/7"><button style="height:50px;width:120px" type="submit">7</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/8"><button style="height:50px;width:120px" type="submit">8</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/9"><button style="height:50px;width:120px" type="submit">9</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/10"><button style="height:50px;width:120px" type="submit">10</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/11"><button style="height:50px;width:120px" type="submit">11</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/12"><button style="height:50px;width:120px" type="submit">12</button></form></td>
             </tr>
         </table>
         <table>
             <tr>
-                <td><form method="POST" action="/updateteamacard/13"><button style="height:50px;width:120px" type="submit">13</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/13"><button style="height:50px;width:120px" type="submit">13</button></form></td>
+                <td><form method="POST" action="/updateteamacard/increment/14"><button style="height:50px;width:120px" type="submit">14</button></form></td>
                 <td><form method="POST" action="/updateteamacoach/1"><button style="height:50px;width:120px" type="submit">Team Yellow</button></form></td>
                 <td><form method="POST" action="/updateteamacoach/2"><button style="height:50px;width:120px" type="submit">Coach Red</button></form></td>
             </tr>

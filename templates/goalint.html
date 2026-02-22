@@ -8,473 +8,42 @@
 
 </head>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            document.addEventListener('keydown', function(event) {
-                if (event.ctrlKey && event.key === '1') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/1', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '2') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/2', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '3') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/3', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === 'r') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/2', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === 't') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/3', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '4') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/4', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '5') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/5', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '6') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/6', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '7') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/7', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === 'f') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/6', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === 'g') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/7', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '8') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/8', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === '9') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/9', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === 'h') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/9', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
+<script>
 
-                else if (event.ctrlKey && event.key === 'y') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/10', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
+    document.addEventListener('DOMContentLoaded', (event) => {
+        function updateGoal(player, team) {
+            const url = team === 'home' ? `/updateteamintagoal/${player}` : `/updateteamintbgoal/${player}`;
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
                 }
-                else if (event.ctrlKey && event.key === 'u') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/11', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === 'j') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/12', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === 'c') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/13', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.ctrlKey && event.key === 'v') {
-                    event.preventDefault();
-                    fetch('/updateteamintbgoal/14', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === '1') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/1', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === '2') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/2', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === '3') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/3', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === 'r') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/2', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === 't') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/3', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === '4') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/4', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === '5') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/5', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === '6') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/6', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === '7') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/7', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === 'f') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/6', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === 'g') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/7', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === '8') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/8', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === '9') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/9', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === 'h') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/9', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === 'y') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/10', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === 'u') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/11', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === 'j') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/12', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === 'c') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/13', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === 'v') {
-                    event.preventDefault();
-                    fetch('/updateteamintagoal/14', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ key: 'value' })
-                    })
-                    .then(response => response.json())
-                    window.location.href = '/';
-                }
-                else if (event.key === 'x') {
-                    event.preventDefault();
-                    window.location.href = '/';
-                    // Perform another action here
-                }
+                window.location.href = '/callintervalgoal';
             });
+        }
+        const playerKeys = {'1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,  '8': 8, '9': 9, '0': 10, '-': 11, '=': 12, 'q': 13, 'w': 14, 'r': 2, 't': 3, 'f': 6, 'g': 7, 'h': 9, 'y': 10, 'u': 11, 'j': 12,  'c': 13, 'v': 14};
+
+        document.addEventListener('keydown', function(event) {
+            const key = event.key.toLowerCase();
+            if (!event.ctrlKey && (key in playerKeys)) {
+                event.preventDefault();
+                updateGoal(playerKeys[key], 'home');
+            } else if (event.ctrlKey && (key in playerKeys)) {
+                event.preventDefault();
+                updateGoal(playerKeys[key], 'away');
+            } else if (key === 'x') {
+                event.preventDefault();
+                window.location.href = '/callintervalgoal';
+            }
         });
+    });
+
         function playSound() {
             var audio = new Audio('/static/airhorn.mp3');
             audio.play();
@@ -612,18 +181,21 @@
 
 <body>
 
-  <header>
-
-      <h1>
-
-          <span style="font-size: 30px; color: white;">{{ hometimeoutv }} </span>
-          <span style="font-size: 200px; color: white;">{{ TeamHome['goals'] }} </span>
-          <span style="font-size: 100px; color: grey; width: 1000px ;">{{location}}</span>
-              <span style="font-size: 200px; color: blue;">  {{ TeamAway['goals'] }}</span>
-          <span style="font-size: 30px; color: white;">{{ awaytimeoutv }} </span>
-
-      </h1>
-  </header>
+    <header>
+        <h1>
+            <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach.red }}</span>
+            <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
+            <span style="font-size: 30px; color: #333333;">spacer</span>
+            <span style="font-size: 30px; color: white;">{{ hometimeoutv }}</span>
+            <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }}</span>
+            <span style="font-size: 100px; color: grey; width: 1000px;">{{location}}</span>
+            <span style="font-size: 300px; color: Yellow;">{{ TeamAway['goals'] }}</span>
+            <span style="font-size: 30px; color: white;">{{ awaytimeoutv }}</span>
+            <span style="font-size: 30px; color: #333333;">spacer</span>
+            <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
+            <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach.red }}</span>
+        </h1>
+    </header>
 
 
    <nav>
@@ -654,9 +226,11 @@
 
 
         ">
-            <td>                <form method="POST" action="/updateteamintagoal/{{ user_id }}">
-                <button style="height:28px;width:180px" type="submit">{{ user_id }}</button>
-                </form></td>
+            <td>
+                <form method="POST" action="/updateteamaintgoal/increment/{{ user_id }}" style="display:inline;"><button style="height:28px;width:120px" type="submit">{{ user_id }}</button></form>
+                <form method="POST" action="/updateteamaintgoal/decrement/{{ user_id }}" style="display:inline;"><button style="height:28px;width:40px" type="submit">-{{ user_id }}</button></form>
+            </td>
+
             <td>{{ teama.goals }}</td>
             <td>{{ teama.majors }}</td>
 <!--            <td>{{ teama.assists }}</td>-->
@@ -755,9 +329,10 @@
                 white; /* Fallback color */
             {% endif %}
         ">
-            <td>                <form method="POST" action="/updateteamintbgoal/{{ user_id }}">
-                <button style="height:28px;width:180px" type="submit">{{ user_id }}</button>
-                </form></td>
+            <td>                
+                <form method="POST" action="/updateteambintgoal/increment/{{ user_id }}" style="display:inline;"><button style="height:28px;width:120px" type="submit">{{ user_id }}</button></form>
+                <form method="POST" action="/updateteambintgoal/decrement/{{ user_id }}" style="display:inline;"><button style="height:28px;width:40px" type="submit">-{{ user_id }}</button></form>
+            </td>
             <td>{{ teamb.goals }}</td>
             <td>{{ teamb.majors }}</td>
 <!--            <td>{{ teama.assists }}</td>-->
@@ -767,17 +342,8 @@
         {% endfor %}
     </table>
 
-<!--       <form method="POST" action="/action">-->
-<!--                 <select name="action" id="action">-->
-<!--                    <option value="increment">increment</option>-->
-<!--                    <option value="decrement">decrement</option>-->
-<!--                </select>-->
-<!--         <button type="submit">action</button>-->
-<!--   </form>-->
-
-
 </aside>
-
+    
 </body>
 </html>
 

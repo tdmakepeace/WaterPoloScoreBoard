@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Development Waterpolo Scoresheet</title>
+    <link rel="stylesheet" href="../static/style.css">
+    <script src="static/jquery.min.js"></script>
+    <style>
+        .red {
+            color: red;
+            font-size: 30px;
+        }
+        .yellow {
+            color: yellow;
+            font-size: 30px;
+        }
+        .none {
+            color: black;
+            font-size: 30px;
+        }
+    </style>
+</head>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        function updateGoal(player, team) {
+            const url = team === 'home' ? `/updateteamacard/increment/${player}` : `/updateteambcard/increment/${player}`;
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                window.location.href = '/';
+            });
+        }
+        const playerKeys = {'1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,  '8': 8, '9': 9, '0': 10, '-': 11, '=': 12, 'q': 13, 'w': 14, 'r': 2, 't': 3, 'f': 6, 'g': 7, 'h': 9, 'y': 10, 'u': 11, 'j': 12,  'c': 13, 'v': 14};
+
+        document.addEventListener('keydown', function(event) {
+            const key = event.key.toLowerCase();
+            if (!event.ctrlKey && (key in playerKeys)) {
+                event.preventDefault();
+                updateGoal(playerKeys[key], 'home');
+            } else if (event.ctrlKey && (key in playerKeys)) {
+                event.preventDefault();
+                updateGoal(playerKeys[key], 'away');
+            } else if (key === 'x') {
+                event.preventDefault();
+                window.location.href = '/';
+            }
+        });
+    });
+    function startCountdown() {
+        $.ajax({
+            url: '/start_countdown',
+            success: function(response) {
+                updateCountdown();
+            }
+        });
+    }
+
+    function pauseCountdown() {
+        $.ajax({
+            url: '/pause_countdown',
+            success: function(response) {
+                updateCountdown();
+            }
+        });
+    }
+
+    function resumeCountdown() {
+        $.ajax({
+            url: '/resume_countdown',
+            success: function(response) {
+                updateCountdown();
+            }
+        });
+    }
+
+    function stopCountdown() {
+        $.ajax({
+            url: '/stop_countdown',
+            success: function(response) {
+                updateCountdown();
+            }
+        });
+    }
+
+    function updateCountdown() {
+        $.ajax({
+            url: '/get_countdown_status',
+            success: function(response) {
+                let countdownElement = document.getElementById('countdown');
+                let timeLeft = response.elapsed_time;
+                if (response.countdown_running) {
+                    let minutes = Math.floor(timeLeft / 60);
+                    let seconds = Math.floor(timeLeft % 60);
+                    countdownElement.innerHTML = '<br> ' + minutes +':' + seconds.toString().padStart(2, '0') + '';
+                    // countdownElement.innerHTML = 'Remaining Time: ' + seconds.toString().padStart(2, '0') + 's';
+                    if (timeLeft > 0) {
+                        setTimeout(updateCountdown, 1000);
+                    }
+                    else {
+                        playSound()
+                        setTimeout(() => { window.location.href = "/callinterval"; }, 2000);
+
+                    }
+                } else {
+                    // countdownElement.innerHTML = '<br>Paused';
+                    let timeLeft = response.elapsed_time;
+                    let minutes = Math.floor(timeLeft / 60);
+                    let seconds = Math.floor(timeLeft % 60);
+                    countdownElement.innerHTML = '<br> ' + minutes +':' + seconds.toString().padStart(2, '0') + '';
+                }
+            }
+        });
+    }
+    // Initial update of countdown display
+    updateCountdown();
+</script>
+
+<body>
+
+    <header>
+        <h1>
+            <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach.red }}</span>
+            <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
+            <span style="font-size: 30px; color: #333333;">spacer</span>
+            <span style="font-size: 30px; color: white;">{{ hometimeoutv }}</span>
+            <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }}</span>
+            <span style="font-size: 100px; color: grey; width: 1000px;">{{location}}</span>
+            <span style="font-size: 300px; color: Yellow;">{{ TeamAway['goals'] }}</span>
+            <span style="font-size: 30px; color: white;">{{ awaytimeoutv }}</span>
+            <span style="font-size: 30px; color: #333333;">spacer</span>
+            <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
+            <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach.red }}</span>
+        </h1>
+    </header>
+
+
+   <nav>
+<!--    <h6>Home Team</h6>-->
+    <table class="center" style="width:100%"  >
+        <tr>
+    <th colspan="4"> <form action="/savehomeplayers/home"><button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " type="submit">{{HomeTeam}}</button> </form></th>
+</tr>
+        <tr>
+    <th> Player&nbsp;&nbsp;&nbsp;</th>
+    <th> <small>Goals&nbsp;</small></th>
+    <th> <small>Majors</small></th>
+<!--    <th> <small>Assists</small></th>-->
+        </tr>
+        {% for user_id, teama in teama.items() %}
+        <tr class="custom-text" style="background-color:
+            {% if teama.reds  == 1 %}
+              black;
+            {% elif teama.majors  == 1 %}
+                #00ff00;
+            {% elif teama.majors == 2 %}
+                #ff9933;
+            {% elif teama.majors >= 3 %}
+                #ff3300; /* Add more conditions as needed */
+            {% else %}
+                white; /* Fallback color */
+            {% endif %}
+
+
+        ">
+            <td>
+                <form method="POST" action="/updateteamacard/increment/{{ user_id }}" style="display:inline;"><button style="height:28px;width:120px" type="submit">{{ user_id }}</button></form>
+                <form method="POST" action="/updateteamacard/decrement/{{ user_id }}" style="display:inline;"><button style="height:28px;width:40px" type="submit">-{{ user_id }}</button></form>
+            </td>
+            <td>{{ teama.goals }}</td>
+            <td>{{ teama.majors }}</td>
+<!--            <td>{{ teama.assists }}</td>-->
+
+
+        </tr>
+        {% endfor %}
+    </table>
+    <table>
+        <td>
+                <form method="POST" action="/updateteamacoach/increment/1">
+                <button style="height:50px;width:120px" type="submit">Team Yellow</button>
+                </form>
+             </td>
+                <td>
+                <form method="POST" action="/updateteamacoach/increment/2">
+                <button style="height:50px;width:120px" type="submit">Coach Red </button>
+                </form>
+             </td>
+                     <td>
+                <form method="POST" action="/updateteamacoach/decrement/1">
+                <button style="height:50px;width:60px" type="submit">- Team Yellow</button>
+                </form>
+             </td>
+                <td>
+                <form method="POST" action="/updateteamacoach/decrement/2">
+                <button style="height:50px;width:60px" type="submit">- Coach Red</button>
+                </form>
+             </td>
+             </table>
+
+  </nav>
+
+<article>
+
+
+        <table class="center" style="width:100%">
+            <tr>
+                <td style="width:10%"><button style="height:50px;width:50px" onclick="addmin()">+</button></td>
+                <td style="width:80%" rowspan="3"><span style="font-size:300px;color:blue;" id="countdown"></span></td>
+                <td style="width:10%"><button style="height:50px;width:50px" onclick="addsec()">+</button></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><button style="height:50px;width:50px" onclick="minmin()">-</button></td>
+                <td><button style="height:50px;width:50px" onclick="minsec()">-</button></td>
+            </tr>
+        </table>
+
+
+<!--    <button style="height:50px;width:200px" onclick="startCountdown()">Start</button>-->
+    <button style="height:50px;width:300px" onclick="pauseCountdown()"><u>S</u>tart / Stop</button>
+ <!--   <button style="height:50px;width:100px" onclick="resumeCountdown()">Resume</button> -->
+    <button style="height:50px;width:50px" onclick="stopCountdown()">Reset</button>
+
+  </div>
+</div>
+<br>
+<br>
+
+  <table class="center"; style="text-align: center">
+        <tr>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;Score&nbsp;&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P1&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P2&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P3&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P4&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">Majors&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P1&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P2&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P3&nbsp;</th>
+            <th style="background-color:rgb(128,128,128);  font-size: 30px;">&nbsp;P4&nbsp;</th>
+
+        </tr>
+          {% for team_id, scores in periodscores.items() %}
+        <tr>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ team_id }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals1 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals2 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals3 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.goals4 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ team_id }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors1 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors2 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors3 }}</td>
+            <td style="background-color:powderblue;  font-size: 30px;">{{ scores.majors4 }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+<br>
+
+            <table class="center"; style="text-align: center">
+<td>
+
+                <th style="width:200px" > Card Issued </th>
+
+</td>
+                                <td>         <form action="/?">
+            <button style="height:50px;width:200px" type="submit">Back (X)</button>
+                </form> </td>
+        </table>
+
+
+
+</article>
+
+
+<aside>
+<!--    <h6>Away Team</h6>-->
+    <table class="center" style="width:100%"  >
+        <tr>
+    <th colspan="4"> <form action="/saveawayplayers/away"><button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " type="submit">{{AwayTeam}}</button> </form> </th>
+</tr>
+        <tr>
+    <th> Player&nbsp;&nbsp;&nbsp;</th>
+    <th> <small>Goals&nbsp;</small></th>
+    <th> <small>Majors</small></th>
+    <th>
+
+    </th>
+<!--    <th> <small>Assists</small></th>-->
+
+        </tr>
+        {% for user_id, teamb in teamb.items() %}
+        <tr class="custom-text" style="background-color:
+            {% if teamb.reds  == 1 %}
+              black;
+            {% elif teamb.majors  == 1 %}
+                #00ff00;
+            {% elif teamb.majors == 2 %}
+                #ff9933;
+            {% elif teamb.majors >= 3 %}
+                #ff3300; /* Add more conditions as needed */
+            {% else %}
+                white; /* Fallback color */
+            {% endif %}
+        ">
+            <td>
+                <form method="POST" action="/updateteambcard/increment/{{ user_id }}" style="display:inline;"><button style="height:28px;width:120px" type="submit">{{ user_id }}</button></form>
+                <form method="POST" action="/updateteambcard/decrement/{{ user_id }}" style="display:inline;"><button style="height:28px;width:40px" type="submit">-{{ user_id }}</button></form>
+            </td>
+            <td>{{ teamb.goals }}</td>
+            <td>{{ teamb.majors }}</td>
+<!--            <td>{{ teama.assists }}</td>-->
+
+
+        </tr>
+        {% endfor %}
+    </table>
+    <table>
+        <td>
+                <form method="POST" action="/updateteambcoach/increment/1">
+                <button style="height:50px;width:120px" type="submit">Team Yellow</button>
+                </form>
+             </td>
+                <td>
+                <form method="POST" action="/updateteambcoach/increment/2">
+                <button style="height:50px;width:120px" type="submit">Coach Red </button>
+                </form>
+             </td>
+                     <td>
+                <form method="POST" action="/updateteambcoach/decrement/1">
+                <button style="height:50px;width:60px" type="submit">- Team Yellow</button>
+                </form>
+             </td>
+                <td>
+                <form method="POST" action="/updateteambcoach/decrement/2">
+                <button style="height:50px;width:60px" type="submit">- Coach Red</button>
+                </form>
+             </td>
+             </table>
+
+<!--       <form method="POST" action="/action">-->
+<!--                 <select name="action" id="action">-->
+<!--                    <option value="increment">increment</option>-->
+<!--                    <option value="decrement">decrement</option>-->
+<!--                </select>-->
+<!--         <button type="submit">action</button>-->
+<!--   </form>-->
+
+
+</aside>
+     
+</body>
+</html>
+
+
+
