@@ -1,169 +1,273 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Development Waterpolo Scoresheet</title>
+    <title>Water Polo Scoreboard Display</title>
     <link rel="stylesheet" href="../static/style.css">
     <script src="static/jquery.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background-color: #222;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            border-bottom: 3px solid #555;
+        }
+        
+        .main-display {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .clocks-container {
+            display: flex;
+            gap: 200px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        
+        .clock-display {
+            text-align: center;
+        }
+        
+        .clock-label {
+            font-size: 25px;
+            color: #999;
+            margin-bottom: 10px;
+        }
+        
+        #countdown {
+            font-size: 450px;
+            font-weight: bold;
+            color: blue;
+        }
+        
+        #shotdown {
+            font-size: 400px;
+            font-weight: bold;
+            color: red;
+        }
+        
+        .score-table {
+            margin-top: 30px;
+        }
+        
+        .score-table table {
+            border-collapse: collapse;
+            background-color: #444;
+        }
+        
+        .score-table th, .score-table td {
+            padding: 15px 25px;
+            border: 2px solid #666;
+            font-size: 28px;
+        }
+        
+        .score-table th {
+            background-color: rgb(128,128,128);
+            font-weight: bold;
+        }
+        
+        .score-table td {
+            background-color: powderblue;
+            color: #000;
+        }
+    </style>
 </head>
 
-    <script>
-        function reload() {
-            setTimeout(() => { window.location.href = "/display"; }, 1000);
-        }
+<script>
+    function playSound() {
+        var audio = new Audio('/static/airhorn.mp3');
+        audio.play();
+    }
 
-        function playSound() {
-            var audio = new Audio('/static/airhorn.mp3');
-            audio.play();
-        }
-
-        function startCountdown() {
-            $.ajax({
-                url: '/start_countdown',
-                success: function(response) {
-                    updateCountdown();
-                }
-            });
-        }
-
-        function pauseCountdown() {
-            $.ajax({
-                url: '/pause_countdown',
-                success: function(response) {
-                    updateCountdown();
-                }
-            });
-        }
-
-        function resumeCountdown() {
-            $.ajax({
-                url: '/resume_countdown',
-                success: function(response) {
-                    updateCountdown();
-                }
-            });
-        }
-
-        function stopCountdown() {
-            $.ajax({
-                url: '/stop_countdown',
-                success: function(response) {
-                    updateCountdown();
-                }
-            });
-        }
-
-        function updateCountdown() {
-            $.ajax({
-                url: '/get_countdown_status',
-                success: function(response) {
+    function updateCountdown() {
+        // First check if timeout is running
+        $.ajax({
+            url: '/get_timeout_status',
+            success: function (timeoutResponse) {
+                let timeLeft = timeoutResponse.elapsed_timeout;
+                
+                // If timeout is running AND above 0 seconds, show timeout clock only
+                if (timeoutResponse.timeout_running && timeLeft > 0) {
                     let countdownElement = document.getElementById('countdown');
-                    let timeLeft = response.elapsed_time;
-                    if (response.countdown_running) {
-                        let minutes = Math.floor(timeLeft / 60);
-                        let seconds = Math.floor(timeLeft % 60);
-                        countdownElement.innerHTML = '<br> ' + minutes +':' + seconds.toString().padStart(2, '0') + '';
-                        if (timeLeft > 0) {
-                            setTimeout(() => { window.location.href = "/display"; }, 1000);
-                        } else {
-                            setTimeout(() => { window.location.href = "/display"; }, 1000);
-                        }
-                    } else {
-                        let minutes = Math.floor(timeLeft / 60);
-                        let seconds = Math.floor(timeLeft % 60);
-                        countdownElement.innerHTML = '<br>Paused';
-                        setTimeout(() => { window.location.href = "/display"; }, 1000);
-                    }
-                }
-            });
-        }
+                    let shotdownElement = document.getElementById('shotdown');
+                    let gameLabelElement = document.querySelector('.clocks-container .clock-display:nth-child(1) .clock-label');
+                    let shotLabelElement = document.querySelector('.clocks-container .clock-display:nth-child(2) .clock-label');
+                    
+                    let minutes = Math.floor(timeLeft / 60);
+                    let seconds = Math.floor(timeLeft % 60);
+                    
+                    // Show timeout in main clock position
+                    gameLabelElement.innerHTML = 'TIMEOUT';
+                    countdownElement.innerHTML = minutes + ':' + seconds.toString().padStart(2, '0');
+                    countdownElement.style.color = "orange";
+                    
+                    // Hide shot clock during timeout
+                    shotLabelElement.innerHTML = '';
+                    shotdownElement.innerHTML = '';
+                    
+                    setTimeout(updateCountdown, 1000);
+                } else {
+                    // Show regular game and shot clocks
+                    $.ajax({
+                        url: '/get_countdown_status',
+                        success: function (response) {
+                            let countdownElement = document.getElementById('countdown');
+                            let shotdownElement = document.getElementById('shotdown');
+                            let gameLabelElement = document.querySelector('.clocks-container .clock-display:nth-child(1) .clock-label');
+                            let shotLabelElement = document.querySelector('.clocks-container .clock-display:nth-child(2) .clock-label');
+                            let timeLeft = response.elapsed_time;
+                            let shotLeft = response.elapsed_shot;
+                            
+                            // Restore labels
+                            gameLabelElement.innerHTML = 'GAME CLOCK';
+                            shotLabelElement.innerHTML = 'SHOT CLOCK';
+                            
+                            // Color coding for shot clock
+                            if (shotLeft <= timeLeft) {
+                                shotdownElement.style.color = "red";
+                            } else {
+                                shotdownElement.style.color = "transparent";
+                            }
 
-        updateCountdown();
-    </script>
+                            // Color coding for main clock
+                            if (timeLeft > 60) {
+                                countdownElement.style.color = "blue";
+                            } else if (timeLeft > 30) {
+                                countdownElement.style.color = "orange";
+                            } else {
+                                countdownElement.style.color = "red";
+                            }
+
+                            let minutes = Math.floor(timeLeft / 60);
+                            let seconds = Math.floor(timeLeft % 60);
+                            let shotseconds = Math.floor(shotLeft % 60);
+                            
+                            countdownElement.innerHTML = minutes + ':' + seconds.toString().padStart(2, '0');
+                            shotdownElement.innerHTML = shotseconds.toString().padStart(2, '0');
+
+                            // Auto-refresh every second
+                            setTimeout(updateCountdown, 1000);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    // Initial update
+    updateCountdown();
+    
+    // Refresh the entire page every 10 seconds as a fallback
+    setInterval(function() {
+        location.reload();
+    }, 10000);
+    
+    // Listen for storage changes from timer.html - works in regular browser
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'timerReloadTimestamp' && e.newValue) {
+            location.reload();
+        }
+    });
+    
+    // Server-side polling - works in both browser and webview
+    let lastServerTimestamp = null;
+    setInterval(function() {
+        $.ajax({
+            url: '/get_timer_reload_timestamp',
+            success: function(response) {
+                if (lastServerTimestamp !== null && response.timestamp !== lastServerTimestamp) {
+                    location.reload();
+                }
+                lastServerTimestamp = response.timestamp;
+            }
+        });
+    }, 200); // Check every 200ms for very fast updates
+</script>
 
 <body>
     <header>
         <h1>
-            <span style="font-size: 30px; color: white;">{{ hometimeoutv }} </span>
-            <span style="font-size: 200px; color: white;">{{ TeamHome['goals'] }} </span>
+            <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach.red }}</span>
+            <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
+            <span style="font-size: 30px; color: #222;">spacer</span>
+            <span style="font-size: 30px; color: white;">{{ hometimeoutv }}</span>
+            <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }}</span>
             <span style="font-size: 100px; color: grey; width: 1000px;">{{location}}</span>
-            <span style="font-size: 200px; color: blue;">{{ TeamAway['goals'] }}</span>
-            <span style="font-size: 30px; color: white;">{{ awaytimeoutv }} </span>
+            <span style="font-size: 300px; color: Yellow;">{{ TeamAway['goals'] }}</span>
+            <span style="font-size: 30px; color: white;">{{ awaytimeoutv }}</span>
+            <span style="font-size: 30px; color: #222;">spacer</span>
+            <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
+            <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach.red }}</span>
         </h1>
     </header>
 
-    <nav>
-        <table>
+    <div class="main-display">
+        <div class="clocks-container">
+            <div class="clock-display">
+                <div class="clock-label">GAME CLOCK</div>
+                <div id="countdown">0:00</div>
+            </div>
+            
+            <div class="clock-display">
+                <div class="clock-label">SHOT CLOCK</div>
+                <div id="shotdown">00</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 10px;">
+            <span style="font-size: 40px; color: white;">{{HomeTeam}}</span>
+            <span style="font-size: 40px; color: grey;"> vs </span>
+            <span style="font-size: 40px; color: Yellow;">{{AwayTeam}}</span>
+            <span style="font-size: 30px; color: #999; margin-left: 50px;">Quarter: {{ quarter }}</span>
+        </div>
+
+        <div class="score-table">
+            <table>
+                <tr>
+                    <th>Score</th>
+                    <th>P1</th>
+                    <th>P2</th>
+                    <th>P3</th>
+                    <th>P4</th>
+                    <th>Majors</th>
+                    <th>P1</th>
+                    <th>P2</th>
+                    <th>P3</th>
+                    <th>P4</th>
+                </tr>
+            {% for team_id, scores in periodscores.items() %}
             <tr>
-                <th colspan="4">{{HomeTeam}}</th>
-            </tr>
-            <tr>
-                <th>Player&nbsp;&nbsp;&nbsp;</th>
-                <th><small>Goals&nbsp;</small></th>
-                <th><small>Majors</small></th>
-                <th><small>Assists</small></th>
-            </tr>
-            {% for user_id, teama in teama.items() %}
-            <tr class="custom-text" style="background-color:
-                {% if teama.majors == 1 %}
-                    #00ff00;
-                {% elif teama.majors == 2 %}
-                    #ff9933;
-                {% elif teama.majors >= 3 %}
-                    #ff3300;
-                {% else %}
-                    white;
-                {% endif %}
-            ">
-                <td>{{ user_id }}</td>
-                <td>{{ teama.goals }}</td>
-                <td>{{ teama.majors }}</td>
-                <td>{{ teama.assists }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ team_id }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.goals1 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.goals2 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.goals3 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.goals4 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ team_id }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.majors1 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.majors2 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.majors3 }}</td>
+                <td style="background-color:powderblue; font-size: 30px;">{{ scores.majors4 }}</td>
             </tr>
             {% endfor %}
-        </table>
-    </nav>
-
-    <article>
-        <div><span style="color: red;" id="countdown"></span></div>
-        <br>
-        <br>
-        {% include 'messages.html' %}
-    </article>
-
-    <aside>
-        <table>
-            <tr>
-                <th colspan="4">{{AwayTeam}}</th>
-            </tr>
-            <tr>
-                <th>Player&nbsp;&nbsp;&nbsp;</th>
-                <th><small>Goals&nbsp;</small></th>
-                <th><small>Majors</small></th>
-                <th><small>Assists</small></th>
-            </tr>
-            {% for user_id, teamb in teamb.items() %}
-            <tr class="custom-text" style="background-color:
-                {% if teamb.majors == 1 %}
-                    #00ff00;
-                {% elif teamb.majors == 2 %}
-                    #ff9933;
-                {% elif teamb.majors >= 3 %}
-                    #ff3300;
-                {% else %}
-                    white;
-                {% endif %}
-            ">
-                <td>{{ user_id }}</td>
-                <td>{{ teamb.goals }}</td>
-                <td>{{ teamb.majors }}</td>
-                <td>{{ teamb.assists }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </aside>
-
-    <footer>
-        <span style="font-size: 50px; padding: 10px; color: Red;">Quarter: {{ quarter }}</span>
-    </footer>
+            </table>
+        </div>
+    </div>
 </body>
 </html>

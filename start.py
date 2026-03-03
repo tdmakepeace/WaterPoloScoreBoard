@@ -45,6 +45,9 @@ teamb = {i: PlayerStats() for i in range(1, 15)}
 
 periodscores = { 'Home': PeriodScores() ,     'Away': PeriodScores() }
 
+# Track when timer.html is loaded to notify display.html
+timer_reload_timestamp = time.time()
+
 # Group related constants at the top
 class Config:
     """Application configuration constants."""
@@ -308,6 +311,8 @@ def displayshotclock(shot):
 
 @app.route('/')
 def index():
+    global timer_reload_timestamp
+    timer_reload_timestamp = time.time()  # Update timestamp when timer.html loads
     return render_template('timer.html', scores=scores, teama=teama, teamb=teamb,
                            elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
                            periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
@@ -324,6 +329,10 @@ def display():
                            hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
                            home_coach=home_team_red, away_coach=away_team_red)
 
+@app.route('/get_timer_reload_timestamp')
+def get_timer_reload_timestamp():
+    """Return the timestamp of when timer.html was last loaded."""
+    return jsonify({'timestamp': timer_reload_timestamp})
 
 
 # CLOCK CONTROLS
@@ -386,14 +395,18 @@ def get_countdown_status():
         remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
         elapsed_shot = time.time() - start_shot
         remaining_shot = max((clock_shot) - elapsed_shot, 0 )
-        return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
     else:
         # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
         # elapsed_time = time.time() - start_time
         remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
         # elapsed_shot = time.time() - start_shot
         remaining_shot = max((clock_shot) - elapsed_shot, 0 )
-        return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
+    
+    return jsonify({
+        'countdown_running': countdown_running, 
+        'elapsed_time': remaining_time, 
+        'elapsed_shot': remaining_shot
+    })
 
 
 @app.route('/reset30')
@@ -1053,24 +1066,24 @@ def updateteamaintgoal(direction,user_id):
         if direction == 'increment':
             teama[user_id]['goals'] = teama[user_id]['goals'] + 1
             scores['Home']['goals'] = scores['Home']['goals'] + 1
-            if quarter == 1:
+            if quarter == 2:
                 periodscores['Home']['goals1'] = periodscores['Home']['goals1'] + 1
-            elif quarter == 2:
-                periodscores['Home']['goals2'] = periodscores['Home']['goals2'] + 1
             elif quarter == 3:
-                periodscores['Home']['goals3'] = periodscores['Home']['goals3'] + 1
+                periodscores['Home']['goals2'] = periodscores['Home']['goals2'] + 1
             elif quarter == 4:
+                periodscores['Home']['goals3'] = periodscores['Home']['goals3'] + 1
+            elif quarter == 5:
                 periodscores['Home']['goals4'] = periodscores['Home']['goals4'] + 1
         elif direction == 'decrement':
             teama[user_id]['goals'] = teama[user_id]['goals'] - 1
             scores['Home']['goals'] = scores['Home']['goals'] - 1
-            if quarter == 1:
+            if quarter == 2:
                 periodscores['Home']['goals1'] = periodscores['Home']['goals1'] - 1
-            elif quarter == 2:
-                periodscores['Home']['goals2'] = periodscores['Home']['goals2'] - 1
             elif quarter == 3:
-                periodscores['Home']['goals3'] = periodscores['Home']['goals3'] - 1
+                periodscores['Home']['goals2'] = periodscores['Home']['goals2'] - 1
             elif quarter == 4:
+                periodscores['Home']['goals3'] = periodscores['Home']['goals3'] - 1
+            elif quarter == 5:
                 periodscores['Home']['goals4'] = periodscores['Home']['goals4'] - 1
             direction = "increment"
 
@@ -1288,8 +1301,9 @@ def updateteambgoal_direction(direction, user_id):
 
         f = open(running_file, 'a')
         writer = csv.writer(f)
+        prequarter = quarter -1 
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', user_id, away_data['away'][user_id - 1][1], 'Away',
+        data = [prequarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', user_id, away_data['away'][user_id - 1][1], 'Away',
         teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
         writer.writerow(data)
         f.close()
@@ -1311,24 +1325,24 @@ def updateteambintgoal(direction,user_id):
         if direction == 'increment':
             teamb[user_id]['goals'] = teamb[user_id]['goals'] + 1
             scores['Away']['goals'] = scores['Away']['goals'] + 1
-            if quarter == 1:
+            if quarter == 2:
                 periodscores['Away']['goals1'] = periodscores['Away']['goals1'] + 1
-            elif quarter == 2:
-                periodscores['Away']['goals2'] = periodscores['Away']['goals2'] + 1
             elif quarter == 3:
-                periodscores['Away']['goals3'] = periodscores['Away']['goals3'] + 1
+                periodscores['Away']['goals2'] = periodscores['Away']['goals2'] + 1
             elif quarter == 4:
+                periodscores['Away']['goals3'] = periodscores['Away']['goals3'] + 1
+            elif quarter == 5:
                 periodscores['Away']['goals4'] = periodscores['Away']['goals4'] + 1
         elif direction == 'decrement':
             teamb[user_id]['goals'] = teamb[user_id]['goals'] - 1
             scores['Away']['goals'] = scores['Away']['goals'] - 1
-            if quarter == 1:
+            if quarter == 2:
                 periodscores['Away']['goals1'] = periodscores['Away']['goals1'] - 1
-            elif quarter == 2:
-                periodscores['Away']['goals2'] = periodscores['Away']['goals2'] - 1
             elif quarter == 3:
-                periodscores['Away']['goals3'] = periodscores['Away']['goals3'] - 1
+                periodscores['Away']['goals2'] = periodscores['Away']['goals2'] - 1
             elif quarter == 4:
+                periodscores['Away']['goals3'] = periodscores['Away']['goals3'] - 1
+            elif quarter == 5:
                 periodscores['Away']['goals4'] = periodscores['Away']['goals4'] - 1
             direction = "increment"
 
@@ -1337,8 +1351,9 @@ def updateteambintgoal(direction,user_id):
 
         f = open(running_file, 'a')
         writer = csv.writer(f)
+        prequarter = quarter -1 
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', user_id, away_data['away'][user_id - 1][1], 'Away',
+        data = [prequarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', user_id, away_data['away'][user_id - 1][1], 'Away',
         teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
         writer.writerow(data)
         f.close()
@@ -2063,7 +2078,7 @@ def save():
     Config.DEFAULT_AWAY_TEAM = (request.form['Away'])
     Config.SHOT_CLOCK = int(request.form['shotclock'])
     Config.MAJORS = int(request.form['majors'])
-    Config.BLUETOOTH_NAME = str(request.form['ble'])
+    # Config.BLUETOOTH_NAME = str(request.form['ble'])
 
     return redirect(url_for('index'))
 
@@ -2172,3 +2187,5 @@ if __name__ == '__main__':
     # app.run(debug=True, host=Config.WEB_HOST, port=Config.WEB_PORT)
     webview.start()
     
+
+

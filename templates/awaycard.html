@@ -141,7 +141,7 @@
 <!--    <h6>Home Team</h6>-->
     <table class="center" style="width:100%"  >
         <tr>
-    <th colspan="4"> <form action="/savehomeplayers/home"><button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " type="submit">{{HomeTeam}}</button> </form></th>
+    <th colspan="4"> <form action="/savehomeplayers/home"><button class="btn-team" style="height:30px;width:300px;font-size: 25px;font-weight: bold;" type="submit">{{HomeTeam}}</button> </form></th>
 </tr>
         <tr>
     <th> Player&nbsp;&nbsp;&nbsp;</th>
@@ -182,9 +182,9 @@
 
     <table class="center" style="width:100%" >
         <tr>
-            <td style="width:10%">    <button style="height:50px;width:50px" onclick="addmin()"> + </button>      </td>
+            <td style="width:10%">    <button class="btn-adjust" style="height:50px;width:50px" onclick="addmin()"> + </button>      </td>
             <td style="width:80%" rowspan="3">    <span style="color: blue  ; font-size:300px;""  id="countdown"> </span>         </td>
-            <td style="width:10%" >    <button style="height:50px;width:50px" onclick="addsec()"> + </button>      </td>
+            <td style="width:10%" >    <button class="btn-adjust" style="height:50px;width:50px" onclick="addsec()"> + </button>      </td>
         </tr>
         <tr>
             <td>            </td>
@@ -192,18 +192,18 @@
             <td>            </td>
         </tr>
                 <tr>
-            <td>  <button style="height:50px;width:50px" onclick="minmin()"> - </button>          </td>
+            <td>  <button class="btn-adjust" style="height:50px;width:50px" onclick="minmin()"> - </button>          </td>
 
-            <td>  <button style="height:50px;width:50px" onclick="minsec()"> - </button>      </td>
+            <td>  <button class="btn-adjust" style="height:50px;width:50px" onclick="minsec()"> - </button>      </td>
         </tr>
 
     </table>
 
 
 <!--    <button style="height:50px;width:200px" onclick="startCountdown()">Start</button>-->
-    <button style="height:50px;width:300px" onclick="pauseCountdown()"><u>S</u>tart / Stop</button>
+    <button class="btn-primary" style="height:50px;width:300px" onclick="pauseCountdown()"><u>S</u>tart / Stop</button>
  <!--   <button style="height:50px;width:100px" onclick="resumeCountdown()">Resume</button> -->
-    <button style="height:50px;width:50px" onclick="stopCountdown()">Reset</button>
+    <button class="btn-danger" style="height:50px;width:50px" onclick="stopCountdown()">Reset</button>
 
   </div>
 </div>
@@ -220,92 +220,92 @@
 <table>
             <td>
                 <form method="POST" action="/updateteambcard/increment/1">
-                <button style="height:50px;width:120px" type="submit">1</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">1</button>
                 </form>
              </td>
 
             <td>
                 <form method="POST" action="/updateteambcard/increment/2">
-                <button style="height:50px;width:120px" type="submit">2</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">2</button>
                 </form>
              </td>
             <td>
                 <form method="POST" action="/updateteambcard/increment/3">
-                <button style="height:50px;width:120px" type="submit">3</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">3</button>
                 </form>
              </td>
 
             <td>
                 <form method="POST" action="/updateteambcard/increment/4">
-                <button style="height:50px;width:120px" type="submit">4</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">4</button>
                 </form>
              </td>
 
             <td>
                 <form method="POST" action="/updateteambcard/increment/5">
-                <button style="height:50px;width:120px" type="submit">5</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">5</button>
                 </form>
              </td>
             <td>
                 <form method="POST" action="/updateteambcard/increment/6">
-                <button style="height:50px;width:120px" type="submit">6</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">6</button>
                 </form>
              </td>
     </table>
 <table>
             <td>
                 <form method="POST" action="/updateteambcard/increment/7">
-                <button style="height:50px;width:120px" type="submit">7</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">7</button>
                 </form>
              </td>
 
             <td>
                 <form method="POST" action="/updateteambcard/increment/8">
-                <button style="height:50px;width:120px" type="submit">8</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">8</button>
                 </form>
              </td>
             <td>
                 <form method="POST" action="/updateteambcard/increment/9">
-                <button style="height:50px;width:120px" type="submit">9</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">9</button>
                 </form>
              </td>
 
             <td>
                 <form method="POST" action="/updateteambcard/increment/10">
-                <button style="height:50px;width:120px" type="submit">10</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">10</button>
                 </form>
              </td>
 
             <td>
                 <form method="POST" action="/updateteambcard/increment/11">
-                <button style="height:50px;width:120px" type="submit">11</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">11</button>
                 </form>
              </td>
             <td>
                 <form method="POST" action="/updateteambcard/increment/12">
-                <button style="height:50px;width:120px" type="submit">12</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">12</button>
                 </form>
              </td>
     </table>
 <table>
             <td>
                 <form method="POST" action="/updateteambcard/increment/13">
-                <button style="height:50px;width:120px" type="submit">13</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">13</button>
                 </form>
              </td>
                          <td>
                 <form method="POST" action="/updateteambcard/increment/14">
-                <button style="height:50px;width:120px" type="submit">14</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">14</button>
                 </form>
              </td>
                 <td>
                 <form method="POST" action="/updateteambcoach/1">
-                <button style="height:50px;width:120px" type="submit">Team Yellow</button>
+                <button class="btn-warning" style="height:50px;width:120px" type="submit">Team Yellow</button>
                 </form>
              </td>
                 <td>
                 <form method="POST" action="/updateteambcoach/2">
-                <button style="height:50px;width:120px" type="submit">Coach Red </button>
+                <button class="btn-danger" style="height:50px;width:120px" type="submit">Coach Red </button>
                 </form>
              </td>
 
@@ -313,7 +313,7 @@
 
 
          <form action="/?">
-            <button style="height:50px;width:200px" type="submit"><u>B</u>ack</button>
+            <button class="btn-secondary" style="height:50px;width:200px" type="submit"><u>B</u>ack</button>
                 </form>
 
 </article>
@@ -323,7 +323,7 @@
 <!--    <h6>Away Team</h6>-->
     <table class="center" style="width:100%"  >
         <tr>
-    <th colspan="4"> <form action="/saveawayplayers/away"><button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " type="submit">{{AwayTeam}}</button> </form> </th>
+    <th colspan="4"> <form action="/saveawayplayers/away"><button class="btn-team" style="height:30px;width:300px;font-size: 25px;font-weight: bold;" type="submit">{{AwayTeam}}</button> </form> </th>
 </tr>
         <tr>
     <th> Player&nbsp;&nbsp;&nbsp;</th>

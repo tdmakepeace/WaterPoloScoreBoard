@@ -202,7 +202,7 @@
 <!--    <h6>Home Team</h6>-->
     <table class="center" style="width:100%"  >
         <tr>
-    <th colspan="4"> <form action="/savehomeplayers/home"><button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " type="submit">{{HomeTeam}}</button> </form></th>
+    <th colspan="4"> <form action="/savehomeplayers/home"><button class="btn-team" style="height:30px;width:300px;font-size: 25px;font-weight: bold;" type="submit">{{HomeTeam}}</button> </form></th>
 </tr>
         <tr>
     <th> Player&nbsp;&nbsp;&nbsp;</th>
@@ -227,8 +227,8 @@
 
         ">
             <td>
-                <form method="POST" action="/updateteamaintgoal/increment/{{ user_id }}" style="display:inline;"><button style="height:28px;width:120px" type="submit">{{ user_id }}</button></form>
-                <form method="POST" action="/updateteamaintgoal/decrement/{{ user_id }}" style="display:inline;"><button style="height:28px;width:40px" type="submit">-{{ user_id }}</button></form>
+                <form method="POST" action="/updateteamaintgoal/increment/{{ user_id }}" style="display:inline;"><button class="btn-success" style="height:28px;width:120px" type="submit">{{ user_id }}</button></form>
+                <form method="POST" action="/updateteamaintgoal/decrement/{{ user_id }}" style="display:inline;"><button class="btn-danger" style="height:28px;width:40px" type="submit">-{{ user_id }}</button></form>
             </td>
 
             <td>{{ teama.goals }}</td>
@@ -293,7 +293,7 @@
 
 </td>
                                 <td>         <form action="/callintervalgoal">
-            <button style="height:50px;width:200px" type="submit">Back (X)</button>
+            <button class="btn-secondary" style="height:50px;width:200px" type="submit">Back (X)</button>
                 </form> </td>
         </table>
 
@@ -306,7 +306,7 @@
 <!--    <h6>Away Team</h6>-->
     <table class="center" style="width:100%"  >
         <tr>
-    <th colspan="4"> <form action="/saveawayplayers/away"><button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " type="submit">{{AwayTeam}}</button> </form> </th>
+    <th colspan="4"> <form action="/saveawayplayers/away"><button class="btn-team" style="height:30px;width:300px;font-size: 25px;font-weight: bold;" type="submit">{{AwayTeam}}</button> </form> </th>
 </tr>
         <tr>
     <th> Player&nbsp;&nbsp;&nbsp;</th>
@@ -330,8 +330,8 @@
             {% endif %}
         ">
             <td>                
-                <form method="POST" action="/updateteambintgoal/increment/{{ user_id }}" style="display:inline;"><button style="height:28px;width:120px" type="submit">{{ user_id }}</button></form>
-                <form method="POST" action="/updateteambintgoal/decrement/{{ user_id }}" style="display:inline;"><button style="height:28px;width:40px" type="submit">-{{ user_id }}</button></form>
+                <form method="POST" action="/updateteambintgoal/increment/{{ user_id }}" style="display:inline;"><button class="btn-success" style="height:28px;width:120px" type="submit">{{ user_id }}</button></form>
+                <form method="POST" action="/updateteambintgoal/decrement/{{ user_id }}" style="display:inline;"><button class="btn-danger" style="height:28px;width:40px" type="submit">-{{ user_id }}</button></form>
             </td>
             <td>{{ teamb.goals }}</td>
             <td>{{ teamb.majors }}</td>

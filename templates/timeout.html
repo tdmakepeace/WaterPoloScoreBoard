@@ -208,7 +208,7 @@
 <!--    <h6>Home Team</h6>-->
     <table class="center" style="width:100%"  >
         <tr>
-    <th colspan="4"> <button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " onclick="alert('Edit at end of game')">{{HomeTeam}}</button> </th>
+    <th colspan="4"> <button class="btn-team" style="height:30px;width:300px;font-size: 25px;font-weight: bold;" onclick="alert('Edit at end of game')">{{HomeTeam}}</button> </th>
 </tr>
         <tr>
     <th> Player&nbsp;&nbsp;&nbsp;</th>
@@ -244,10 +244,10 @@
     <div> <span style="color: red;" id="timeout"> </span></div>
 
 <!--    <button style="height:50px;width:100px" onclick="startTimeout()">Start Timeoute Period</button>-->
-    <button style="height:50px;width:100px" onclick="pauseTimeout()">Pause (N)</button>
-    <button style="height:50px;width:100px" onclick="resumeTimeout()">Resume (cntl+N</button>
+    <button class="btn-clock" style="height:50px;width:100px" onclick="pauseTimeout()">Pause (N)</button>
+    <button class="btn-clock" style="height:50px;width:100px" onclick="resumeTimeout()">Resume (cntl+N</button>
             <form method="GET" action="/">
-            <button style="height:50px;width:100px" onclick="stopTimeout()" type="submit">Return to Game (X)</button>
+            <button class="btn-secondary" style="height:50px;width:100px" onclick="stopTimeout()" type="submit">Return to Game (X)</button>
         </form>
 
 
@@ -271,7 +271,7 @@
 <!--    <h6>Away Team</h6>-->
     <table class="center" style="width:100%"  >
         <tr>
-    <th colspan="4"> <button style="height:30px;width:300px;font-size: 25px;font-weight: bold; " onclick="alert('Edit at end of game')">{{AwayTeam}}</button> </th>
+    <th colspan="4"> <button class="btn-team" style="height:30px;width:300px;font-size: 25px;font-weight: bold;" onclick="alert('Edit at end of game')">{{AwayTeam}}</button> </th>
 </tr>
         <tr>
     <th> Player&nbsp;&nbsp;&nbsp;</th>

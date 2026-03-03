@@ -17,6 +17,10 @@
             color: black;
             font-size: 30px;
         }
+        table[style*="border: none"] td,
+        table[style*="border: none"] th {
+            border: none !important;
+        }
     </style>
 </head>
 
@@ -397,6 +401,10 @@
 
 
 <body>
+    <script>
+        // Signal to display.html that timer.html has reloaded
+        localStorage.setItem('timerReloadTimestamp', Date.now());
+    </script>
     <header>
         <h1>
             <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach.red }}</span>
@@ -419,7 +427,9 @@
             <tr>
                 <th colspan="4">
                     <form action="/savehomeplayers/home">
-                        <button style="height:30px;width:300px;font-size: 25px;font-weight: bold;" type="submit">{{HomeTeam}}</button>
+                        <button class="btn-team" style="height:30px;width:300px;font-size: 25px;font-weight: bold;" type="submit">
+                            {{HomeTeam}}
+                        </button>
                     </form>
                 </th>
             </tr>
@@ -448,16 +458,11 @@
             </tr>
             {% endfor %}
         </table>
-        <table>
+        <table style="border: none;">
             <tr>
                 <td>
-                    <form action="/card">
-                        <button style="height:50px;width:120px" type="submit">Card (F)</button>
-                    </form>
-                </td>
-                <td>
                     <form action="/hometimeout">
-                        <button style="height:50px;width:160px" type="submit">Timeout (R)</button>
+                        <button class="btn-secondary" style="height:50px;width:160px" type="submit">Timeout (R)</button>
                     </form>
                 </td>
             </tr>
@@ -465,19 +470,29 @@
     </nav>
 
     <article>
-        <table class="center" style="width:100%">
+        <table class="center" style="width:80%; border: none;">
             <tr>
-                <td style="width:10%"><button style="height:50px;width:50px" onclick="addmin()">+</button></td>
-                <td style="width:80%" rowspan="3"><span style="font-size:300px;color:blue;" id="countdown"></span></td>
-                <td style="width:10%"><button style="height:50px;width:50px" onclick="addsec()">+</button></td>
+                <td style="width:10%">
+                    <button class="btn-adjust" style="height:50px;width:50px" onclick="addmin()">+</button>
+                </td>
+                <td style="width:80%" rowspan="3">
+                    <span style="color:blue;font-size: 350px;font-weight: bold" id="countdown"></span>
+                </td>
+                <td style="width:10%">
+                    <button class="btn-adjust" style="height:50px;width:50px" onclick="addsec()">+</button>
+                </td>
             </tr>
             <tr>
                 <td></td>
                 <td></td>
             </tr>
             <tr>
-                <td><button style="height:50px;width:50px" onclick="minmin()">-</button></td>
-                <td><button style="height:50px;width:50px" onclick="minsec()">-</button></td>
+                <td>
+                    <button class="btn-adjust" style="height:50px;width:50px" onclick="minmin()">-</button>
+                </td>
+                <td>
+                    <button class="btn-adjust" style="height:50px;width:50px" onclick="minsec()">-</button>
+                </td>
             </tr>
         </table>
 
@@ -510,33 +525,74 @@
             {% endfor %}
         </table>
 
-        <table class="center" style="text-align: center">
+        <table class="center" style="text-align: center; border: none;">
             <tr>
-                <th colspan="2"><button style="height:200px;width:150px" onclick="pauseCountdown()">Start / Stop (N)</button></th>
-                <th colspan="2"><button style="height:150px;width:150px" onclick="possession()">Running Change (Y)</button> <button style="height:150px;width:150px" onclick="pause30()">Paused Change (H)</button></th>
-                <th colspan="3"><span style="font-size: 300px;" id="shotdown">00</span></th>
-                <th colspan="2"><button style="height:150px;width:150px" onclick="reset20()">Shot (U)</button> <button style="height:150px;width:150px" onclick="pause20()">Corner (J)</button></th>
-                <th colspan="2"><button style="height:100px;width:150px;font-size:10px;color:red" onclick="buzzer()">Buzzer (G)</button> <button style="height:100px;width:150px" onclick="force20()">Force short</button> <button style="height:100px;width:150px;font-size:10px;color:red" onclick="stopCountdown()">Reset Clocks</button></th>
+                <th colspan="2">
+                    <button class="btn-primary" style="height:200px;width:150px" onclick="pauseCountdown()">
+                        Start / Stop (N)
+                    </button>
+                </th>
+                <th colspan="2">
+                    <button class="btn-clock" style="height:150px;width:150px" onclick="possession()">
+                        Running Change (Y)
+                    </button>
+                    <button class="btn-clock" style="height:150px;width:150px" onclick="pause30()">
+                        Paused Change (H)
+                    </button>
+                </th>
+                <th colspan="3">
+                    <span style="font-size: 300px;font-weight: bold" id="shotdown">00</span>
+                </th>
+                <th colspan="2">
+                    <button class="btn-shot" style="height:150px;width:150px" onclick="reset20()">
+                        Shot (U)
+                    </button>
+                    <button class="btn-shot" style="height:150px;width:150px" onclick="pause20()">
+                        Corner (J)
+                    </button>
+                </th>
+                <th colspan="2">
+                    <button class="btn-danger" style="height:100px;width:150px;font-size:10px" onclick="buzzer()">
+                        Buzzer (G)
+                    </button>
+                    <button class="btn-warning" style="height:100px;width:150px" onclick="force20()">
+                        Force short
+                    </button>
+                    <button class="btn-danger" style="height:100px;width:150px;font-size:10px" onclick="stopCountdown()">
+                        Reset Clocks
+                    </button>
+                </th>
             </tr>
         </table>
 
         {% include 'messages.html' %}
 
-        <table class="center" style="text-align: center">
+        <table class="center" style="text-align: center; border: none;">
             <tr>
                 <td>
+                    <form action="/card">
+                        <button class="btn-warning" style="height:50px;width:120px" type="submit">Card (F)</button>
+                    </form>
+                </td>
+                <td>
                     <form action="/major">
-                        <button style="height:80px;width:300px" type="submit">Major (C)</button>
+                        <button class="btn-warning" style="height:80px;width:300px" type="submit">
+                            Major (C)
+                        </button>
                     </form>
                 </td>
                 <td>
                     <form action="/goal">
-                        <button style="height:80px;width:300px" type="submit">Goal (V)</button>
+                        <button class="btn-success" style="height:80px;width:300px" type="submit">
+                            Goal (V)
+                        </button>
                     </form>
                 </td>
                 <td>
                     <form action="/penalty">
-                        <button style="height:80px;width:300px" type="submit">Penalty (B)</button>
+                        <button class="btn-warning" style="height:80px;width:300px" type="submit">
+                            Penalty (B)
+                        </button>
                     </form>
                 </td>
             </tr>
@@ -550,7 +606,9 @@
             <tr>
                 <th colspan="4">
                     <form action="/saveawayplayers/away">
-                        <button style="height:30px;width:300px;font-size: 25px;font-weight: bold;" type="submit">{{AwayTeam}}</button>
+                        <button class="btn-team-away" style="height:30px;width:300px;font-size: 25px;font-weight: bold;" type="submit">
+                            {{AwayTeam}}
+                        </button>
                     </form>
                 </th>
             </tr>
@@ -579,16 +637,14 @@
             </tr>
             {% endfor %}
         </table>
-        <table>
+        <table class="right" style="float: right;text-align: center; border: none;">
             <tr>
                 <td>
-                    <form action="/card">
-                        <button style="height:50px;width:120px" type="submit">Card (F)</button>
-                    </form>
-                </td>
                 <td>
                     <form action="/awaytimeout">
-                        <button style="height:50px;width:160px" type="submit">Timeout (T)</button>
+                        <button class="btn-secondary" style="height:50px;width:160px" type="submit">
+                            Timeout (T)
+                        </button>
                     </form>
                 </td>
             </tr>
@@ -596,50 +652,73 @@
     </aside>
 
     <footer>
-        <table>
+        <table style="border: none;">
             <tr>
                 <td>
                     <form method="POST" action="/start">
-                        <button style="height:50px;width:180px" type="submit">Start Game</button>
+                        <button class="btn-success" style="height:50px;width:180px" type="submit">
+                            Start Game
+                        </button>
                     </form>
                 </td>
                 <td>
                     <form method="POST" action="/period">
-                        <button style="height:50px;width:150px" type="submit">Skip Period</button>
+                        <button class="btn-secondary" style="height:50px;width:150px" type="submit">
+                            Skip Period
+                        </button>
                     </form>
                 </td>
                 <td>
                     <form method="POST" action="/clear">
-                        <button style="height:50px;width:180px" type="submit">Undo / Delete</button>
+                        <button class="btn-danger" style="height:50px;width:180px" type="submit">
+                            Undo / Delete
+                        </button>
                     </form>
                 </td>
                 <td>
                     <form method="POST" action="/finish">
-                        <button style="height:50px;width:150px" type="submit">Finish Game</button>
+                        <button class="btn-primary" style="height:50px;width:150px" type="submit">
+                            Finish Game
+                        </button>
                     </form>
                 </td>
                 <td>
-                    <span style="font-size: 50px; padding: 10px; color: white;">Quarter: {{ quarter }}</span>
+                    <span style="font-size: 50px; padding: 10px; color: white;">
+                        Quarter: {{ quarter }}
+                    </span>
                 </td>
                 <td>
                     <form action="/settings">
-                        <button style="height:50px;width:180px" type="submit">Edit Settings</button>
+                        <button class="btn-secondary" style="height:50px;width:180px" type="submit">
+                            Edit Settings
+                        </button>
                     </form>
                 </td>
                 <td>
                     <form action="/callinterval">
-                        <button style="height:50px;width:120px" type="submit" onclick="playSound()">Move to interval</button>
+                        <button class="btn-clock" style="height:50px;width:120px" type="submit" onclick="playSound()">
+                            Move to interval
+                        </button>
                     </form>
                 </td>
                 <td>
                     <form action="/saverefdata/referee">
-                        <button style="height:50px;width:120px" type="submit">Referees</button>
+                        <button class="btn-secondary" style="height:50px;width:120px" type="submit">
+                            Referees
+                        </button>
                     </form>
                 </td>
                 <td>
                     <form action="/help">
-                        <button style="height:50px;width:50px" type="submit">help</button>
+                        <button class="btn-secondary" style="height:50px;width:50px" type="submit">
+                            Help
+                        </button>
                     </form>
+                </td>
+                <td>
+                    <button class="btn-primary" style="height:50px;width:120px" onclick="window.open('/display', '_blank')">
+                        Display
+                    </button>
                 </td>
             </tr>
         </table>

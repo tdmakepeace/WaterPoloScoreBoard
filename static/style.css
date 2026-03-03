@@ -90,6 +90,122 @@ table, th, td {
 
 button {
     margin: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Primary Action Buttons - Blue/Green */
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #653a8b 100%);
+}
+
+/* Goal/Success Buttons - Green */
+.btn-success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #0e7e6f 0%, #2dd368 100%);
+}
+
+/* Warning/Penalty Buttons - Orange */
+.btn-warning {
+    background: linear-gradient(135deg, #f81e1a 0%, #f5576c 100%);
+    color: white;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #e07ce8 0%, #dc4456 100%);
+}
+
+/* Danger/Reset Buttons - Red */
+.btn-danger {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #e85d87 0%, #eac92b 100%);
+}
+
+/* Time/Clock Control Buttons - Cyan/Blue */
+.btn-clock {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.btn-clock:hover {
+    background: linear-gradient(135deg, #3a96e5 0%, #00d9e5 100%);
+}
+
+/* Shot Clock Buttons - Purple */
+.btn-shot {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    color: #333;
+}
+
+.btn-shot:hover {
+    background: linear-gradient(135deg, #93dad6 0%, #edbfd0 100%);
+}
+
+/* Secondary/Settings Buttons - Gray/Silver */
+.btn-secondary {
+    background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, #71dee5 0%, #5591e6 100%);
+}
+
+/* Team Buttons */
+.btn-team {
+    background: linear-gradient(135deg, #faf8f5 0%, #fcb69f 100%);
+    color: #333;
+}
+
+.btn-team:hover {
+    background: linear-gradient(135deg, #f1ece5 0%, #e39d86 100%);
+}
+
+/* Team Away Buttons */
+.btn-team-away   {
+    background: linear-gradient(135deg, #667afc 0%, #4a33f8 100%);
+    color: #333;
+}
+
+.btn-team-away:hover {
+    background: linear-gradient(135deg, #3a4fc1 0%, #2a3f91 100%);
+}
+
+/* Control Adjustment Buttons */
+.btn-adjust {
+    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+    color: #333;
+}
+
+.btn-adjust:hover {
+    background: linear-gradient(135deg, #ccaae3 0%, #75ace3 100%);
 }
 
 .button-container {
