@@ -174,10 +174,10 @@
     // Initial update
     updateCountdown();
     
-    // Refresh the entire page every 10 seconds as a fallback
+    // Refresh the entire page every 30 seconds as a fallback
     setInterval(function() {
         location.reload();
-    }, 10000);
+    }, 30000);
     
     // Listen for storage changes from timer.html - works in regular browser
     window.addEventListener('storage', function(e) {
