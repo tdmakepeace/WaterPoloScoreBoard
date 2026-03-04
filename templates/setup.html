@@ -14,14 +14,14 @@
 
     <article class="center">
         <form method="POST" action="/save">
-            <table class="center" style="width:100%">
+            <table class="modern-table center">
                 <tr>
-                    <td style="background-color:darkgray; font-size: 35px;">Settings</td>
-                    <td style="background-color:lightgray; font-size: 35px;">Values</td>
+                    <th>Settings</th>
+                    <th>Values</th>
                 </tr>
                 <tr>
-                    <td style="background-color:gray; font-size: 35px;">Game Time</td>
-                    <td style="background-color:gray; font-size: 35px;">
+                    <td>Game Time</td>
+                    <td>
                         <select name="game" id="game">
                             <option value=14>7 Min</option>
                             <option value=13>6:30 Min</option>
@@ -38,8 +38,8 @@
                     </td>
                 </tr>
                 <tr>
-                    <td style="background-color:gray; font-size: 35px;">Interval</td>
-                    <td style="background-color:gray; font-size: 35px;">
+                    <td>Interval</td>
+                    <td>
                         <select name="interval" id="interval">
                             <option value=4>2</option>
                             <option value=2>1</option>
@@ -49,8 +49,8 @@
                     </td>
                 </tr>
                 <tr>
-                    <td style="background-color:gray; font-size: 35px;">Half Time</td>
-                    <td style="background-color:gray; font-size: 35px;">
+                    <td>Half Time</td>
+                    <td>
                         <select name="half" id="half">
                             <option value=4>2</option>
                             <option value=2>1</option>
@@ -62,8 +62,8 @@
                     </td>
                 </tr>
                 <tr>
-                    <td style="background-color:gray; font-size: 35px;">Shot Clock</td>
-                    <td style="background-color:gray; font-size: 35px;">
+                    <td>Shot Clock</td>
+                    <td>
                         <select name="shotclock" id="shotclock">
                             <option value=28>28</option>
                             <option value=30>30</option>
@@ -71,8 +71,8 @@
                     </td>
                 </tr>
                 <tr>
-                    <td style="background-color:gray; font-size: 35px;">Max Majors</td>
-                    <td style="background-color:gray; font-size: 35px;">
+                    <td>Max Majors</td>
+                    <td>
                         <select name="majors" id="majors">
                             <option value=3>3</option>
                             <option value=4>4</option>
@@ -81,15 +81,29 @@
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="2" style="background-color:gray; font-size: 35px;">
+                    <td style="width:40%">
                         <label for="Location">Location&nbsp;&nbsp;&nbsp;:</label>
-                        <input type="text" id="Location" name="Location" value="{{location}}"><br>
-                        <label for="Home">Home Team:</label>
-                        <input type="text" id="Home" name="Home" value="{{HomeTeam}}"><br>
-                        <label for="Away">Away Team:</label>
-                        <input type="text" id="away" name="Away" value="{{AwayTeam}}"><br>
                     </td>
-                </tr>
+                    <td style="width:60%">
+                        <input type="text" id="Location" name="Location" value="{{location}}"><br>
+                    </td>
+               </tr>
+                <tr>
+                    <td style="width:40%">
+                        <label for="Home">Home Team:</label>
+                    </td>
+                    <td style="width:60%">
+                        <input type="text" id="Home" name="Home" value="{{HomeTeam}}"><br>
+                    </td>
+               </tr>
+                <tr>
+                    <td style="width:40%">
+                        <label for="Away">Away Team:</label>
+                    </td>
+                    <td style="width:60%">
+                        <input type="text" id="Away" name="Away" value="{{AwayTeam}}"><br>
+                    </td>
+               </tr>
             </table>
             <button class="btn-success" style="height:80px;width:200px" type="submit">Save</button>
         </form>

@@ -16,13 +16,6 @@
             flex-direction: column;
         }
         
-        header {
-            background-color: #222;
-            color: #fff;
-            text-align: center;
-            padding: 20px;
-            border-bottom: 3px solid #555;
-        }
         
         .main-display {
             flex: 1;
@@ -30,7 +23,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 5px;
         }
         
         .clocks-container {
@@ -38,7 +31,7 @@
             gap: 200px;
             align-items: center;
             justify-content: center;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
         }
         
         .clock-display {
@@ -204,8 +197,8 @@
 <body>
     <header>
         <h1>
-            <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach.red }}</span>
-            <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
+            <span style="font-size: 30px; color: {% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach.red }}</span>
+            <span style="font-size: 30px; color: {% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
             <span style="font-size: 30px; color: #222;">spacer</span>
             <span style="font-size: 30px; color: white;">{{ hometimeoutv }}</span>
             <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }}</span>
@@ -213,8 +206,8 @@
             <span style="font-size: 300px; color: Yellow;">{{ TeamAway['goals'] }}</span>
             <span style="font-size: 30px; color: white;">{{ awaytimeoutv }}</span>
             <span style="font-size: 30px; color: #222;">spacer</span>
-            <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
-            <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach.red }}</span>
+            <span style="font-size: 30px; color: {% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
+            <span style="font-size: 30px; color: {% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach.red }}</span>
         </h1>
     </header>
 
@@ -229,13 +222,6 @@
                 <div class="clock-label">SHOT CLOCK</div>
                 <div id="shotdown">00</div>
             </div>
-        </div>
-
-        <div style="margin-top: 10px;">
-            <span style="font-size: 40px; color: white;">{{HomeTeam}}</span>
-            <span style="font-size: 40px; color: grey;"> vs </span>
-            <span style="font-size: 40px; color: Yellow;">{{AwayTeam}}</span>
-            <span style="font-size: 30px; color: #999; margin-left: 50px;">Quarter: {{ quarter }}</span>
         </div>
 
         <div class="score-table">
@@ -267,6 +253,12 @@
             </tr>
             {% endfor %}
             </table>
+        </div>
+        <div style="margin-top: 10px;">
+            <span style="font-size: 40px; color: white;">{{HomeTeam}}</span>
+            <span style="font-size: 40px; color: grey;"> vs </span>
+            <span style="font-size: 40px; color: Yellow;">{{AwayTeam}}</span>
+            <span style="font-size: 30px; color: #999; margin-left: 50px;">Quarter: {{ quarter }}</span>
         </div>
     </div>
 </body>

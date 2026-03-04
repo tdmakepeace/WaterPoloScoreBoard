@@ -2,6 +2,7 @@
 <html xmlns="http://www.w3.org/1999/html">
 <head>
     <title>Development Waterpolo Scoresheet</title>
+    <link rel="stylesheet" href="../static/style.css">
    <style>
         /* Basic styling for the layout */
         body {
@@ -242,16 +243,29 @@
 
 <article>
     <div> <span style="color: red;" id="timeout"> </span></div>
-
+<br>
 <!--    <button style="height:50px;width:100px" onclick="startTimeout()">Start Timeoute Period</button>-->
-    <button class="btn-clock" style="height:50px;width:100px" onclick="pauseTimeout()">Pause (N)</button>
-    <button class="btn-clock" style="height:50px;width:100px" onclick="resumeTimeout()">Resume (cntl+N</button>
-            <form method="GET" action="/">
-            <button class="btn-secondary" style="height:50px;width:100px" onclick="stopTimeout()" type="submit">Return to Game (X)</button>
+
+    <table class="center" style="width:80%; border: none;">
+            <tr>
+                
+                <button class="btn-clock" style="height:50px;width:200px" onclick="pauseTimeout()">Pause (N)</button>
+            </tr>
+            
+            <tr>
+                <button class="btn-clock" style="height:50px;width:200px" onclick="resumeTimeout()">Resume (cntl+N)</button>
+            </tr>
+        </table>
+
+      <!-- <button onclick="playSound()">Play Sound</button>  -->
+            <form method="GET" action="/returninterval">
+            <button class="btn-secondary" style="height:50px;width:200px" onclick="stopTimeout()" type="submit">Return to Game (X) </button>
         </form>
 
-
-   <p style="color:blue; font-size:50px; "id = "output"></p>
+<!--    <button style="height:50px;width:100px" onclick="stopTimeout()">END</button>-->
+    <br>
+    <div> <span style="color: blue;" id="output"> </span></div>
+   
 
    <script>
       let output = document.getElementById("output");
@@ -271,7 +285,7 @@
 <!--    <h6>Away Team</h6>-->
     <table class="center" style="width:100%"  >
         <tr>
-    <th colspan="4"> <button class="btn-team" style="height:30px;width:300px;font-size: 25px;font-weight: bold;" onclick="alert('Edit at end of game')">{{AwayTeam}}</button> </th>
+    <th colspan="4"> <button class="btn-team-away" style="height:30px;width:300px;font-size: 25px;font-weight: bold;" onclick="alert('Edit at end of game')">{{AwayTeam}}</button> </th>
 </tr>
         <tr>
     <th> Player&nbsp;&nbsp;&nbsp;</th>

@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Development Waterpolo Scoresheet</title>
+    <link rel="stylesheet" href="../static/style.css">
    <style>
         /* Basic styling for the layout */
         body {
@@ -18,16 +19,6 @@
             height: 100vh; /* Full height of the viewport */
          }
 
-        header {
-            grid-area: header; /* Places the header in the 'header' area */
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            line-height: 220px; /* Vertically centers the text */
-            /*height: 300px; !* Full height of the viewport *!*/
-            /*min-height: 40%*/
-            height: 35
-        }
 
         nav {
             grid-area: left; /* Places the left content in the 'left' area */
@@ -184,17 +175,17 @@
 <body>
     <header>
         <h1>
-            <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach.red }}</span>
-            <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
-            <span style="font-size: 30px; color: #333333;">spacer</span>
+            <span style="font-size: 30px; color: {% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach.red }}</span>
+            <span style="font-size: 30px; color: {% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
+            <span style="font-size: 30px; color: #222;">spacer</span>
             <span style="font-size: 30px; color: white;">{{ hometimeoutv }}</span>
             <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }}</span>
             <span style="font-size: 100px; color: grey; width: 1000px;">{{location}}</span>
             <span style="font-size: 300px; color: Yellow;">{{ TeamAway['goals'] }}</span>
             <span style="font-size: 30px; color: white;">{{ awaytimeoutv }}</span>
-            <span style="font-size: 30px; color: #333333;">spacer</span>
-            <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
-            <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach.red }}</span>
+            <span style="font-size: 30px; color: #222;">spacer</span>
+            <span style="font-size: 30px; color: {% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
+            <span style="font-size: 30px; color: {% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach.red }}</span>
         </h1>
     </header>
 
@@ -240,12 +231,26 @@
 <article>
     <div> <span style="color: red;" id="timeout"> </span></div>
 
-<!--    <button style="height:50px;width:100px" onclick="startTimeout()">Start Timeoute Period</button>-->
-    <button class="btn-clock" style="height:50px;width:100px" onclick="pauseTimeout()">Pause (N)</button>
-    <button class="btn-clock" style="height:50px;width:100px" onclick="resumeTimeout()">Resume (cntl+N)</button>
+    <br>
+    <!--    <button style="height:50px;width:100px" onclick="startTimeout()">Start Timeoute Period</button>-->
+    <table class="center" style="width:80%; border: none;">
+            <tr>
+                
+                <button class="btn-clock" style="height:50px;width:200px" onclick="pauseTimeout()">Pause (N)</button>
+            </tr>
+            
+            <tr>
+                <button class="btn-clock" style="height:50px;width:200px" onclick="resumeTimeout()">Resume (cntl+N)</button>
+            </tr>
+        </table>
+
+
+
+    
+    
       <!-- <button onclick="playSound()">Play Sound</button>  -->
             <form method="GET" action="/returninterval">
-            <button class="btn-secondary" style="height:50px;width:100px" onclick="stopTimeout()" type="submit">Return to Game (X) </button>
+            <button class="btn-secondary" style="height:50px;width:200px" onclick="stopTimeout()" type="submit">Return to Game (X) </button>
         </form>
 
 <!--    <button style="height:50px;width:100px" onclick="stopTimeout()">END</button>-->
@@ -269,7 +274,7 @@
 <!--    <h6>Away Team</h6>-->
     <table class="center" style="width:100%"  >
         <tr>
-    <th colspan="4"> <button class="btn-team" style="height:30px;width:300px;font-size: 25px;font-weight: bold;" onclick="alert('Edit at end of game')">{{AwayTeam}}</button> </th>
+    <th colspan="4"> <button class="btn-team-away" style="height:30px;width:300px;font-size: 25px;font-weight: bold;" onclick="alert('Edit at end of game')">{{AwayTeam}}</button> </th>
 </tr>
         <tr>
     <th> Player&nbsp;&nbsp;&nbsp;</th>
