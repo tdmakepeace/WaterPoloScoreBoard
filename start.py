@@ -620,9 +620,6 @@ def card():
     if countdown_running:
         if runningclock == "no":
             pause_countdown()
-    else:
-        msg = 'clock not running'
-        flash(msg, "warning")
 
     return render_template('card.html', scores=scores, teama=teama, teamb=teamb,
                            elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
@@ -638,9 +635,6 @@ def homecard():
     if countdown_running:
         if runningclock == "no":
             pause_countdown()
-    else:
-        msg = 'clock not running'
-        flash(msg, "warning")
 
     return render_template('homecard.html', scores=scores, teama=teama, teamb=teamb,
                            elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
@@ -657,9 +651,7 @@ def awaycard():
     if countdown_running:
         if runningclock == "no":
             pause_countdown()
-    else:
-        msg = 'clock not running'
-        flash(msg, "warning")
+
 
     return render_template('awaycard.html', scores=scores, teama=teama, teamb=teamb,
                            elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
