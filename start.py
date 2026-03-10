@@ -2177,8 +2177,8 @@ def convert_csv_to_pdf():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host=Config.WEB_HOST, port=Config.WEB_PORT)
-    # webview.start()
+    # app.run(debug=True, host=Config.WEB_HOST, port=Config.WEB_PORT)
+    webview.start()
     
 
 
