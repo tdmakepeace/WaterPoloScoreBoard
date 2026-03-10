@@ -118,7 +118,7 @@
                 }
             });
         }
-        
+
         function pauseCountdown() {
             $.ajax({
                 url: '/pause_countdown',
@@ -184,7 +184,7 @@
                                     });
                                 } else {
                                    $.ajax({
-                                        url: '/displayshotclock/' + 0,
+                                        url: '/displayshotclock/' + seconds,
                                         method: 'GET', // or 'POST' depending on your backend
                                     });
                                 }
@@ -221,7 +221,7 @@
                                     });
                                 } else {
                                    $.ajax({
-                                        url: '/displayshotclock/' + 0,
+                                        url: '/displayshotclock/' + seconds,
                                         method: 'GET', // or 'POST' depending on your backend
                                     });
                                 }
