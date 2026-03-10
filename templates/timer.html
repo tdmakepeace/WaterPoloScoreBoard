@@ -24,40 +24,9 @@
     </style>
 </head>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <!-- <script src="{{ url_for('static', filename='script.js') }}"></script> -->
 
     <script>
-        function playSound() {
-            var audio = new Audio('/static/airhorn.mp3');
-            audio.play();
-        }
-
-        function changeSound() {
-            var audio = new Audio('/static/airhorn-change.mp3');
-            audio.play();
-        }
-
-        function playbell() {
-            var audio = new Audio('/static/bell-ring.mp3');
-            audio.play();
-        }
-        function startCountdown() {
-            $.ajax({
-                url: '/start_countdown',
-                success: function(response) {
-                    updateCountdown();
-                }
-            });
-        }
-
-        function buzzer() {
-            $.ajax({
-                url: '/buzzer',
-                success: function(response) {
-                    playSound();
-                }
-            });
-        }
       document.addEventListener('DOMContentLoaded', (event) => {
             document.addEventListener('keydown', function(event) {
                 if (event.key === 'n') {
@@ -118,6 +87,38 @@
             });
         });
 
+        function playSound() {
+            var audio = new Audio('/static/airhorn.mp3');
+            audio.play();
+        }
+
+        function changeSound() {
+            var audio = new Audio('/static/airhorn-change.mp3');
+            audio.play();
+        }
+
+        function playbell() {
+            var audio = new Audio('/static/bell-ring.mp3');
+            audio.play();
+        }
+        function startCountdown() {
+            $.ajax({
+                url: '/start_countdown',
+                success: function(response) {
+                    updateCountdown();
+                }
+            });
+        }
+
+        function buzzer() {
+            $.ajax({
+                url: '/buzzer',
+                success: function(response) {
+                    playSound();
+                }
+            });
+        }
+        
         function pauseCountdown() {
             $.ajax({
                 url: '/pause_countdown',

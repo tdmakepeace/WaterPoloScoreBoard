@@ -1990,13 +1990,14 @@ def interval():
 
 @app.route('/returninterval')
 def returninterval():
+    global quarter
     stop_countdown()
 
     timestamp = datetime.now()
 
     f = open(running_file, 'a')
     writer = csv.writer(f)
-    header = ['Game Status at ', Config.DEFAULT_LOCATION, ' on the ', timestamp, 'end of quarter :', quarter - 1, ]
+    header = ['Game Status at ', Config.DEFAULT_LOCATION, ' on the ', timestamp, 'end of quarter :', quarter, ]
     writer.writerow(header)
 
     # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
@@ -2011,7 +2012,7 @@ def returninterval():
     writer.writerow(header)
 
     f.close()
-
+    quarter=quarter +1
     return redirect(url_for('index'))
 
 
@@ -2025,7 +2026,7 @@ def callinterval():
         timeout = Config.TIMEOUT_TIME
         # elapsed_time = time.time() - start_time
         # remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
-        quarter=quarter +1
+
         pause_countdown()
         time.sleep(1)
         stop_timeout()
@@ -2176,8 +2177,8 @@ def convert_csv_to_pdf():
 
 
 if __name__ == '__main__':
-    # app.run(debug=True, host=Config.WEB_HOST, port=Config.WEB_PORT)
-    webview.start()
+    app.run(debug=True, host=Config.WEB_HOST, port=Config.WEB_PORT)
+    # webview.start()
     
 
 
