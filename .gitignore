@@ -145,3 +145,5 @@ data/es_backups/
 
 # Toby UltraEdit
 *.bak
+
+cert/*
