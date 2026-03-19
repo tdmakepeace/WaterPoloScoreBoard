@@ -1,3 +1,4 @@
+
 import errno
 from time import sleep
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
@@ -104,8 +105,14 @@ TeamAway = scores['Away']
 home_data = {'home': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6', ''], ['7', ''], ['8', ''], ['9', ''], ['10', ''], ['11', ''], ['12', ''], ['13', ''], ['14', '']]}
 away_data = {'away': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6', ''], ['7', ''], ['8', ''], ['9', ''], ['10', ''], ['11', ''], ['12', ''], ['13', ''], ['14', '']]}
 
+# home_data = {'home': [['1', 'player1'], ['2', 'player2'], ['3', 'player1'], ['4', 'player4'], ['5', 'player5'], ['6', 'player6'], ['7', 'player7'], ['8', 'player8'], ['9', 'player9'], ['10', 'player10'], ['11', 'player11'], ['12', 'player12'], ['13', 'player13'], ['14', 'player14']]}
+# away_data = {'away': [['1', 'player1'], ['2', 'player2'], ['3', 'player3'], ['4', 'player4'], ['5', 'player5'], ['6', 'player6'], ['7', 'player7'], ['8', 'player8'], ['9', 'player9'], ['10', 'player10'], ['11', 'player11'], ['12', 'player12'], ['13', 'player13'], ['14', 'player14']]}
+
+
+
 # REFEREE NAME AND EXPENCES
 ref_data = {'referee': [['1', '','',''], ['2', '','','']]}
+# ref_data = {'referee': [['1', 'Toby','kingston royals',''], ['2', 'Steve','surrey sharks','10']]}
 
 # CARDS
 home_coach = {'red': 0 , 'yellow': 0}
@@ -1664,93 +1671,93 @@ def finish():
         # print(f"Sent command to int: {command}")
         asyncio.run(send_ble_int(command))
         asyncio.run(send_ble_command("exit"))
-        now = datetime.now()  # current date and time
-        timestamp = now.strftime("%d/%m/%Y, %H:%M:%S")
+        # now = datetime.now()  # current date and time
+        # timestamp = now.strftime("%d/%m/%Y, %H:%M:%S")
 
-        f = open(filename, 'a')
-        writer = csv.writer(f)
-        header = ['Game Over at ', Config.DEFAULT_LOCATION, ' on the ', timestamp]
-        writer.writerow(header)
-        header = ['Home: ', scores['Home']['goals'] , 'Away :' , scores['Away']['goals']]
-        writer.writerow(header)
+        # f = open(filename, 'a')
+        # writer = csv.writer(f)
+        # header = ['Game Over at ', Config.DEFAULT_LOCATION, ' on the ', timestamp]
+        # writer.writerow(header)
+        # header = ['Home: ', scores['Home']['goals'] , 'Away :' , scores['Away']['goals']]
+        # writer.writerow(header)
 
-        header = ['breakdown']
-        writer.writerow(header)
-        header = ['Team','Event','P1','P2','P3','P4']
-        writer.writerow(header)
+        # header = ['breakdown']
+        # writer.writerow(header)
+        # header = ['Team','Event','P1','P2','P3','P4']
+        # writer.writerow(header)
 
-        for team in periodscores:
-            data = [team , 'Goals', periodscores[team]['goals1'], periodscores[team]['goals2'], periodscores[team]['goals3'], periodscores[team]['goals4']]
-            writer.writerow(data)
-        for team in periodscores:
-            data = [team , 'Majors', periodscores[team]['majors1'], periodscores[team]['majors2'], periodscores[team]['majors3'], periodscores[team]['majors4']]
-            writer.writerow(data)
+        # for team in periodscores:
+        #     data = [team , 'Goals', periodscores[team]['goals1'], periodscores[team]['goals2'], periodscores[team]['goals3'], periodscores[team]['goals4']]
+        #     writer.writerow(data)
+        # for team in periodscores:
+        #     data = [team , 'Majors', periodscores[team]['majors1'], periodscores[team]['majors2'], periodscores[team]['majors3'], periodscores[team]['majors4']]
+        #     writer.writerow(data)
 
-        header2 = ['Home Team: ', Config.DEFAULT_HOME_TEAM ]
-        writer.writerow(header2)
-        header2 = ['Home Player','name', 'goals', 'majors', 'reds']
+        # header2 = ['Home Team: ', Config.DEFAULT_HOME_TEAM ]
+        # writer.writerow(header2)
+        # header2 = ['Home Player','name', 'goals', 'majors', 'reds']
 
-        writer.writerow(header2)
-        for user_id in teama:
+        # writer.writerow(header2)
+        # for user_id in teama:
 
-            data = [user_id ,home_data['home'][user_id-1][1], teama[user_id]['goals'],teama[user_id]['majors'],teama[user_id]['reds'] ]
-            writer.writerow(data)
+        #     data = [user_id ,home_data['home'][user_id-1][1], teama[user_id]['goals'],teama[user_id]['majors'],teama[user_id]['reds'] ]
+        #     writer.writerow(data)
 
 
-        header2 = ['Away Team: ', Config.DEFAULT_AWAY_TEAM ]
-        writer.writerow(header2)
-        header2 = ['Away Player','name', 'goals', 'majors', 'reds']
-        writer.writerow(header2)
-        for user_id in teamb:
-            data = [user_id ,away_data['away'][user_id-1][1], teamb[user_id]['goals'],teamb[user_id]['majors'],teamb[user_id]['reds'] ]
-            writer.writerow(data)
+        # header2 = ['Away Team: ', Config.DEFAULT_AWAY_TEAM ]
+        # writer.writerow(header2)
+        # header2 = ['Away Player','name', 'goals', 'majors', 'reds']
+        # writer.writerow(header2)
+        # for user_id in teamb:
+        #     data = [user_id ,away_data['away'][user_id-1][1], teamb[user_id]['goals'],teamb[user_id]['majors'],teamb[user_id]['reds'] ]
+        #     writer.writerow(data)
 
-        header2 = ['Referees: ' ]
-        writer.writerow(header2)
-        header2 = ['Hatnumber','Name', 'Club', 'Expences']
-        writer.writerow(header2)
-        for i in ref_data['referee'] :
-            data = i[0],i[1],i[2],i[3]
-            writer.writerow(data)
+        # header2 = ['Referees: ' ]
+        # writer.writerow(header2)
+        # header2 = ['Hatnumber','Name', 'Club', 'Expences']
+        # writer.writerow(header2)
+        # for i in ref_data['referee'] :
+        #     data = i[0],i[1],i[2],i[3]
+        #     writer.writerow(data)
 
-        header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals',
-                  'majors', 'reds']
-        writer.writerow(header)
+        # header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals',
+        #           'majors', 'reds']
+        # writer.writerow(header)
 
-        f.close()
+        # f.close()
 
-        try:
-            with open(running_file, newline='') as in_file:
-                with open(filename, 'a', newline='') as out_file:
-                    writer = csv.writer(out_file)
-                    for row in csv.reader(in_file):
-                        if row:
-                            writer.writerow(row)
-            f.close()
-        except :
-            print('finish')
-        try:
-            with open(filename, newline='') as in_file:
-                with open(compress_file, 'w', newline='') as out_file:
-                    writer = csv.writer(out_file)
-                    for row in csv.reader(in_file):
-                        if row:
-                            writer.writerow(row)
-            f.close()
-        except :
-            print('finish')
+        # try:
+        #     with open(running_file, newline='') as in_file:
+        #         with open(filename, 'a', newline='') as out_file:
+        #             writer = csv.writer(out_file)
+        #             for row in csv.reader(in_file):
+        #                 if row:
+        #                     writer.writerow(row)
+        #     f.close()
+        # except :
+        #     print('finish')
+        # try:
+        #     with open(filename, newline='') as in_file:
+        #         with open(compress_file, 'w', newline='') as out_file:
+        #             writer = csv.writer(out_file)
+        #             for row in csv.reader(in_file):
+        #                 if row:
+        #                     writer.writerow(row)
+        #     f.close()
+        # except :
+        #     print('finish')
 
-        try:
-            os.remove(running_file)
-        except OSError as e:  # this would be "except OSError, e:" before Python 2.6
-            if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
-                raise  # re-raise exception if a different error occurred...
+        # try:
+        #     os.remove(running_file)
+        # except OSError as e:  # this would be "except OSError, e:" before Python 2.6
+        #     if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
+        #         raise  # re-raise exception if a different error occurred...
 
-        try:
-            os.remove(filename)
-        except OSError as e:  # this would be "except OSError, e:" before Python 2.6
-            if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
-                raise  # re-raise exception if a different error occurred...
+        # try:
+        #     os.remove(filename)
+        # except OSError as e:  # this would be "except OSError, e:" before Python 2.6
+        #     if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
+        #         raise  # re-raise exception if a different error occurred...
 
     return redirect(url_for('convert_csv_to_pdf'))
 
@@ -2156,20 +2163,316 @@ def saverefdata(user_id):
 def convert_csv_to_pdf():
     pdf = FPDF()
     pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=12)
     pdf.set_font("helvetica", size=10)
 
-    with open(compress_file, 'r', encoding='utf-8', newline='') as f:
-        csv_reader = csv.reader(f)
-        for row in csv_reader:
-            # Join CSV columns with proper spacing
-            line_text = ' | '.join(str(cell) for cell in row)
+    line_height = 6
+    max_text_width = 190  # approx page width minus margins (A4 portrait)
 
-            # Handle long lines - split if necessary
-            if pdf.get_string_width(line_text) > 190:  # Page width minus margins
-                # For long lines, use multi_cell
-                pdf.multi_cell(0, 10, txt=line_text, border=0)
+    def write_line(text: str, *, bold: bool = False) -> None:
+        pdf.set_font("helvetica", style="B" if bold else "", size=10)
+        if pdf.get_string_width(text) > max_text_width:
+            pdf.multi_cell(0, line_height, txt=text, border=0)
+        else:
+            pdf.cell(0, line_height, text=text, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+    def write_row(row) -> None:
+        line_text = " | ".join("" if cell is None else str(cell) for cell in row)
+        write_line(line_text)
+
+    def write_score_and_breakdown_table() -> None:
+        usable_w = pdf.w - pdf.l_margin - pdf.r_margin
+
+        pdf.set_font("helvetica", style="B", size=11)
+        pdf.cell(0, line_height + 1, text="Game Summary", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        pdf.ln(1)
+
+        # Score row (2 columns)
+        col_w = usable_w / 2
+        pdf.set_font("helvetica", style="B", size=10)
+        pdf.cell(col_w, line_height, text="Home", border=1)
+        pdf.cell(col_w, line_height, text="Away", border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+        pdf.set_font("helvetica", style="", size=10)
+        home_label = f"{Config.DEFAULT_HOME_TEAM}: {scores['Home']['goals']}"
+        away_label = f"{Config.DEFAULT_AWAY_TEAM}: {scores['Away']['goals']}"
+        pdf.cell(col_w, line_height, text=home_label, border=1)
+        pdf.cell(col_w, line_height, text=away_label, border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+        pdf.ln(3)
+
+        # Breakdown table
+        pdf.set_font("helvetica", style="B", size=10)
+        pdf.cell(0, line_height, text="Breakdown", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+        team_w = 22
+        event_w = 20
+        per_w = (usable_w - team_w - event_w) / 4
+
+        pdf.set_font("helvetica", style="B", size=9)
+        pdf.cell(team_w, line_height, text="Team", border=1)
+        pdf.cell(event_w, line_height, text="Event", border=1)
+        pdf.cell(per_w, line_height, text="P1", border=1)
+        pdf.cell(per_w, line_height, text="P2", border=1)
+        pdf.cell(per_w, line_height, text="P3", border=1)
+        pdf.cell(per_w, line_height, text="P4", border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+        def breakdown_row(team: str, event: str, p1, p2, p3, p4) -> None:
+            pdf.set_font("helvetica", style="", size=9)
+            pdf.cell(team_w, line_height, text=str(team), border=1)
+            pdf.cell(event_w, line_height, text=str(event), border=1)
+            pdf.cell(per_w, line_height, text=str(p1), border=1, align="C")
+            pdf.cell(per_w, line_height, text=str(p2), border=1, align="C")
+            pdf.cell(per_w, line_height, text=str(p3), border=1, align="C")
+            pdf.cell(per_w, line_height, text=str(p4), border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+        for team in periodscores:
+            breakdown_row(
+                team,
+                "Goals",
+                periodscores[team]["goals1"],
+                periodscores[team]["goals2"],
+                periodscores[team]["goals3"],
+                periodscores[team]["goals4"],
+            )
+
+        for team in periodscores:
+            breakdown_row(
+                team,
+                "Majors",
+                periodscores[team]["majors1"],
+                periodscores[team]["majors2"],
+                periodscores[team]["majors3"],
+                periodscores[team]["majors4"],
+            )
+
+        pdf.ln(5)
+
+    # 1) In-memory arrays (always include)
+    write_score_and_breakdown_table()
+
+    # Two-column layout: Home left, Away right
+    def write_two_column_teams() -> None:
+        left_x = pdf.l_margin
+        gutter = 6
+        usable_w = pdf.w - pdf.l_margin - pdf.r_margin
+        col_w = (usable_w - gutter) / 2
+        right_x = left_x + col_w + gutter
+
+        # Columns: Player | Name | Goals | Majors | Reds
+        player_w = 12
+        goals_w = 12
+        majors_w = 14
+        reds_w = 12
+        name_w = col_w - (player_w + goals_w + majors_w + reds_w)
+
+        start_y = pdf.get_y()
+
+        def ensure_space(y: float) -> float:
+            bottom_limit = pdf.h - pdf.b_margin
+            if y + (line_height * 2) > bottom_limit:
+                pdf.add_page()
+                return pdf.get_y()
+            return y
+
+        def draw_header(x: float, y: float, title: str) -> float:
+            y = ensure_space(y)
+            pdf.set_xy(x, y)
+            pdf.set_font("helvetica", style="B", size=10)
+            pdf.cell(col_w, line_height, text=title, border=0, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+            pdf.set_x(x)
+            pdf.set_font("helvetica", style="B", size=10)
+            pdf.cell(player_w, line_height, text="Hat", border=1)
+            pdf.cell(name_w, line_height, text="Name", border=1)
+            pdf.cell(goals_w, line_height, text="G", border=1, align="C")
+            pdf.cell(majors_w, line_height, text="M", border=1, align="C")
+            pdf.cell(reds_w, line_height, text="C", border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            return pdf.get_y()
+
+        left_y = draw_header(left_x, start_y, f"Home Team: {Config.DEFAULT_HOME_TEAM}")
+        right_y = draw_header(right_x, start_y, f"Away Team: {Config.DEFAULT_AWAY_TEAM}")
+
+        left_ids = list(teama.keys()) if isinstance(teama, dict) else []
+        right_ids = list(teamb.keys()) if isinstance(teamb, dict) else []
+        n = max(len(left_ids), len(right_ids))
+
+        for i in range(n):
+            row_y = max(left_y, right_y)
+            row_y = ensure_space(row_y)
+
+            # Home row
+            pdf.set_font("helvetica", style="", size=10)
+            pdf.set_xy(left_x, row_y)
+            if i < len(left_ids):
+                user_id = left_ids[i]
+                name = home_data.get("home", [])[int(user_id) - 1][1] if int(user_id) - 1 < len(home_data.get("home", [])) else ""
+                stats = teama.get(user_id, {})
+                goals = stats.get("goals", "")
+                majors = stats.get("majors", "")
+                reds = stats.get("reds", "")
             else:
-                pdf.cell(0, 10, text=line_text, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                user_id, name, goals, majors, reds = "", "", "", "", ""
+            pdf.cell(player_w, line_height, text=str(user_id), border=1)
+            pdf.cell(name_w, line_height, text=str(name), border=1)
+            pdf.cell(goals_w, line_height, text=str(goals), border=1, align="C")
+            pdf.cell(majors_w, line_height, text=str(majors), border=1, align="C")
+            pdf.cell(reds_w, line_height, text=str(reds), border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            left_y = row_y + line_height
+
+            # Away row
+            pdf.set_xy(right_x, row_y)
+            if i < len(right_ids):
+                user_id = right_ids[i]
+                name = away_data.get("away", [])[int(user_id) - 1][1] if int(user_id) - 1 < len(away_data.get("away", [])) else ""
+                stats = teamb.get(user_id, {})
+                goals = stats.get("goals", "")
+                majors = stats.get("majors", "")
+                reds = stats.get("reds", "")
+            else:
+                user_id, name, goals, majors, reds = "", "", "", "", ""
+            pdf.cell(player_w, line_height, text=str(user_id), border=1)
+            pdf.cell(name_w, line_height, text=str(name), border=1)
+            pdf.cell(goals_w, line_height, text=str(goals), border=1, align="C")
+            pdf.cell(majors_w, line_height, text=str(majors), border=1, align="C")
+            pdf.cell(reds_w, line_height, text=str(reds), border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            right_y = row_y + line_height
+
+        pdf.set_y(max(left_y, right_y) + 2)
+
+    write_two_column_teams()
+
+    pdf.ln(2)
+    write_line("Referees", bold=True)
+
+    usable_w = pdf.w - pdf.l_margin - pdf.r_margin
+    hat_w = 16
+    club_w = 45
+    exp_w = 25
+    name_w = usable_w - (hat_w + club_w + exp_w)
+
+    pdf.set_font("helvetica", style="B", size=10)
+    pdf.cell(hat_w, line_height, text="Number", border=1)
+    pdf.cell(name_w, line_height, text="Name", border=1)
+    pdf.cell(club_w, line_height, text="Club", border=1)
+    pdf.cell(exp_w, line_height, text="Expenses", border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+    pdf.set_font("helvetica", style="", size=10)
+    for hat, name, club, expenses in ref_data.get("referee", []):
+        pdf.cell(hat_w, line_height, text=str(hat), border=1)
+        pdf.cell(name_w, line_height, text=str(name), border=1)
+        pdf.cell(club_w, line_height, text=str(club), border=1)
+        pdf.cell(exp_w, line_height, text=str(expenses), border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+    # Game log table (running_file)
+    pdf.ln(4)
+    write_line("Game Log (running file)", bold=True)
+
+    def fit_text(text: str, width: float) -> str:
+        s = "" if text is None else str(text)
+        if pdf.get_string_width(s) <= width:
+            return s
+        ell = "…"
+        if pdf.get_string_width(ell) > width:
+            return ""
+        # trim until it fits
+        while s and pdf.get_string_width(s + ell) > width:
+            s = s[:-1]
+        return s + ell if s else ell
+
+    def write_game_log_table(rows) -> None:
+        usable_w2 = pdf.w - pdf.l_margin - pdf.r_margin
+        # Use smaller font to fit many columns
+        pdf.set_font("helvetica", style="", size=7)
+        h = 4.5
+
+        # Fixed widths; remainder goes to Name column
+        w_q = 9
+        w_m = 9
+        w_s = 9
+        w_hs = 13
+        w_as = 13
+        w_action = 18
+        w_player = 10
+        w_team = 12
+        w_goals = 10
+        w_majors = 12
+        w_reds = 10
+        w_name = usable_w2 - (w_q + w_m + w_s + w_hs + w_as + w_action + w_player + w_team + w_goals + w_majors + w_reds)
+        if w_name < 22:
+            # fall back: steal from action if needed
+            steal = 22 - w_name
+            w_action = max(10, w_action - steal)
+            w_name = usable_w2 - (w_q + w_m + w_s + w_hs + w_as + w_action + w_player + w_team + w_goals + w_majors + w_reds)
+
+        def header_row() -> None:
+            pdf.set_font("helvetica", style="B", size=7)
+            pdf.cell(w_q, h, text="Quar", border=1, align="C")
+            pdf.cell(w_m, h, text="Min", border=1, align="C")
+            pdf.cell(w_s, h, text="Sec", border=1, align="C")
+            pdf.cell(w_hs, h, text="Home", border=1, align="C")
+            pdf.cell(w_as, h, text="Away", border=1, align="C")
+            pdf.cell(w_action, h, text="Action", border=1)
+            pdf.cell(w_player, h, text="Hat", border=1, align="C")
+            pdf.cell(w_name, h, text="Name", border=1)
+            pdf.cell(w_team, h, text="Team", border=1)
+            pdf.cell(w_goals, h, text="Goals", border=1, align="C")
+            pdf.cell(w_majors, h, text="Majors", border=1, align="C")
+            pdf.cell(w_reds, h, text="Card", border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.set_font("helvetica", style="", size=7)
+
+        def ensure_table_space() -> None:
+            if pdf.get_y() + (h * 2) > (pdf.h - pdf.b_margin):
+                pdf.add_page()
+                header_row()
+
+        header_row()
+
+        for row in rows:
+            if not row:
+                continue
+            # Skip header lines if present in the file
+            if row and str(row[0]).strip().lower() == "quarter":
+                continue
+
+            # Pad/truncate to expected 12 columns
+            r = list(row)[:12]
+            while len(r) < 12:
+                r.append("")
+
+            ensure_table_space()
+            pdf.cell(w_q, h, text=fit_text(r[0], w_q), border=1, align="C")
+            pdf.cell(w_m, h, text=fit_text(r[1], w_m), border=1, align="C")
+            pdf.cell(w_s, h, text=fit_text(r[2], w_s), border=1, align="C")
+            pdf.cell(w_hs, h, text=fit_text(r[3], w_hs), border=1, align="C")
+            pdf.cell(w_as, h, text=fit_text(r[4], w_as), border=1, align="C")
+            pdf.cell(w_action, h, text=fit_text(r[5], w_action), border=1)
+            pdf.cell(w_player, h, text=fit_text(r[6], w_player), border=1, align="C")
+            pdf.cell(w_name, h, text=fit_text(r[7], w_name), border=1)
+            pdf.cell(w_team, h, text=fit_text(r[8], w_team), border=1)
+            pdf.cell(w_goals, h, text=fit_text(r[9], w_goals), border=1, align="C")
+            pdf.cell(w_majors, h, text=fit_text(r[10], w_majors), border=1, align="C")
+            pdf.cell(w_reds, h, text=fit_text(r[11], w_reds), border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+        pdf.set_font("helvetica", style="", size=10)
+
+    if os.path.exists(running_file):
+        with open(running_file, "r", encoding="utf-8", newline="") as f:
+            write_game_log_table(csv.reader(f))
+    else:
+        write_line("(running_file not found; it may have been deleted at finish.)")
+
+    # 2) CSV file rows (append if present)
+    pdf.ln(4)
+    # write_line(f"CSV Log: {compress_file}", bold=True)
+    # if os.path.exists(compress_file):
+    #     with open(compress_file, "r", encoding="utf-8", newline="") as f:
+    #         csv_reader = csv.reader(f)
+    #         for row in csv_reader:
+    #             if row:
+    #                 write_row(row)
+    # else:
+    #     write_line("(CSV file not found; only array data was exported.)")
 
     pdf_file_path = compress_file.rsplit('.', 1)[0] + '.pdf'
     pdf.output(pdf_file_path)
