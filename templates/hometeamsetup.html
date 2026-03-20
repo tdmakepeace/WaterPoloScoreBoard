@@ -15,6 +15,42 @@
             height: 100vh;
          }
 
+        #csvControls {
+            max-width: 600px;
+            width: 100%;
+            margin: 20px auto 0 auto;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+        }
+
+        #csvPreview {
+            margin-top: 10px;
+            max-height: 240px;
+            overflow: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        #csvPreview table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        #csvPreview th, #csvPreview td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        #csvStatus {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
         header {
             background-color: #333;
             color: #fff;
@@ -102,6 +138,217 @@
             // Update the number of entries
             document.getElementById('num_entries').value = entryIndex + 1;
         }
+
+        // -------- CSV import (client-side) --------
+        // Expected CSV shape: hat_number,name (header row is optional).
+        // This parses locally so you can preview values before submitting the form.
+        let _csvParsedRows = [];
+
+        function _detectDelimiter(text) {
+            const firstNonEmptyLine = text.split(/\r?\n/).find(l => l.trim().length > 0) || "";
+            if (!firstNonEmptyLine) return ",";
+            const hasComma = firstNonEmptyLine.includes(",");
+            const hasSemicolon = firstNonEmptyLine.includes(";");
+            return hasSemicolon && !hasComma ? ";" : ",";
+        }
+
+        function _parseCSV(text) {
+            const delimiter = _detectDelimiter(text);
+            const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+            const rows = [];
+            let row = [];
+            let field = "";
+            let inQuotes = false;
+
+            for (let i = 0; i < normalized.length; i++) {
+                const c = normalized[i];
+
+                if (inQuotes) {
+                    if (c === '"') {
+                        if (normalized[i + 1] === '"') {
+                            field += '"';
+                            i++;
+                        } else {
+                            inQuotes = false;
+                        }
+                    } else {
+                        field += c;
+                    }
+                    continue;
+                }
+
+                if (c === '"') {
+                    inQuotes = true;
+                    continue;
+                }
+
+                if (c === delimiter) {
+                    row.push(field.trim());
+                    field = "";
+                    continue;
+                }
+
+                if (c === "\n") {
+                    // Push last field in line
+                    row.push(field.trim());
+                    field = "";
+
+                    // Skip completely-empty lines
+                    if (row.some(v => v !== "")) {
+                        rows.push(row);
+                    }
+                    row = [];
+                    continue;
+                }
+
+                field += c;
+            }
+
+            // Finalize if file doesn't end with newline
+            if (field.length > 0 || row.length > 0) {
+                row.push(field.trim());
+                if (row.some(v => v !== "")) rows.push(row);
+            }
+
+            return rows;
+        }
+
+        function _isNumericHat(value) {
+            const v = (value ?? "").toString().trim();
+            if (!v) return false;
+            const n = parseInt(v, 10);
+            return !Number.isNaN(n);
+        }
+
+        function refreshCsvPreview() {
+            const fileInput = document.getElementById("csvFile");
+            const statusEl = document.getElementById("csvStatus");
+            const previewEl = document.getElementById("csvPreview");
+
+            const file = fileInput.files && fileInput.files[0];
+            if (!file) {
+                statusEl.textContent = "Choose a CSV file first.";
+                previewEl.innerHTML = "";
+                _csvParsedRows = [];
+                return;
+            }
+
+            statusEl.textContent = "Reading and parsing CSV...";
+            previewEl.innerHTML = "";
+            _csvParsedRows = [];
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const text = e.target.result || "";
+                    const parsed = _parseCSV(text);
+
+                    // Convert to {hat, name}, skipping headers/invalid rows
+                    const people = [];
+                    for (let idx = 0; idx < parsed.length; idx++) {
+                        const r = parsed[idx];
+                        const hat = (r[0] ?? "").toString().trim();
+                        const name = (r[1] ?? "").toString().trim();
+
+                        if (!hat && !name) continue;
+                        if (!_isNumericHat(hat)) {
+                            // Likely header or malformed line; skip.
+                            continue;
+                        }
+
+                        people.push({ hat: String(parseInt(hat, 10)), name });
+                    }
+
+                    // If parsing produced nothing, show what we can
+                    if (people.length === 0) {
+                        statusEl.textContent = "No valid rows found. Expected: hat_number,name";
+                        previewEl.innerHTML = "";
+                        _csvParsedRows = [];
+                        return;
+                    }
+
+                    _csvParsedRows = people;
+
+                    // Render preview (up to N rows)
+                    const maxPreview = 200;
+                    const shown = people.slice(0, maxPreview);
+                    const truncated = people.length > maxPreview;
+
+                    let html = "<table><thead><tr><th>Hat</th><th>Name</th></tr></thead><tbody>";
+                    for (const p of shown) {
+                        const safeHat = p.hat.replace(/[<>&"]/g, "");
+                        const safeName = p.name.replace(/[<>&"]/g, "");
+                        html += `<tr><td>${safeHat}</td><td>${safeName}</td></tr>`;
+                    }
+                    html += "</tbody></table>";
+                    if (truncated) {
+                        html += `<div style="margin-top:8px;color:#666;">Showing first ${maxPreview} of ${people.length} rows.</div>`;
+                    }
+
+                    previewEl.innerHTML = html;
+                    statusEl.textContent = `CSV parsed. ${people.length} valid row(s) found. Click "Apply to Form" to fill the inputs.`;
+                } catch (err) {
+                    previewEl.innerHTML = "";
+                    _csvParsedRows = [];
+                    statusEl.textContent = "Failed to parse CSV. Make sure it's formatted as: hat_number,name";
+                    console.error(err);
+                }
+            };
+
+            reader.onerror = () => {
+                statusEl.textContent = "Failed to read CSV file.";
+            };
+
+            reader.readAsText(file);
+        }
+
+        function applyCsvToForm() {
+            const statusEl = document.getElementById("csvStatus");
+            const previewEl = document.getElementById("csvPreview");
+
+            const numEntries = parseInt(document.getElementById("num_entries").value, 10) || 0;
+            if (!_csvParsedRows || _csvParsedRows.length === 0) {
+                statusEl.textContent = "Refresh the CSV preview first.";
+                return;
+            }
+
+            // Build a lookup: hat number -> name input element
+            const hatToNameInput = new Map();
+            for (let i = 0; i < numEntries; i++) {
+                const hatEl = document.getElementById(`hatnum_${i}`);
+                const nameEl = document.getElementById(`name_${i}`);
+                if (!hatEl || !nameEl) continue;
+
+                const hat = (hatEl.value ?? "").toString().trim();
+                if (hat) hatToNameInput.set(hat, nameEl);
+            }
+
+            // Clear names before applying imported values
+            for (let i = 0; i < numEntries; i++) {
+                const nameEl = document.getElementById(`name_${i}`);
+                if (nameEl) nameEl.value = "";
+            }
+
+            // Apply imported rows by hat number match
+            let applied = 0;
+            let ignored = 0;
+            for (const p of _csvParsedRows) {
+                const nameEl = hatToNameInput.get(String(p.hat));
+                if (nameEl) {
+                    nameEl.value = p.name;
+                    applied++;
+                } else {
+                    ignored++;
+                }
+            }
+
+            // Update status message (preview remains as-is)
+            statusEl.textContent = `Applied CSV to the form. Applied: ${applied}. Ignored (hat not present in form): ${ignored}. Now click "Submit" to save.`;
+
+            // Optional: lightly scroll preview into view if user wants feedback
+            previewEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
     </script>
 </head>
 <body>
@@ -125,6 +372,21 @@
             {% endfor %}
         </div>
 <!--        <button type="button" onclick="addEntry()">Add Another Entry</button><br><br>-->
+
+        <div id="csvControls">
+            <div style="font-weight:bold;font-size:16px;margin-bottom:8px;">Import Home Players CSV</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <input type="file" id="csvFile" accept=".csv,text/csv">
+                <button type="button" onclick="refreshCsvPreview()">Refresh Preview</button>
+                <button type="button" onclick="applyCsvToForm()">Apply to Form</button>
+            </div>
+            <div style="margin-top:8px;color:#555;font-size:13px;">
+                Format: `hat_number,name` (header row optional).
+            </div>
+            <div id="csvStatus"></div>
+            <div id="csvPreview"></div>
+        </div>
+
         <input type="submit" value="Submit">
     </form>
 </body>

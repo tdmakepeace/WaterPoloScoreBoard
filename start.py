@@ -782,26 +782,25 @@ def updateteamacoach(direction,id):
             if id == 1 :
                 home_coach['yellow'] = 1
                 home_team_red['yellow'] = home_team_red['yellow'] + 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW', 'Coach','', 'Home']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW',  'Home', '', 'Coach' ,'','','']
                 writer.writerow(data)
 
 
             elif id == 2 :
                 home_coach['red'] = 1
                 home_team_red['red'] = home_team_red['red'] + 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Coach','', 'Home']
-                writer.writerow(data)
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED',  'Home', '', 'Coach' ,'','','']
 
         elif direction == 'decrement':
             if id == 1 :
                 home_coach['yellow'] = 0
                 home_team_red['yellow'] = home_team_red['yellow'] - 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach','', 'Home']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD',  'Home', '', 'Coach' ,'','','']
                 writer.writerow(data)
             elif id == 2 :
                 home_coach['red'] = 0
                 home_team_red['red'] = home_team_red['red'] - 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach','', 'Home']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD',  'Home', '', 'Coach','','','']
                 writer.writerow(data)
             direction = "increment"
 
@@ -837,25 +836,25 @@ def updateteambcoach(direction,id):
             if id == 1 :
                 away_coach['yellow'] = 1
                 away_team_red['yellow'] = away_team_red['yellow'] + 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW', 'Coach','', 'Away']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW','Away','', 'Coach' ,'','','']   
                 writer.writerow(data)
 
             elif id == 2 :
                 away_coach['red'] = 1
                 away_team_red['red'] = away_team_red['red'] + 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Coach','', 'Away']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED','Away','', 'Coach' ,'','','']
                 writer.writerow(data)
 
         elif direction == 'decrement':
             if id == 1 :
                 away_coach['yellow'] = 0
                 away_team_red['yellow'] = away_team_red['yellow'] - 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach','', 'Away']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD','Away','', 'Coach' ,'','','']
                 writer.writerow(data)
             elif id == 2 :
                 away_coach['red'] = 0
                 away_team_red['red'] = away_team_red['red'] - 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD', 'Coach','', 'Away']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD','Away','', 'Coach' ,'','','']
                 writer.writerow(data)
             direction = "increment"
 
@@ -890,13 +889,13 @@ def updateteamacard(direction,user_id):
             # print('help2')
             teama[user_id]['reds'] = 1
             home_team_red['red'] = home_team_red['red']  + 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', user_id, home_data['home'][user_id - 1][1], 'Home',
-                    teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Home', user_id, home_data['home'][user_id - 1][1], 
+                 teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
         elif direction == 'decrement':
             teama[user_id]['reds'] = 0
             home_team_red['red'] = home_team_red['red'] - 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', user_id, home_data['home'][user_id - 1][1], 'Home',
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', 'Home', user_id, home_data['home'][user_id - 1][1],
                     teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
 
@@ -930,14 +929,14 @@ def updateteambcard(direction, user_id):
             # print('help2')
             teamb[user_id]['reds'] = 1
             away_team_red['red'] = away_team_red['red'] + 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', user_id, away_data['away'][user_id - 1][1], 'Away',
-                    teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Away', user_id, away_data['away'][user_id - 1][1], 
+                   teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
         elif direction == 'decrement':
             teamb[user_id]['reds'] = 0
             away_team_red['red'] = away_team_red['red'] - 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', user_id, away_data['away'][user_id - 1][1], 'Away',
-                    teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', 'Away', user_id, away_data['away'][user_id - 1][1],
+                   teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
             writer.writerow(data)
 
             direction = "increment"
@@ -995,7 +994,7 @@ def updateteamagoal(user_id):
         x = td_str.split(':')
         f = open(running_file, 'a')
         writer = csv.writer(f)
-        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , user_id , home_data['home'][user_id - 1][1], 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
+        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' ,  'Home',  user_id , home_data['home'][user_id - 1][1], teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
         writer.writerow(data)
         f.close()
 
@@ -1046,7 +1045,7 @@ def updateteamagoal_direction(direction,user_id):
         x = td_str.split(':')
         f = open(running_file, 'a')
         writer = csv.writer(f)
-        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , user_id , home_data['home'][user_id - 1][1], 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
+        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , 'Home',  user_id , home_data['home'][user_id - 1][1],  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
         writer.writerow(data)
         f.close()
 
@@ -1065,24 +1064,24 @@ def updateteamaintgoal(direction,user_id):
         if direction == 'increment':
             teama[user_id]['goals'] = teama[user_id]['goals'] + 1
             scores['Home']['goals'] = scores['Home']['goals'] + 1
-            if quarter == 2:
+            if quarter == 1:
                 periodscores['Home']['goals1'] = periodscores['Home']['goals1'] + 1
-            elif quarter == 3:
+            elif quarter == 2:
                 periodscores['Home']['goals2'] = periodscores['Home']['goals2'] + 1
-            elif quarter == 4:
+            elif quarter == 3:
                 periodscores['Home']['goals3'] = periodscores['Home']['goals3'] + 1
-            elif quarter == 5:
+            elif quarter == 4:
                 periodscores['Home']['goals4'] = periodscores['Home']['goals4'] + 1
         elif direction == 'decrement':
             teama[user_id]['goals'] = teama[user_id]['goals'] - 1
             scores['Home']['goals'] = scores['Home']['goals'] - 1
-            if quarter == 2:
+            if quarter == 1:
                 periodscores['Home']['goals1'] = periodscores['Home']['goals1'] - 1
-            elif quarter == 3:
+            elif quarter == 2:
                 periodscores['Home']['goals2'] = periodscores['Home']['goals2'] - 1
-            elif quarter == 4:
+            elif quarter == 3:
                 periodscores['Home']['goals3'] = periodscores['Home']['goals3'] - 1
-            elif quarter == 5:
+            elif quarter == 4:
                 periodscores['Home']['goals4'] = periodscores['Home']['goals4'] - 1
             direction = "increment"
 
@@ -1090,7 +1089,7 @@ def updateteamaintgoal(direction,user_id):
         x = td_str.split(':')
         f = open(running_file, 'a')
         writer = csv.writer(f)
-        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , user_id , home_data['home'][user_id - 1][1], 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
+        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' ,'Home',  user_id , home_data['home'][user_id - 1][1],  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
         writer.writerow(data)
         f.close()
 
@@ -1147,7 +1146,7 @@ def updateteamamajor(direction,user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Majors', user_id, home_data['home'][user_id - 1][1], 'Home', teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Majors',  'Home', user_id, home_data['home'][user_id - 1][1],  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
         writer.writerow(data)
         f.close()
 
@@ -1206,7 +1205,7 @@ def updateteamapenalty(direction,user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', user_id, home_data['home'][user_id - 1][1], 'Home',
+        data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', 'Home', user_id, home_data['home'][user_id - 1][1],
                 teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
         writer.writerow(data)
         f.close()
@@ -1300,9 +1299,8 @@ def updateteambgoal_direction(direction, user_id):
 
         f = open(running_file, 'a')
         writer = csv.writer(f)
-        prequarter = quarter -1 
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [prequarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', user_id, away_data['away'][user_id - 1][1], 'Away',
+        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', 'Away', user_id, away_data['away'][user_id - 1][1], 
         teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
         writer.writerow(data)
         f.close()
@@ -1324,24 +1322,24 @@ def updateteambintgoal(direction,user_id):
         if direction == 'increment':
             teamb[user_id]['goals'] = teamb[user_id]['goals'] + 1
             scores['Away']['goals'] = scores['Away']['goals'] + 1
-            if quarter == 2:
+            if quarter == 1:
                 periodscores['Away']['goals1'] = periodscores['Away']['goals1'] + 1
-            elif quarter == 3:
+            elif quarter == 2:
                 periodscores['Away']['goals2'] = periodscores['Away']['goals2'] + 1
-            elif quarter == 4:
+            elif quarter == 3:
                 periodscores['Away']['goals3'] = periodscores['Away']['goals3'] + 1
-            elif quarter == 5:
+            elif quarter == 4:
                 periodscores['Away']['goals4'] = periodscores['Away']['goals4'] + 1
         elif direction == 'decrement':
             teamb[user_id]['goals'] = teamb[user_id]['goals'] - 1
             scores['Away']['goals'] = scores['Away']['goals'] - 1
-            if quarter == 2:
+            if quarter == 1:
                 periodscores['Away']['goals1'] = periodscores['Away']['goals1'] - 1
-            elif quarter == 3:
+            elif quarter == 2:
                 periodscores['Away']['goals2'] = periodscores['Away']['goals2'] - 1
-            elif quarter == 4:
+            elif quarter == 3:
                 periodscores['Away']['goals3'] = periodscores['Away']['goals3'] - 1
-            elif quarter == 5:
+            elif quarter == 4:
                 periodscores['Away']['goals4'] = periodscores['Away']['goals4'] - 1
             direction = "increment"
 
@@ -1350,9 +1348,7 @@ def updateteambintgoal(direction,user_id):
 
         f = open(running_file, 'a')
         writer = csv.writer(f)
-        prequarter = quarter -1 
-        # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [prequarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', user_id, away_data['away'][user_id - 1][1], 'Away',
+        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', 'Away', user_id, away_data['away'][user_id - 1][1], 
         teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
         writer.writerow(data)
         f.close()
@@ -1413,7 +1409,7 @@ def updateteambmajor(direction,user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Major', user_id, away_data['away'][user_id - 1][1], 'Away',
+        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Major', 'Away', user_id, away_data['away'][user_id - 1][1], 
         teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
         writer.writerow(data)
         f.close()
@@ -1472,7 +1468,7 @@ def updateteambpenalty(direction,user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', user_id, away_data['away'][user_id - 1][1], 'Away',
+        data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', 'Away', user_id, away_data['away'][user_id - 1][1], 
         teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
         writer.writerow(data)
         f.close()
@@ -1487,42 +1483,42 @@ def period():
         global quarter, direction
         if direction == 'increment':
             quarter = quarter + 1
-            timestamp = datetime.now()
+            # timestamp = datetime.now()
 
-            f = open(running_file, 'a')
-            writer = csv.writer(f)
-            header = ['Game Status at ', Config.DEFAULT_LOCATION, ' on the ', timestamp, 'end of quarter :' ,quarter -1, ]
-            writer.writerow(header)
+            # f = open(running_file, 'a')
+            # writer = csv.writer(f)
+            # header = ['Game Status at ', Config.DEFAULT_LOCATION, ' on the ', timestamp, 'end of quarter :' ,quarter -1, ]
+            # writer.writerow(header)
 
-            # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
-            # writer.writerow(header1)
+            # # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
+            # # writer.writerow(header1)
 
-            data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'],'Home Majors:',  scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
-            writer.writerow(data)
+            # data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'],'Home Majors:',  scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
+            # writer.writerow(data)
 
-            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors', 'reds']
-            writer.writerow(header)
+            # header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors', 'reds']
+            # writer.writerow(header)
 
-            f.close()
+            # f.close()
         elif direction == 'decrement':
             quarter = quarter - 1
-            timestamp = datetime.now()
+            # timestamp = datetime.now()
 
-            f = open(running_file, 'a')
-            writer = csv.writer(f)
-            header = ['Game Status at ', Config.DEFAULT_LOCATION, ' on the ', timestamp, 'end of quarter :' ,quarter -1, ]
-            writer.writerow(header)
+            # f = open(running_file, 'a')
+            # writer = csv.writer(f)
+            # header = ['Game Status at ', Config.DEFAULT_LOCATION, ' on the ', timestamp, 'end of quarter :' ,quarter -1, ]
+            # writer.writerow(header)
 
-            # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
-            # writer.writerow(header1)
+            # # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
+            # # writer.writerow(header1)
 
-            data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'],'Home Majors:',  scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
-            writer.writerow(data)
+            # data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'],'Home Majors:',  scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
+            # writer.writerow(data)
 
-            header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors', 'reds']
-            writer.writerow(header)
+            # header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors', 'reds']
+            # writer.writerow(header)
 
-            f.close()
+            # f.close()
             direction = "increment"
 
     return redirect(url_for('index'))
@@ -1785,9 +1781,8 @@ def hometimeout():
 
             f = open(running_file, 'a')
             writer = csv.writer(f)
-            # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
             data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout',
-            hometimeoutv, 'Home']
+            'Home', hometimeoutv,'','','','']
             writer.writerow(data)
             f.close()
             # pause_countdown()
@@ -1803,9 +1798,8 @@ def hometimeout():
 
             f = open(running_file, 'a')
             writer = csv.writer(f)
-            # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
             data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout removed',
-            hometimeoutv, 'Home']
+            'Home', hometimeoutv,'','','','']
             writer.writerow(data)
             f.close()
             direction = "increment"
@@ -1822,8 +1816,8 @@ def hometimeout():
             f = open(running_file, 'a')
             writer = csv.writer(f)
             # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout',
-            hometimeoutv, 'Home']
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout', 'Home',
+            hometimeoutv,'','','','']
             writer.writerow(data)
             f.close()
             # pause_countdown()
@@ -1841,7 +1835,7 @@ def hometimeout():
             writer = csv.writer(f)
             # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
             data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout removed',
-            hometimeoutv, 'Home']
+            'Home', hometimeoutv,'','','','']
             writer.writerow(data)
             f.close()
             direction = "increment"
@@ -1874,7 +1868,7 @@ def awaytimeout():
             f = open(running_file, 'a')
             writer = csv.writer(f)
             # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout', awaytimeoutv ,'Away']
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout','Away', awaytimeoutv,'','','','']
             writer.writerow(data)
             f.close()
             pause_countdown()
@@ -1891,7 +1885,7 @@ def awaytimeout():
             f = open(running_file, 'a')
             writer = csv.writer(f)
             # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout', awaytimeoutv ,'Away']
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout','Away', awaytimeoutv,'','','','']
             writer.writerow(data)
             f.close()
             direction = "increment"
@@ -1908,8 +1902,7 @@ def awaytimeout():
             f = open(running_file, 'a')
             writer = csv.writer(f)
             # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout',
-            awaytimeoutv, 'Away']
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout', 'Away',  awaytimeoutv,'','','','']
             writer.writerow(data)
             f.close()
             # pause_countdown()
@@ -1926,8 +1919,7 @@ def awaytimeout():
             f = open(running_file, 'a')
             writer = csv.writer(f)
             # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout', awaytimeoutv,
-            'Away']
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Timeout', 'Away', awaytimeoutv,'','','','']
             writer.writerow(data)
             f.close()
             direction = "increment"
@@ -2002,23 +1994,23 @@ def returninterval():
 
     timestamp = datetime.now()
 
-    f = open(running_file, 'a')
-    writer = csv.writer(f)
-    header = ['Game Status at ', Config.DEFAULT_LOCATION, ' on the ', timestamp, 'end of quarter :', quarter, ]
-    writer.writerow(header)
+    # f = open(running_file, 'a')
+    # writer = csv.writer(f)
+    # header = ['Game Status at ', Config.DEFAULT_LOCATION, ' on the ', timestamp, 'end of quarter :', quarter, ]
+    # writer.writerow(header)
 
-    # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
-    # writer.writerow(header1)
+    # # header1 = ['HomeScore', 'AwayScore', 'HomeMajors', 'AwayMajors']
+    # # writer.writerow(header1)
 
-    data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'], 'Home Majors:',
-            scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
-    writer.writerow(data)
+    # data = ['Home score:', scores['Home']['goals'], 'Away score :', scores['Away']['goals'], 'Home Majors:',
+    #         scores['Home']['majors'], 'Away Majors :', scores['Away']['majors']]
+    # writer.writerow(data)
 
-    header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors',
-              'reds']
-    writer.writerow(header)
+    # header = ['Quarter', 'Min', 'Sec', 'HomeScore', 'AwayScore', 'action', 'player', 'name', 'team', 'goals', 'majors',
+    #           'reds']
+    # writer.writerow(header)
 
-    f.close()
+    # f.close()
     quarter=quarter +1
     return redirect(url_for('index'))
 
@@ -2347,7 +2339,7 @@ def convert_csv_to_pdf():
 
     usable_w = pdf.w - pdf.l_margin - pdf.r_margin
     hat_w = 16
-    club_w = 45
+    club_w = 60
     exp_w = 25
     name_w = usable_w - (hat_w + club_w + exp_w)
 
@@ -2372,7 +2364,8 @@ def convert_csv_to_pdf():
         s = "" if text is None else str(text)
         if pdf.get_string_width(s) <= width:
             return s
-        ell = "…"
+        # Use plain ASCII for maximum compatibility with standard Helvetica fonts.
+        ell = "..."
         if pdf.get_string_width(ell) > width:
             return ""
         # trim until it fits
@@ -2413,9 +2406,9 @@ def convert_csv_to_pdf():
             pdf.cell(w_hs, h, text="Home", border=1, align="C")
             pdf.cell(w_as, h, text="Away", border=1, align="C")
             pdf.cell(w_action, h, text="Action", border=1)
+            pdf.cell(w_team, h, text="Team", border=1, align="C")
             pdf.cell(w_player, h, text="Hat", border=1, align="C")
             pdf.cell(w_name, h, text="Name", border=1)
-            pdf.cell(w_team, h, text="Team", border=1)
             pdf.cell(w_goals, h, text="Goals", border=1, align="C")
             pdf.cell(w_majors, h, text="Majors", border=1, align="C")
             pdf.cell(w_reds, h, text="Card", border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
@@ -2447,9 +2440,9 @@ def convert_csv_to_pdf():
             pdf.cell(w_hs, h, text=fit_text(r[3], w_hs), border=1, align="C")
             pdf.cell(w_as, h, text=fit_text(r[4], w_as), border=1, align="C")
             pdf.cell(w_action, h, text=fit_text(r[5], w_action), border=1)
-            pdf.cell(w_player, h, text=fit_text(r[6], w_player), border=1, align="C")
-            pdf.cell(w_name, h, text=fit_text(r[7], w_name), border=1)
-            pdf.cell(w_team, h, text=fit_text(r[8], w_team), border=1)
+            pdf.cell(w_team, h, text=fit_text(r[6], w_team), border=1)
+            pdf.cell(w_player, h, text=fit_text(r[7], w_player), border=1, align="C")
+            pdf.cell(w_name, h, text=fit_text(r[8], w_name), border=1)
             pdf.cell(w_goals, h, text=fit_text(r[9], w_goals), border=1, align="C")
             pdf.cell(w_majors, h, text=fit_text(r[10], w_majors), border=1, align="C")
             pdf.cell(w_reds, h, text=fit_text(r[11], w_reds), border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
