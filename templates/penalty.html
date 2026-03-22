@@ -5,7 +5,20 @@
  <link rel="stylesheet" href="../static/style.css">
 <script src="static/jquery.min.js">
   </script>
-
+    <style>
+        .red {
+            color: red;
+            font-size: 30px;
+        }
+        .yellow {
+            color: yellow;
+            font-size: 30px;
+        }
+        .none {
+            color: black;
+            font-size: 30px;
+        }
+    </style>
 </head>
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
@@ -359,17 +372,21 @@
 
     <header>
         <h1>
-            <span style="font-size: 30px; color: {% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach.red }}</span>
-            <span style="font-size: 30px; color: {% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
-            <span style="font-size: 30px; color: #222;">spacer</span>
+            <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach['red'] }}</span>
+            <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
+            <!-- <span style="font-size: 28px; color: #888;">{{ home_coach['AC'] }}</span>
+            <span style="font-size: 28px; color: #888;">{{ home_coach['TM'] }}</span> -->
+            <span style="font-size: 30px; color: #333333;">spacer</span>
             <span style="font-size: 30px; color: white;">{{ hometimeoutv }}</span>
             <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }}</span>
             <span style="font-size: 100px; color: grey; width: 1000px;">{{location}}</span>
             <span style="font-size: 300px; color: Yellow;">{{ TeamAway['goals'] }}</span>
             <span style="font-size: 30px; color: white;">{{ awaytimeoutv }}</span>
-            <span style="font-size: 30px; color: #222;">spacer</span>
-            <span style="font-size: 30px; color: {% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
-            <span style="font-size: 30px; color: {% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach.red }}</span>
+            <span style="font-size: 30px; color: #333333;">spacer</span>
+            <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach['red'] }}</span>
+            <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
+            <!-- <span style="font-size: 28px; color: #888;">{{ away_coach['AC'] }}</span>
+            <span style="font-size: 28px; color: #888;">{{ away_coach['TM'] }}</span> -->
         </h1>
     </header>
 

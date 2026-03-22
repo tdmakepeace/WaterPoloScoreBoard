@@ -5,6 +5,10 @@
     <title>Edit Form</title>
    <style>
         /* Basic styling for the layout */
+        html {
+            min-height: 100%;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -12,8 +16,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100vh;
-         }
+            min-height: 100vh;
+            height: auto;
+        }
 
         #csvControls {
             max-width: 600px;
@@ -26,11 +31,16 @@
 
         #csvPreview {
             margin-top: 10px;
-            max-height: 240px;
+            max-height: 420px;
             overflow: auto;
             border: 1px solid #eee;
             border-radius: 8px;
             padding: 10px;
+        }
+
+        #csvPreview .preview-staff-table .missing {
+            color: #999;
+            font-style: italic;
         }
 
         #csvPreview table {
@@ -78,6 +88,26 @@
             gap: 10px;
         }
 
+        #staffSection {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        #staffSection > div {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #staffSection .staff-role {
+            min-width: 140px;
+            font-weight: bold;
+        }
+
         label {
             min-width: 80px;
             font-weight: bold;
@@ -96,6 +126,11 @@
         }
 
         input[name^="name_"] {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        #staffSection input[type="text"] {
             flex: 1;
             min-width: 200px;
         }
@@ -139,10 +174,15 @@
             document.getElementById('num_entries').value = entryIndex + 1;
         }
 
-        // -------- CSV import (client-side) --------
-        // Expected CSV shape: hat_number,name (header row is optional).
-        // This parses locally so you can preview values before submitting the form.
-        let _csvParsedRows = [];
+        // CSV: numeric hat -> players; HC / AC / TM -> away_staff fields
+        let _csvParsedRows = { players: [], staff: [] };
+
+        const _STAFF_ROLES = new Set(["HC", "AC", "TM"]);
+
+        function _normalizeStaffRole(value) {
+            const u = (value ?? "").toString().trim().toUpperCase();
+            return _STAFF_ROLES.has(u) ? u : null;
+        }
 
         function _detectDelimiter(text) {
             const firstNonEmptyLine = text.split(/\r?\n/).find(l => l.trim().length > 0) || "";
@@ -190,11 +230,9 @@
                 }
 
                 if (c === "\n") {
-                    // Push last field in line
                     row.push(field.trim());
                     field = "";
 
-                    // Skip completely-empty lines
                     if (row.some(v => v !== "")) {
                         rows.push(row);
                     }
@@ -205,7 +243,6 @@
                 field += c;
             }
 
-            // Finalize if file doesn't end with newline
             if (field.length > 0 || row.length > 0) {
                 row.push(field.trim());
                 if (row.some(v => v !== "")) rows.push(row);
@@ -230,13 +267,13 @@
             if (!file) {
                 statusEl.textContent = "Choose a CSV file first.";
                 previewEl.innerHTML = "";
-                _csvParsedRows = [];
+                _csvParsedRows = { players: [], staff: [] };
                 return;
             }
 
             statusEl.textContent = "Reading and parsing CSV...";
             previewEl.innerHTML = "";
-            _csvParsedRows = [];
+            _csvParsedRows = { players: [], staff: [] };
 
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -244,54 +281,79 @@
                     const text = e.target.result || "";
                     const parsed = _parseCSV(text);
 
-                    // Convert to {hat, name}, skipping headers/invalid rows
-                    const people = [];
+                    const players = [];
+                    const staff = [];
                     for (let idx = 0; idx < parsed.length; idx++) {
                         const r = parsed[idx];
                         const hat = (r[0] ?? "").toString().trim();
                         const name = (r[1] ?? "").toString().trim();
 
                         if (!hat && !name) continue;
-                        if (!_isNumericHat(hat)) {
-                            // Likely header or malformed line; skip.
+
+                        const role = _normalizeStaffRole(hat);
+                        if (role) {
+                            staff.push({ role, name });
                             continue;
                         }
 
-                        people.push({ hat: String(parseInt(hat, 10)), name });
+                        if (!_isNumericHat(hat)) continue;
+
+                        players.push({ hat: String(parseInt(hat, 10)), name });
                     }
 
-                    // If parsing produced nothing, show what we can
-                    if (people.length === 0) {
-                        statusEl.textContent = "No valid rows found. Expected: hat_number,name";
+                    if (players.length === 0 && staff.length === 0) {
+                        statusEl.textContent = "No valid rows. Players: hat_number,name. Staff: HC, AC, or TM then name.";
                         previewEl.innerHTML = "";
-                        _csvParsedRows = [];
+                        _csvParsedRows = { players: [], staff: [] };
                         return;
                     }
 
-                    _csvParsedRows = people;
+                    _csvParsedRows = { players, staff };
 
-                    // Render preview (up to N rows)
-                    const maxPreview = 200;
-                    const shown = people.slice(0, maxPreview);
-                    const truncated = people.length > maxPreview;
+                    const staffByRole = new Map();
+                    for (const s of staff) {
+                        staffByRole.set(s.role, s.name);
+                    }
 
-                    let html = "<table><thead><tr><th>Hat</th><th>Name</th></tr></thead><tbody>";
-                    for (const p of shown) {
-                        const safeHat = p.hat.replace(/[<>&"]/g, "");
-                        const safeName = p.name.replace(/[<>&"]/g, "");
-                        html += `<tr><td>${safeHat}</td><td>${safeName}</td></tr>`;
+                    let html = "";
+
+                    html += "<div style='font-weight:bold;margin:0 0 6px;'>Staff in CSV (HC, AC, TM)</div>";
+                    html += "<table class='preview-staff-table'><thead><tr><th>Role</th><th>Name (from file)</th></tr></thead><tbody>";
+                    for (const role of ["HC", "AC", "TM"]) {
+                        const raw = staffByRole.has(role) ? staffByRole.get(role) : "";
+                        const hasVal = (raw ?? "").toString().trim().length > 0;
+                        const safeR = role.replace(/[<>&"]/g, "");
+                        const safeName = (raw ?? "").toString().replace(/[<>&"]/g, "");
+                        const cell = hasVal
+                            ? safeName
+                            : "<span class='missing'>(not in CSV)</span>";
+                        html += `<tr><td><strong>${safeR}</strong></td><td>${cell}</td></tr>`;
                     }
                     html += "</tbody></table>";
-                    if (truncated) {
-                        html += `<div style="margin-top:8px;color:#666;">Showing first ${maxPreview} of ${people.length} rows.</div>`;
+
+                    if (players.length) {
+                        html += "<div style='font-weight:bold;margin:16px 0 6px;'>Players (numeric hat)</div>";
+                        html += "<table><thead><tr><th>Hat</th><th>Name</th></tr></thead><tbody>";
+                        const maxP = 200;
+                        for (const p of players.slice(0, maxP)) {
+                            const safeHat = p.hat.replace(/[<>&"]/g, "");
+                            const safeName = p.name.replace(/[<>&"]/g, "");
+                            html += `<tr><td>${safeHat}</td><td>${safeName}</td></tr>`;
+                        }
+                        html += "</tbody></table>";
+                        if (players.length > maxP) {
+                            html += `<div style="margin-top:8px;color:#666;">Showing first ${maxP} of ${players.length} player rows.</div>`;
+                        }
                     }
 
                     previewEl.innerHTML = html;
-                    statusEl.textContent = `CSV parsed. ${people.length} valid row(s) found. Click "Apply to Form" to fill the inputs.`;
+                    const staffFilled = ["HC", "AC", "TM"].filter((r) => staffByRole.has(r) && (staffByRole.get(r) ?? "").toString().trim()).length;
+                    statusEl.textContent =
+                        `CSV parsed. Staff rows with names: ${staffFilled}/3. Players: ${players.length}. Click "Apply to Form" to fill inputs.`;
                 } catch (err) {
                     previewEl.innerHTML = "";
-                    _csvParsedRows = [];
-                    statusEl.textContent = "Failed to parse CSV. Make sure it's formatted as: hat_number,name";
+                    _csvParsedRows = { players: [], staff: [] };
+                    statusEl.textContent = "Failed to parse CSV.";
                     console.error(err);
                 }
             };
@@ -306,47 +368,60 @@
         function applyCsvToForm() {
             const statusEl = document.getElementById("csvStatus");
             const previewEl = document.getElementById("csvPreview");
-
+            const data = _csvParsedRows;
             const numEntries = parseInt(document.getElementById("num_entries").value, 10) || 0;
-            if (!_csvParsedRows || _csvParsedRows.length === 0) {
+
+            if (!data || ((!data.players || !data.players.length) && (!data.staff || !data.staff.length))) {
                 statusEl.textContent = "Refresh the CSV preview first.";
                 return;
             }
 
-            // Build a lookup: hat number -> name input element
             const hatToNameInput = new Map();
             for (let i = 0; i < numEntries; i++) {
                 const hatEl = document.getElementById(`hatnum_${i}`);
                 const nameEl = document.getElementById(`name_${i}`);
                 if (!hatEl || !nameEl) continue;
-
                 const hat = (hatEl.value ?? "").toString().trim();
                 if (hat) hatToNameInput.set(hat, nameEl);
             }
 
-            // Clear names before applying imported values
-            for (let i = 0; i < numEntries; i++) {
-                const nameEl = document.getElementById(`name_${i}`);
-                if (nameEl) nameEl.value = "";
-            }
+            let appliedPlayers = 0;
+            let ignoredPlayers = 0;
 
-            // Apply imported rows by hat number match
-            let applied = 0;
-            let ignored = 0;
-            for (const p of _csvParsedRows) {
-                const nameEl = hatToNameInput.get(String(p.hat));
-                if (nameEl) {
-                    nameEl.value = p.name;
-                    applied++;
-                } else {
-                    ignored++;
+            if (data.players && data.players.length) {
+                for (let i = 0; i < numEntries; i++) {
+                    const nameEl = document.getElementById(`name_${i}`);
+                    if (nameEl) nameEl.value = "";
+                }
+                for (const p of data.players) {
+                    const nameEl = hatToNameInput.get(String(p.hat));
+                    if (nameEl) {
+                        nameEl.value = p.name;
+                        appliedPlayers++;
+                    } else ignoredPlayers++;
                 }
             }
 
-            // Update status message (preview remains as-is)
-            statusEl.textContent = `Applied CSV to the form. Applied: ${applied}. Ignored (hat not present in form): ${ignored}. Now click "Submit" to save.`;
+            if (data.staff && data.staff.length) {
+                for (const role of ["HC", "AC", "TM"]) {
+                    const el = document.getElementById(`staff_name_${role}`);
+                    if (el) el.value = "";
+                }
+                for (const s of data.staff) {
+                    const el = document.getElementById(`staff_name_${s.role}`);
+                    if (el) el.value = s.name;
+                }
+            }
 
-            // Optional: lightly scroll preview into view if user wants feedback
+            const parts = [];
+            if (data.players && data.players.length) {
+                parts.push(`${appliedPlayers} player name(s); ignored hats: ${ignoredPlayers}`);
+            }
+            if (data.staff && data.staff.length) {
+                parts.push(`${data.staff.length} staff row(s)`);
+            }
+            statusEl.textContent = `Applied CSV (${parts.join("; ")}). Submit to save.`;
+
             previewEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
     </script>
@@ -371,17 +446,26 @@
             </div>
             {% endfor %}
         </div>
-<!--        <button type="button" onclick="addEntry()">Add Another Entry</button><br><br>-->
+
+        <div id="staffSection">
+            <div style="font-weight:bold;font-size:16px;margin-bottom:4px;">Away staff</div>
+            {% for record in (staff_data or []) %}
+            <div>
+                <span class="staff-role">{{ record[0] }}</span>
+                <input type="text" id="staff_name_{{ record[0] }}" name="staff_{{ record[0] }}" value="{{ record[1] }}">
+            </div>
+            {% endfor %}
+        </div>
 
         <div id="csvControls">
-            <div style="font-weight:bold;font-size:16px;margin-bottom:8px;">Import Away Players CSV</div>
+            <div style="font-weight:bold;font-size:16px;margin-bottom:8px;">Import Away roster CSV</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                 <input type="file" id="csvFile" accept=".csv,text/csv">
                 <button type="button" onclick="refreshCsvPreview()">Refresh Preview</button>
                 <button type="button" onclick="applyCsvToForm()">Apply to Form</button>
             </div>
             <div style="margin-top:8px;color:#555;font-size:13px;">
-                Format: `hat_number,name` (header row optional).
+                Players: <code>hat_number,name</code>. Staff: <code>HC</code>, <code>AC</code>, or <code>TM</code> in the first column, name in the second. One file can include both. Header row optional.
             </div>
             <div id="csvStatus"></div>
             <div id="csvPreview"></div>

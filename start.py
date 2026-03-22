@@ -104,6 +104,8 @@ TeamAway = scores['Away']
 # PLAYERS NAMES
 home_data = {'home': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6', ''], ['7', ''], ['8', ''], ['9', ''], ['10', ''], ['11', ''], ['12', ''], ['13', ''], ['14', '']]}
 away_data = {'away': [['1', ''], ['2', ''], ['3', ''], ['4', ''], ['5', ''], ['6', ''], ['7', ''], ['8', ''], ['9', ''], ['10', ''], ['11', ''], ['12', ''], ['13', ''], ['14', '']]}
+home_staff = {'home': [['HC', ''], ['AC', ''], ['TM', '']]}
+away_staff = {'away': [['HC', ''], ['AC', ''], ['TM', '']]}
 
 # home_data = {'home': [['1', 'player1'], ['2', 'player2'], ['3', 'player1'], ['4', 'player4'], ['5', 'player5'], ['6', 'player6'], ['7', 'player7'], ['8', 'player8'], ['9', 'player9'], ['10', 'player10'], ['11', 'player11'], ['12', 'player12'], ['13', 'player13'], ['14', 'player14']]}
 # away_data = {'away': [['1', 'player1'], ['2', 'player2'], ['3', 'player3'], ['4', 'player4'], ['5', 'player5'], ['6', 'player6'], ['7', 'player7'], ['8', 'player8'], ['9', 'player9'], ['10', 'player10'], ['11', 'player11'], ['12', 'player12'], ['13', 'player13'], ['14', 'player14']]}
@@ -115,11 +117,12 @@ ref_data = {'referee': [['1', '','',''], ['2', '','','']]}
 # ref_data = {'referee': [['1', 'Toby','kingston royals',''], ['2', 'Steve','surrey sharks','10']]}
 
 # CARDS
-home_coach = {'red': 0 , 'yellow': 0}
-away_coach = {'red': 0 , 'yellow': 0}
 
-home_team_red = {'red': 0 , 'yellow': 0}
-away_team_red = {'red': 0 , 'yellow': 0}
+home_coach = {'HC': 0, 'yellow': 0, 'AC': 0, 'TM': 0}
+away_coach = {'HC': 0, 'yellow': 0, 'AC': 0, 'TM': 0}
+
+home_team_red = {'red': 0, 'yellow': 0}
+away_team_red = {'red': 0, 'yellow': 0}
 
 runningclock = "no"
 
@@ -782,25 +785,44 @@ def updateteamacoach(direction,id):
             if id == 1 :
                 home_coach['yellow'] = 1
                 home_team_red['yellow'] = home_team_red['yellow'] + 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW',  'Home', '', 'Coach' ,'','','']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW',  'Home', '', 'Team Yellow' ,'','','']
                 writer.writerow(data)
-
-
             elif id == 2 :
-                home_coach['red'] = 1
+                home_coach['HC'] = 1
                 home_team_red['red'] = home_team_red['red'] + 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED',  'Home', '', 'Coach' ,'','','']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED',  'Home', '', 'Head Coach' ,'','','']
+                writer.writerow(data)
+            elif id == 3 :
+                home_coach['AC'] = 1
+                home_team_red['red'] = home_team_red['red'] + 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED',  'Home', '', 'Assist Coach' ,'','','']
+                writer.writerow(data)
+            elif id == 4 :
+                home_coach['TM'] = 1
+                home_team_red['red'] = home_team_red['red'] + 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED',  'Home', '', 'Team, Manager' ,'','','']
+                writer.writerow(data)   
 
         elif direction == 'decrement':
             if id == 1 :
                 home_coach['yellow'] = 0
                 home_team_red['yellow'] = home_team_red['yellow'] - 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD',  'Home', '', 'Coach' ,'','','']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL Yellow',  'Home', '', 'Team Yellow' ,'','','']
                 writer.writerow(data)
             elif id == 2 :
-                home_coach['red'] = 0
+                home_coach['HC'] = 0
                 home_team_red['red'] = home_team_red['red'] - 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD',  'Home', '', 'Coach','','','']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED',  'Home', '', 'Head Coach','','','']
+                writer.writerow(data)
+            elif id == 3 :
+                home_coach['AC'] = 0
+                home_team_red['red'] = home_team_red['red'] - 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED',  'Home', '', 'Assist Coach','','','']
+                writer.writerow(data)
+            elif id == 4 :
+                home_coach['TM'] = 0
+                home_team_red['red'] = home_team_red['red'] - 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED',  'Home', '', 'Team Manager','','','']
                 writer.writerow(data)
             direction = "increment"
 
@@ -836,25 +858,44 @@ def updateteambcoach(direction,id):
             if id == 1 :
                 away_coach['yellow'] = 1
                 away_team_red['yellow'] = away_team_red['yellow'] + 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW','Away','', 'Coach' ,'','','']   
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'YELLOW',  'Away', '', 'Team Yellow' ,'','','']
                 writer.writerow(data)
-
             elif id == 2 :
-                away_coach['red'] = 1
+                away_coach['HC'] = 1
                 away_team_red['red'] = away_team_red['red'] + 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED','Away','', 'Coach' ,'','','']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED',  'Away', '', 'Head Coach' ,'','','']
+                writer.writerow(data)
+            elif id == 3 :
+                away_coach['AC'] = 1
+                away_team_red['red'] = away_team_red['red'] + 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED',  'Away', '', 'Assist Coach' ,'','','']
+                writer.writerow(data)
+            elif id == 4 :
+                away_coach['TM'] = 1
+                away_team_red['red'] = away_team_red['red'] + 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED',  'Away', '', 'Team, Manager' ,'','','']
                 writer.writerow(data)
 
         elif direction == 'decrement':
             if id == 1 :
                 away_coach['yellow'] = 0
                 away_team_red['yellow'] = away_team_red['yellow'] - 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD','Away','', 'Coach' ,'','','']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL Yellow',  'Away', '', 'Team Yellow' ,'','','']
                 writer.writerow(data)
             elif id == 2 :
-                away_coach['red'] = 0
+                away_coach['HC'] = 0
                 away_team_red['red'] = away_team_red['red'] - 1
-                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL CARD','Away','', 'Coach' ,'','','']
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED',  'Away', '', 'Head Coach','','','']
+                writer.writerow(data)
+            elif id == 3 :
+                away_coach['AC'] = 0
+                away_team_red['red'] = away_team_red['red'] - 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED',  'Away', '', 'Assist Coach','','','']
+                writer.writerow(data)
+            elif id == 4 :
+                away_coach['TM'] = 0
+                away_team_red['red'] = away_team_red['red'] - 1
+                data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED',  'Away', '', 'Team Manager','','','']
                 writer.writerow(data)
             direction = "increment"
 
@@ -888,7 +929,7 @@ def updateteamacard(direction,user_id):
         if direction == 'increment':
             # print('help2')
             teama[user_id]['reds'] = 1
-            home_team_red['red'] = home_team_red['red']  + 1
+            home_team_red['red'] = home_team_red['red'] + 1
             data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Home', user_id, home_data['home'][user_id - 1][1], 
                  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
@@ -930,7 +971,7 @@ def updateteambcard(direction, user_id):
             teamb[user_id]['reds'] = 1
             away_team_red['red'] = away_team_red['red'] + 1
             data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Away', user_id, away_data['away'][user_id - 1][1], 
-                   teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+                   teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
             writer.writerow(data)
         elif direction == 'decrement':
             teamb[user_id]['reds'] = 0
@@ -2077,6 +2118,12 @@ def save():
 
 @app.route('/savehomeplayers/<user_id>' , methods=['GET', 'POST'])
 def savehomeplayers(user_id):
+    global home_data, home_staff
+    user_id = (user_id or "").strip()
+    if user_id not in home_staff:
+        home_staff[user_id] = [['HC', ''], ['AC', ''], ['TM', '']]
+    staff_rows = home_staff[user_id]
+
     if request.method == 'POST':
         # Clear the existing data for the user ID
         home_data[user_id] = []
@@ -2092,16 +2139,31 @@ def savehomeplayers(user_id):
             form_data = [hatnum,name]
 
             home_data[user_id].append(form_data)
+
+        for row in staff_rows:
+            role = row[0]
+            row[1] = (request.form.get(f'staff_{role}', '') or '').strip()
         # print(home_data)
         return redirect(url_for('index'))
 
     # For GET requests, render the form with existing data
     existing_data = home_data.get(user_id, [])
 
-    return render_template('hometeamsetup.html', user_id=user_id, data=existing_data)
+    return render_template(
+        'hometeamsetup.html',
+        user_id=user_id,
+        data=existing_data,
+        staff_data=staff_rows,
+    )
 
 @app.route('/saveawayplayers/<user_id>' , methods=['GET', 'POST'])
 def saveawayplayers(user_id):
+    global away_data, away_staff
+    user_id = (user_id or "").strip()
+    if user_id not in away_staff:
+        away_staff[user_id] = [['HC', ''], ['AC', ''], ['TM', '']]
+    staff_rows = away_staff[user_id]
+
     if request.method == 'POST':
         # Clear the existing data for the user ID
         away_data[user_id] = []
@@ -2117,12 +2179,21 @@ def saveawayplayers(user_id):
             form_data = [hatnum,name]
 
             away_data[user_id].append(form_data)
+
+        for row in staff_rows:
+            role = row[0]
+            row[1] = (request.form.get(f'staff_{role}', '') or '').strip()
         # print(away_data)
         return redirect(url_for('index'))
 
     # For GET requests, render the form with existing data
     existing_data = away_data.get(user_id, [])
-    return render_template('awayteamsetup.html', user_id=user_id, data=existing_data)
+    return render_template(
+        'awayteamsetup.html',
+        user_id=user_id,
+        data=existing_data,
+        staff_data=staff_rows,
+    )
 
 @app.route('/saverefdata/<user_id>' , methods=['GET', 'POST'])
 def saverefdata(user_id):
@@ -2172,7 +2243,7 @@ def convert_csv_to_pdf():
         line_text = " | ".join("" if cell is None else str(cell) for cell in row)
         write_line(line_text)
 
-    def write_score_and_breakdown_table() -> None:
+    def write_scoretable() -> None:
         usable_w = pdf.w - pdf.l_margin - pdf.r_margin
 
         pdf.set_font("helvetica", style="B", size=11)
@@ -2193,55 +2264,8 @@ def convert_csv_to_pdf():
 
         pdf.ln(3)
 
-        # Breakdown table
-        pdf.set_font("helvetica", style="B", size=10)
-        pdf.cell(0, line_height, text="Breakdown", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-
-        team_w = 22
-        event_w = 20
-        per_w = (usable_w - team_w - event_w) / 4
-
-        pdf.set_font("helvetica", style="B", size=9)
-        pdf.cell(team_w, line_height, text="Team", border=1)
-        pdf.cell(event_w, line_height, text="Event", border=1)
-        pdf.cell(per_w, line_height, text="P1", border=1)
-        pdf.cell(per_w, line_height, text="P2", border=1)
-        pdf.cell(per_w, line_height, text="P3", border=1)
-        pdf.cell(per_w, line_height, text="P4", border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-
-        def breakdown_row(team: str, event: str, p1, p2, p3, p4) -> None:
-            pdf.set_font("helvetica", style="", size=9)
-            pdf.cell(team_w, line_height, text=str(team), border=1)
-            pdf.cell(event_w, line_height, text=str(event), border=1)
-            pdf.cell(per_w, line_height, text=str(p1), border=1, align="C")
-            pdf.cell(per_w, line_height, text=str(p2), border=1, align="C")
-            pdf.cell(per_w, line_height, text=str(p3), border=1, align="C")
-            pdf.cell(per_w, line_height, text=str(p4), border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-
-        for team in periodscores:
-            breakdown_row(
-                team,
-                "Goals",
-                periodscores[team]["goals1"],
-                periodscores[team]["goals2"],
-                periodscores[team]["goals3"],
-                periodscores[team]["goals4"],
-            )
-
-        for team in periodscores:
-            breakdown_row(
-                team,
-                "Majors",
-                periodscores[team]["majors1"],
-                periodscores[team]["majors2"],
-                periodscores[team]["majors3"],
-                periodscores[team]["majors4"],
-            )
-
-        pdf.ln(5)
-
     # 1) In-memory arrays (always include)
-    write_score_and_breakdown_table()
+    write_scoretable()
 
     # Two-column layout: Home left, Away right
     def write_two_column_teams() -> None:
@@ -2330,7 +2354,51 @@ def convert_csv_to_pdf():
             pdf.cell(reds_w, line_height, text=str(reds), border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
             right_y = row_y + line_height
 
-        pdf.set_y(max(left_y, right_y) + 2)
+        def draw_staff_coach_column(x: float, y: float, staff_rows: list, coach_dict: dict) -> float:
+            idx_w = 10
+            key_w = 14
+            val_w = 11
+            name_w = max(18.0, col_w - idx_w - key_w - val_w)
+            pdf.set_xy(x, y)
+            pdf.set_font("helvetica", style="B", size=8)
+            # pdf.cell(idx_w, line_height, text="#", border=1, align="C")
+            pdf.cell(key_w, line_height, text="Key", border=1, align="C")
+            pdf.cell(name_w, line_height, text="Name", border=1)
+            pdf.cell(val_w, line_height, text="Card", border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            y = pdf.get_y()
+            pdf.set_font("helvetica", style="", size=8)
+            for i, row in enumerate(staff_rows):
+                role_key = row[0] if len(row) > 0 else ""
+                sname = row[1] if len(row) > 1 else ""
+                y = ensure_space(y)
+                pdf.set_xy(x, y)
+                # pdf.cell(idx_w, line_height, text=str(i), border=1, align="C")
+                pdf.cell(key_w, line_height, text=str(role_key), border=1, align="C")
+                pdf.cell(name_w, line_height, text=str(sname), border=1)
+                pdf.cell(val_w, line_height, text=str(coach_dict.get(role_key, "")), border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                y = pdf.get_y()
+            i = len(staff_rows)
+            y = ensure_space(y)
+            pdf.set_xy(x, y)
+            # pdf.cell(idx_w, line_height, text=str(i), border=1, align="C")
+            pdf.cell(key_w, line_height, text="Yellow", border=1, align="C")
+            pdf.cell(name_w, line_height, text="Team Yellow", border=1)
+            pdf.cell(val_w, line_height, text=str(coach_dict.get("yellow", "")), border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            return pdf.get_y()
+
+        coach_y = max(left_y, right_y)
+        coach_y = ensure_space(coach_y)
+        pdf.set_font("helvetica", style="B", size=9)
+        pdf.set_xy(left_x, coach_y)
+        pdf.cell(col_w, line_height, text="Coach", border=0)
+        pdf.set_xy(right_x, coach_y)
+        pdf.cell(col_w, line_height, text="Coach", border=0)
+        table_y = coach_y + line_height
+
+        table_y = ensure_space(table_y)
+        left_bottom = draw_staff_coach_column(left_x, table_y, home_staff.get("home", []), home_coach)
+        right_bottom = draw_staff_coach_column(right_x, table_y, away_staff.get("away", []), away_coach)
+        pdf.set_y(max(left_bottom, right_bottom) + 2)
 
     write_two_column_teams()
 
@@ -2355,6 +2423,62 @@ def convert_csv_to_pdf():
         pdf.cell(name_w, line_height, text=str(name), border=1)
         pdf.cell(club_w, line_height, text=str(club), border=1)
         pdf.cell(exp_w, line_height, text=str(expenses), border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+
+    pdf.ln(4)
+    
+    def write_breakdown_table() -> None:
+        usable_w = pdf.w - pdf.l_margin - pdf.r_margin
+
+        # Breakdown table
+        pdf.set_font("helvetica", style="B", size=10)
+        pdf.cell(0, line_height, text="Breakdown", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+        team_w = 22
+        event_w = 20
+        per_w = (usable_w - team_w - event_w) / 4
+
+        pdf.set_font("helvetica", style="B", size=9)
+        pdf.cell(team_w, line_height, text="Team", border=1)
+        pdf.cell(event_w, line_height, text="Event", border=1)
+        pdf.cell(per_w, line_height, text="P1", border=1)
+        pdf.cell(per_w, line_height, text="P2", border=1)
+        pdf.cell(per_w, line_height, text="P3", border=1)
+        pdf.cell(per_w, line_height, text="P4", border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+        def breakdown_row(team: str, event: str, p1, p2, p3, p4) -> None:
+            pdf.set_font("helvetica", style="", size=9)
+            pdf.cell(team_w, line_height, text=str(team), border=1)
+            pdf.cell(event_w, line_height, text=str(event), border=1)
+            pdf.cell(per_w, line_height, text=str(p1), border=1, align="C")
+            pdf.cell(per_w, line_height, text=str(p2), border=1, align="C")
+            pdf.cell(per_w, line_height, text=str(p3), border=1, align="C")
+            pdf.cell(per_w, line_height, text=str(p4), border=1, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+        for team in periodscores:
+            breakdown_row(
+                team,
+                "Goals",
+                periodscores[team]["goals1"],
+                periodscores[team]["goals2"],
+                periodscores[team]["goals3"],
+                periodscores[team]["goals4"],
+            )
+
+        for team in periodscores:
+            breakdown_row(
+                team,
+                "Majors",
+                periodscores[team]["majors1"],
+                periodscores[team]["majors2"],
+                periodscores[team]["majors3"],
+                periodscores[team]["majors4"],
+            )
+
+        pdf.ln(5)
+
+    # 1) In-memory arrays (always include)
+    write_breakdown_table()
 
     # Game log table (running_file)
     pdf.ln(4)
