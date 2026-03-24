@@ -423,8 +423,9 @@
 
         ">
             <td>
-                <form method="POST" action="/updateteamacard/increment/{{ user_id }}" style="display:inline;"><button class="btn-warning" style="height:38px;width:120px" type="submit">{{ user_id }}</button></form>
-                <form method="POST" action="/updateteamacard/decrement/{{ user_id }}" style="display:inline;"><button class="btn-secondary" style="height:38px;width:80px" type="submit">-{{ user_id }}</button></form>
+                <form method="POST" action="/updateteamacard/increment/{{ user_id }}" style="display:inline;"><button class="btn-warning" style="height:38px;width:100px" type="submit">{{ user_id }}</button></form>
+                <form method="POST" action="/updateteamabrut/increment/{{ user_id }}" style="display:inline;"><button class="btn-warning" style="height:38px;width:60px" type="submit">Brut</button></form>
+                <form method="POST" action="/updateteamacard/decrement/{{ user_id }}" style="display:inline;"><button class="btn-secondary" style="height:38px;width:60px" type="submit">-{{ user_id }}</button></form>
             </td>
             <td>{{ teama.goals }}</td>
             <td>{{ teama.majors }}</td>
@@ -624,8 +625,9 @@
             {% endif %}
         ">
             <td>
-                <form method="POST" action="/updateteambcard/increment/{{ user_id }}" style="display:inline;"><button class="btn-warning" style="height:38px;width:120px" type="submit">{{ user_id }}</button></form>
-                <form method="POST" action="/updateteambcard/decrement/{{ user_id }}" style="display:inline;"><button class="btn-secondary" style="height:38px;width:80px" type="submit">-{{ user_id }}</button></form>
+                <form method="POST" action="/updateteambcard/increment/{{ user_id }}" style="display:inline;"><button class="btn-warning" style="height:38px;width:100px" type="submit">{{ user_id }}</button></form>
+                <form method="POST" action="/updateteambbrut/increment/{{ user_id }}" style="display:inline;"><button class="btn-warning" style="height:38px;width:60p`x" type="submit">Brut</button></form>
+                <form method="POST" action="/updateteambcard/decrement/{{ user_id }}" style="display:inline;"><button class="btn-secondary" style="height:38px;width:60px" type="submit">-{{ user_id }}</button></form>
             </td>
             <td>{{ teamb.goals }}</td>
             <td>{{ teamb.majors }}</td>

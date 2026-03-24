@@ -243,6 +243,17 @@
                                 // }
                                 setTimeout(updateCountdown, 1000);
                             } else if (timeLeft > 1) {
+                                if (timeLeft > shotLeft) {
+                                    $.ajax({
+                                        url: '/displayshotclock/' + shotseconds,
+                                        method: 'GET', // or 'POST' depending on your backend
+                                    });
+                                } else {
+                                   $.ajax({
+                                        url: '/displayshotclock/' + seconds,
+                                        method: 'GET', // or 'POST' depending on your backend
+                                    });
+                                }
                                 if (shotLeft < 1) {
                                     playSound();
                                     $.ajax({

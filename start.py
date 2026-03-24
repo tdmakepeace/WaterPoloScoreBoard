@@ -945,6 +945,46 @@ def updateteamacard(direction,user_id):
 
     return redirect(url_for('index'))
 
+@app.route('/updateteamabrut/<direction>/<int:user_id>', methods=['GET', 'POST'])
+def updateteamabrut(direction,user_id):
+    global quarter
+    global countdown_running, start_time, elapsed_time
+    if quarter == 0 :
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+
+
+
+        # elapsed_time = time.time() - start_time
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
+        # print('help1')
+        # action = request.form['action']
+        direction = str(direction)
+        # action = "increment"
+        td_str = str(timedelta(seconds=remaining_time))
+        x = td_str.split(':')
+        f = open(running_file, 'a')
+        writer = csv.writer(f)
+        # print(teama)
+        if direction == 'increment':
+            # print('help2')
+            teama[user_id]['reds'] = 1
+            home_team_red['red'] = home_team_red['red'] + 1
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED BRUT', 'Home', user_id, home_data['home'][user_id - 1][1], 
+                 teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            teama[user_id]['reds'] = 0
+            home_team_red['red'] = home_team_red['red'] - 1
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', 'Home', user_id, home_data['home'][user_id - 1][1],
+                    teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            writer.writerow(data)
+
+            direction = "increment"
+        f.close()
+
+    return redirect(url_for('index'))
+
 @app.route('/updateteambcard/<direction>/<int:user_id>', methods=['GET', 'POST'])
 def updateteambcard(direction, user_id):
     global quarter
@@ -986,7 +1026,46 @@ def updateteambcard(direction, user_id):
 
     return redirect(url_for('index'))
 
+@app.route('/updateteambbrut/<direction>/<int:user_id>', methods=['GET', 'POST'])
+def updateteambbrut(direction, user_id):
+    global quarter
+    global countdown_running, start_time, elapsed_time
+    if quarter == 0 :
+        return redirect(url_for('index'))
+    if request.method == 'POST':
 
+
+
+        # elapsed_time = time.time() - start_time
+        remaining_time = math.floor(max(Config.GAME_TIME*30 - elapsed_time, 0))
+        # print('help1')
+        # action = request.form['action']
+        direction = str(direction)
+        # action = "increment"
+        td_str = str(timedelta(seconds=remaining_time))
+        x = td_str.split(':')
+        f = open(running_file, 'a')
+        writer = csv.writer(f)
+        # print(teamb)
+        if direction == 'increment':
+            # print('help2')
+            teamb[user_id]['reds'] = 1
+            away_team_red['red'] = away_team_red['red'] + 1
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED BRUT', 'Away', user_id, away_data['away'][user_id - 1][1], 
+                   teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            teamb[user_id]['reds'] = 0
+            away_team_red['red'] = away_team_red['red'] - 1
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', 'Away', user_id, away_data['away'][user_id - 1][1],
+                   teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            writer.writerow(data)
+
+            direction = "increment"
+        f.close()
+
+
+    return redirect(url_for('index'))
 
 @app.route('/updateteamagoal/<int:user_id>', methods=['GET', 'POST'])
 def updateteamagoal(user_id):
