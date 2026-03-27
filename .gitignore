@@ -147,3 +147,7 @@ data/es_backups/
 *.bak
 
 cert/*
+
+# Waterpolo testing
+Kingston_royals*
+temp*
