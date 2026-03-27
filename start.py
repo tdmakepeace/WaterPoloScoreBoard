@@ -1,12 +1,14 @@
 
 import errno
 from time import sleep
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, has_request_context
 # from quart import Quart , render_template, request, redirect, url_for, jsonify, flash
 import time
 import csv
 import math
 import os
+import threading
+import urllib.request
 import webview
 from datetime import datetime, timedelta
 from fpdf import FPDF
@@ -48,6 +50,44 @@ periodscores = { 'Home': PeriodScores() ,     'Away': PeriodScores() }
 
 # Track when timer.html is loaded to notify display.html
 timer_reload_timestamp = time.time()
+webview_window = None
+force_reload_token = time.time()
+runtime_listening_port = 5000
+external_call_token = 0
+last_external_call = {"path": "", "method": "", "remote_addr": "", "timestamp": 0}
+
+# When these routes are serving a "next screen" (goal/major/penalty),
+# we must avoid bumping `force_reload_token` because timer.html's polling
+# will reload the timer page and interrupt navigation.
+SKIP_FORCE_RELOAD_PATHS = {
+    "/goal",
+    "/goalint",
+    "/major",
+    "/penalty",
+}
+
+AUTO_REFRESH_EXCLUDED_PATHS = {
+    "/",
+    "/display",
+    "/favicon.ico",
+    "/goal",
+    "/major",
+    "/penalty",
+    "/card",
+    "/awaytimeout",
+    "/hometimeout",
+    "/timeout",
+    "/interval",
+    "/callinterval",
+    "/returninterval",
+    "/trigger_refresh",
+    "/refresh_webview",
+}
+AUTO_REFRESH_EXCLUDED_PREFIXES = (
+    "/static/",
+    "/get_",
+    "/displayshotclock/",
+)
 
 # Group related constants at the top
 class Config:
@@ -80,6 +120,63 @@ class Config:
     DEFAULT_LOCATION = 'New Malden'
     DEFAULT_HOME_TEAM = 'Kingston Royals'
     DEFAULT_AWAY_TEAM = 'Away Team'
+
+
+def load_scoreboard_config():
+    """Load runtime config values used during app startup."""
+    return {
+        "listening_port": os.environ.get("SCOREBOARD_LISTENING_PORT", Config.WEB_PORT),
+    }
+
+
+def refresh_webview_window():
+    """Best-effort native refresh for the pywebview window."""
+    if webview_window is None:
+        return False, "No active webview window"
+
+    try:
+        # Fast path: reload current page in-place.
+        webview_window.evaluate_js("window.location.reload(true);")
+        return True, "reload via evaluate_js"
+    except Exception as js_error:
+        try:
+            # Fallback: navigate to index with a cache-busting query param.
+            refresh_url = f"http://127.0.0.1:{runtime_listening_port}/?refresh={int(time.time() * 1000)}"
+            webview_window.load_url(refresh_url)
+            return True, "reload via load_url fallback"
+        except Exception as load_error:
+            return False, f"{js_error}; {load_error}"
+
+
+def _should_auto_refresh(req):
+    """Refresh for state-changing requests, excluding polling/noisy paths."""
+    if req.method not in ("GET", "POST"):
+        return False
+    if req.path in AUTO_REFRESH_EXCLUDED_PATHS:
+        return False
+    return not any(req.path.startswith(prefix) for prefix in AUTO_REFRESH_EXCLUDED_PREFIXES)
+
+
+def _is_external_browser_call(req):
+    remote_addr = (req.remote_addr or "").strip()
+    if not remote_addr:
+        return False
+    return not (remote_addr == "127.0.0.1" or remote_addr == "::1" or remote_addr.startswith("127."))
+
+
+def broadcast_refresh_event():
+    """Update shared refresh state (token)."""
+    global timer_reload_timestamp, force_reload_token
+    now = time.time()
+    timer_reload_timestamp = now
+    if has_request_context and request.path in SKIP_FORCE_RELOAD_PATHS:
+        return
+    force_reload_token = now
+    # IMPORTANT:
+    # Do not call `refresh_webview_window()` here.
+    # Many "goal/major/penalty" routes call pause/reset functions internally, and
+    # forcing a native WebView reload mid-navigation can interrupt the page change.
+    # timer.html / display.html reload themselves when `force_reload_token` changes.
 
 app = Flask(__name__, static_url_path='/static')
 # app = Quart(__name__, static_url_path='/static')
@@ -150,7 +247,6 @@ elapsedtimeout = 0
 reason = 'Timeout'
 timeout = Config.TIMEOUT_TIME
 BLUETOOTH_CONNECT = Config.BLUETOOTH_CONNECT
-window = webview.create_window('WaterPolo Scoreboard', app)
 
 
 ## Bluetooth code block ##
@@ -339,10 +435,70 @@ def display():
                            hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
                            home_coach=home_team_red, away_coach=away_team_red)
 
+@app.route('/controls')
+def controls():
+    """Controls-only page containing just the function buttons."""
+    return render_template('controls.html')
+
 @app.route('/get_timer_reload_timestamp')
 def get_timer_reload_timestamp():
     """Return the timestamp of when timer.html was last loaded."""
     return jsonify({'timestamp': timer_reload_timestamp})
+
+@app.route('/get_force_reload_token')
+def get_force_reload_token():
+    """Shared token polled by pages to coordinate forced reloads."""
+    return jsonify({'token': force_reload_token})
+
+@app.route('/get_external_call_token')
+def get_external_call_token():
+    """Token and metadata updated when external browser calls are received."""
+    return jsonify({
+        'token': external_call_token,
+        'path': last_external_call["path"],
+        'method': last_external_call["method"],
+        'remote_addr': last_external_call["remote_addr"],
+        'timestamp': last_external_call["timestamp"],
+    })
+
+@app.route('/trigger_refresh', methods=['GET', 'POST'])
+def trigger_refresh():
+    """External hook: trigger all connected clients to reload."""
+    global timer_reload_timestamp, force_reload_token
+    now = time.time()
+    timer_reload_timestamp = now
+    force_reload_token = now
+    refreshed, detail = refresh_webview_window()
+    return jsonify({'status': 'success', 'token': force_reload_token, 'webview_refreshed': refreshed, 'detail': detail})
+
+@app.route('/refresh_webview', methods=['GET', 'POST'])
+def refresh_webview():
+    """External hook to refresh the running WebView app."""
+    global timer_reload_timestamp, force_reload_token
+    now = time.time()
+    timer_reload_timestamp = now
+    force_reload_token = now
+
+    refreshed, detail = refresh_webview_window()
+    return jsonify({'status': 'success', 'webview_refreshed': refreshed, 'detail': detail})
+
+
+@app.after_request
+def auto_refresh_on_external_call(response):
+    global timer_reload_timestamp, force_reload_token, external_call_token, last_external_call
+    if _is_external_browser_call(request) and _should_auto_refresh(request):
+        now = time.time()
+        timer_reload_timestamp = now
+        force_reload_token = now
+        external_call_token = now
+        last_external_call = {
+            "path": request.path,
+            "method": request.method,
+            "remote_addr": request.remote_addr or "",
+            "timestamp": now,
+        }
+        refresh_webview_window()
+    return response
 
 
 # CLOCK CONTROLS
@@ -352,6 +508,7 @@ def start_countdown():
     countdown_running = True
     start_time = time.time() - elapsed_time
     start_shot = time.time() - elapsed_shot
+    broadcast_refresh_event()
     return jsonify({'status': 'success'})
 
 
@@ -364,6 +521,7 @@ def stop_countdown():
     elapsed_time = 0
     start_shot = 0
     elapsed_shot = 0
+    broadcast_refresh_event()
     return jsonify({'status': 'success'})
 
 
@@ -379,6 +537,7 @@ def pause_countdown():
         countdown_running = True
         start_time = time.time() - elapsed_time
         start_shot = time.time() - elapsed_shot
+    broadcast_refresh_event()
     return jsonify({'status': 'success'})
 
 
@@ -2676,8 +2835,39 @@ def convert_csv_to_pdf():
 
 
 if __name__ == '__main__':
-    # app.run(debug=True, host=Config.WEB_HOST, port=Config.WEB_PORT)
-    webview.start()
+    config = load_scoreboard_config()
+    listening_port = int(config.get("listening_port", Config.WEB_PORT))
+    runtime_listening_port = listening_port
+    browser_only = os.environ.get("SCOREBOARD_BROWSER_ONLY", "").lower() in ("1", "true", "yes")
+
+    def run_flask():
+        app.run(
+            host=Config.WEB_HOST,
+            port=listening_port,
+            debug=False,
+            use_reloader=False,
+            threaded=True,
+        )
+
+    if browser_only:
+        app.run(
+            host=Config.WEB_HOST,
+            port=listening_port,
+            debug=False,
+            use_reloader=False,
+        )
+    else:
+        threading.Thread(target=run_flask, daemon=True).start()
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline:
+            try:
+                urllib.request.urlopen(f"http://127.0.0.1:{listening_port}/", timeout=0.25)
+                break
+            except OSError:
+                time.sleep(0.05)
+
+        webview_window = webview.create_window("WaterPolo Scoreboard", f"http://127.0.0.1:{listening_port}")
+        webview.start()
     
 
 
