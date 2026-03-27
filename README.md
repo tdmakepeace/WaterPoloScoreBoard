@@ -2,6 +2,11 @@
 
 A local (Windows) water polo scoreboard app with a web UI rendered inside a desktop window (via `pywebview`). It tracks timer/quarters, scoring (goals/majors/reds), player names, referees, and exports match logs to a CSV + PDF.
 
+Typical setup uses two screens:
+
+- An external display (scoreboard view) that players/spectators can see as the game clock.
+- A phone or tablet (control view) for score table staff to manage timer, scoring, majors, and game flow.
+
 You can use a Huion K20 on the table for quick key presses.
 
 ![Screenshot of layout keys.](/huion_k20/huion_layout.png)
@@ -11,6 +16,8 @@ In the `huion_k20` folder you can find the key layout image and cfg.
 ## Features
 
 - Web UI for scoreboard control (timer, quarters, shot clock, timeouts)
+- Display page can be shown full-screen on an external monitor/TV as the visible game clock
+- Controls page works well on a mobile device for table-side game management
 - Player setup (home/away) + referee setup
 - Bluetooth integration (optional) for controlling the hardware scoreboard buzzer
 - Export at game end:
@@ -108,3 +115,11 @@ Exports depend on `Config.DEFAULT_HOME_TEAM` and `Config.DEFAULT_AWAY_TEAM`, for
 - PDF layout is controlled in `convert_csv_to_pdf()` in `start.py`.
 - Team, referee, and per-player stats are sourced from in-memory arrays (`home_data`, `away_data`, `ref_data`) and the generated CSV logs (`compress_file`, `running_file`).
 
+## Access controls and Display 
+To open the display page either click on the display button in the app, or got direct to the broswer
+
+`http://127.0.0.1:5000/display`
+
+To run the controls on a mobile device as long as on the same network.
+
+`http://<IP of the app machine>:5000/controls`
