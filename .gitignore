@@ -151,3 +151,6 @@ cert/*
 # Waterpolo testing
 Kingston_royals*
 temp*
+
+# ignore cursor files
+.cursor/*

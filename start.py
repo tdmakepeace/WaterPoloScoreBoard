@@ -578,6 +578,55 @@ def get_countdown_status():
     })
 
 
+def _shot_clock_apply_delta(delta):
+    """Set shot remaining to current_remaining + delta (clamped). Fixes 00-display where elapsed > clock."""
+    global countdown_running, start_time, elapsed_time, start_shot, elapsed_shot, remaining_shot, clock_shot
+
+    if delta not in (-1, 1):
+        return jsonify({'status': 'error', 'message': 'delta must be -1 or 1'}), 400
+
+    max_shot_remaining = 60
+
+    if countdown_running:
+        elapsed_time = time.time() - start_time
+        elapsed_shot = time.time() - start_shot
+        remaining_shot = max(clock_shot - elapsed_shot, 0)
+    else:
+        remaining_shot = max(clock_shot - elapsed_shot, 0)
+
+    new_remaining = max(0, min(max_shot_remaining, remaining_shot + delta))
+    if new_remaining == remaining_shot:
+        return jsonify({'status': 'success'})
+
+    now = time.time()
+    if countdown_running:
+        # remaining = clock_shot - (now - start_shot)  =>  start_shot = now - (clock_shot - new_remaining)
+        start_shot = now - (clock_shot - new_remaining)
+        elapsed_shot = now - start_shot
+        remaining_shot = max(clock_shot - elapsed_shot, 0)
+    else:
+        # remaining = clock_shot - elapsed_shot  =>  clock_shot = elapsed_shot + new_remaining
+        clock_shot = elapsed_shot + new_remaining
+        remaining_shot = max(clock_shot - elapsed_shot, 0)
+
+    command = str(remaining_shot)
+    asyncio.run(send_ble_int(command))
+    broadcast_refresh_event()
+    return jsonify({'status': 'success'})
+
+
+@app.route('/shot_clock_plus')
+def shot_clock_plus():
+    """Shot clock +1s (no negative path segment; reliable in all browsers)."""
+    return _shot_clock_apply_delta(1)
+
+
+@app.route('/shot_clock_minus')
+def shot_clock_minus():
+    """Shot clock -1s."""
+    return _shot_clock_apply_delta(-1)
+
+
 @app.route('/reset30')
 def reset30():
     global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
