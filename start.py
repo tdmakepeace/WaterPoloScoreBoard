@@ -1,6 +1,8 @@
 
 import errno
 from time import sleep
+import socket
+from typing import Optional
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, has_request_context
 # from quart import Quart , render_template, request, redirect, url_for, jsonify, flash
 import time
@@ -120,6 +122,51 @@ class Config:
     DEFAULT_LOCATION = 'New Malden'
     DEFAULT_HOME_TEAM = 'Kingston Royals'
     DEFAULT_AWAY_TEAM = 'Away Team'
+
+
+def _preferred_listening_ipv4_address() -> Optional[str]:
+    """Best-effort LAN IPv4 detection (never returns 127.0.0.1 or 0.0.0.0)."""
+
+    def _is_acceptable(ip: str) -> bool:
+        ip = (ip or "").strip()
+        return ip not in ("0.0.0.0", "127.0.0.1") and not ip.startswith("127.")
+
+    # UDP "connect" trick doesn't send packets, but selects the right outbound interface.
+    for dest in (("8.8.8.8", 80), ("1.1.1.1", 80)):
+        sock: Optional[socket.socket] = None
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.connect(dest)
+            ip = sock.getsockname()[0]
+            if _is_acceptable(ip):
+                return ip
+        except OSError:
+            continue
+        finally:
+            if sock is not None:
+                try:
+                    sock.close()
+                except OSError:
+                    pass
+
+    hostname = socket.gethostname()
+    try:
+        for info in socket.getaddrinfo(hostname, None, family=socket.AF_INET):
+            ip = info[4][0]
+            if _is_acceptable(ip):
+                return ip
+    except OSError:
+        pass
+
+    try:
+        _, _, ips = socket.gethostbyname_ex(hostname)
+        for ip in ips:
+            if _is_acceptable(ip):
+                return ip
+    except OSError:
+        pass
+
+    return None
 
 
 def load_scoreboard_config():
@@ -2381,7 +2428,14 @@ def callintervalgoal():
 
 @app.route('/settings')
 def settings():
-    return render_template('setup.html' , HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION , ble_clients=ble_clients  )
+    return render_template(
+        'setup.html',
+        HomeTeam=Config.DEFAULT_HOME_TEAM,
+        AwayTeam=Config.DEFAULT_AWAY_TEAM,
+        location=Config.DEFAULT_LOCATION,
+        ble_clients=ble_clients,
+        listen_ip=_preferred_listening_ipv4_address(),
+    )
 
 @app.route('/help')
 def help():
