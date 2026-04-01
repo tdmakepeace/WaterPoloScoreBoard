@@ -109,7 +109,7 @@ class Config:
     SHOT_CLOCK = 28
     FOUL_CLOCK = SHOT_CLOCK -10
     BLUETOOTH_CONNECT = 0
-    MAJORS = 9
+    MAJORS = 3
 
     
     # Bluetooth constants
