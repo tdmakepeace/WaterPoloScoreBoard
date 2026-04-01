@@ -149,7 +149,7 @@ data/es_backups/
 cert/*
 
 # Waterpolo testing
-Kingston_royals*
+Kingston*
 temp*
 
 # ignore cursor files
