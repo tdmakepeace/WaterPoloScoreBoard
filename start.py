@@ -299,6 +299,8 @@ BLUETOOTH_CONNECT = Config.BLUETOOTH_CONNECT
 ## Bluetooth code block ##
 ble_client = None  # global client
 ble_clients = []
+# Advertised BLE names at connect time, parallel to ble_clients (BleakClient has no .name).
+ble_client_names: list[str] = []
 # async def init_ble():
 #     global ble_client
 #     devices = await BleakScanner.discover()
@@ -315,7 +317,7 @@ ble_clients = []
 
 
 async def init_ble():
-    global ble_clients
+    global ble_clients, ble_client_names
     devices = await BleakScanner.discover(timeout=5.0)
     targets = [
         d for d in devices if d.name and any(name in d.name for name in Config.BLUETOOTH_NAME)
@@ -326,11 +328,13 @@ async def init_ble():
         return
 
     ble_clients = []  # reset before reconnecting
+    ble_client_names = []
     for d in targets:
         client = BleakClient(d.address)
         await client.connect()
         print(f"Connected to {d.name} at {d.address}")
         ble_clients.append(client)
+        ble_client_names.append((d.name or "").strip())
     # print(ble_clients)
     return ble_clients   # now returns the actual list
 
@@ -341,7 +345,7 @@ async def init_ble():
 #     print(f"Disconnected bluetooth")
 
 async def dis_ble():
-    global ble_clients
+    global ble_clients, ble_client_names
     for client in ble_clients:
         # print(client)
         try:
@@ -357,7 +361,23 @@ async def dis_ble():
 
     # Clear the list once all are disconnected
     ble_clients = []
+    ble_client_names = []
     return ble_clients
+
+
+def get_ble_waterpolo_connection_flags() -> dict[str, bool]:
+    """True when a live BLE client matches WaterPolo_1 / WaterPolo_2 (name substring, case-insensitive)."""
+    wp1 = False
+    wp2 = False
+    for name, client in zip(ble_client_names, ble_clients):
+        if not client or not getattr(client, "is_connected", False):
+            continue
+        n = (name or "").lower()
+        if "waterpolo_1" in n:
+            wp1 = True
+        if "waterpolo_2" in n:
+            wp2 = True
+    return {"waterpolo_1": wp1, "waterpolo_2": wp2}
 
 
 # async def send_ble_command(command: str):
@@ -496,6 +516,12 @@ def get_timer_reload_timestamp():
 def get_force_reload_token():
     """Shared token polled by pages to coordinate forced reloads."""
     return jsonify({'token': force_reload_token})
+
+
+@app.route('/ble_connection_status')
+def ble_connection_status():
+    """JSON for timer UI: WaterPolo_1 / WaterPolo_2 BLE link state."""
+    return jsonify(get_ble_waterpolo_connection_flags())
 
 @app.route('/get_external_call_token')
 def get_external_call_token():

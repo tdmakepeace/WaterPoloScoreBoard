@@ -21,6 +21,44 @@
         table[style*="border: none"] th {
             border: none !important;
         }
+        .ble-status-corner {
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.55);
+            font-family: system-ui, sans-serif;
+        }
+        .ble-status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ble-status-item span.label {
+            font-size: 12px;
+            color: #ccc;
+            min-width: 1em;
+        }
+        .ble-light {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px currentColor;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+        }
+        .ble-light--on {
+            background: #22c55e;
+            color: #22c55e;
+        }
+        .ble-light--off {
+            background: #ef4444;
+            color: #ef4444;
+        }
     </style>
 </head>
 
@@ -440,6 +478,24 @@
             });
         }, 250);
 
+        function updateBleLights() {
+            $.ajax({
+                url: '/ble_connection_status',
+                dataType: 'json',
+                success: function (data) {
+                    var l1 = document.getElementById('ble-light-wp1');
+                    var l2 = document.getElementById('ble-light-wp2');
+                    if (l1) {
+                        l1.className = 'ble-light ' + (data.waterpolo_1 ? 'ble-light--on' : 'ble-light--off');
+                    }
+                    if (l2) {
+                        l2.className = 'ble-light ' + (data.waterpolo_2 ? 'ble-light--on' : 'ble-light--off');
+                    }
+                }
+            });
+        }
+        updateBleLights();
+        setInterval(updateBleLights, 2000);
 
     </script>
 
@@ -710,5 +766,16 @@
             </tr>
         </table>
     </footer>
+
+    <div class="ble-status-corner" title="BLE scoreboard links: green = connected, red = not connected">
+        <div class="ble-status-item">
+            <span class="label">1</span>
+            <div id="ble-light-wp1" class="ble-light ble-light--off" title="WaterPolo_1"></div>
+        </div>
+        <div class="ble-status-item">
+            <span class="label">2</span>
+            <div id="ble-light-wp2" class="ble-light ble-light--off" title="WaterPolo_2"></div>
+        </div>
+    </div>
 </body>
 </html>
