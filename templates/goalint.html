@@ -23,40 +23,100 @@
 
 <script>
 
+    // document.addEventListener('DOMContentLoaded', (event) => {
+    //     function updateGoal(player, team) {
+    //         const url = team === 'home' ? `/updateteamintagoal/${player}` : `/updateteamintbgoal/${player}`;
+    //         fetch(url, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json'
+    //             },
+    //             body: JSON.stringify({})
+    //         })
+    //         .then(response => {
+    //             if (!response.ok) {
+    //                 throw new Error('Network response was not ok');
+    //             }
+    //             window.location.href = '/callintervalgoal';
+    //         });
+    //     }
+    //     const playerKeys = {'1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,  '8': 8, '9': 9, '0': 10, '-': 11, '=': 12, 'q': 13, 'w': 14, 'r': 2, 't': 3, 'f': 6, 'g': 7, 'h': 9, 'y': 10, 'u': 11, 'j': 12,  'c': 13, 'v': 14};
+
+    //     document.addEventListener('keydown', function(event) {
+    //         const key = event.key.toLowerCase();
+    //         if (!event.ctrlKey && (key in playerKeys)) {
+    //             event.preventDefault();
+    //             updateGoal(playerKeys[key], 'home');
+    //         } else if (event.ctrlKey && (key in playerKeys)) {
+    //             event.preventDefault();
+    //             updateGoal(playerKeys[key], 'away');
+    //         } else if (key === 'x') {
+    //             event.preventDefault();
+    //             window.location.href = '/callintervalgoal';
+    //         }
+    //     });
+    // });
     document.addEventListener('DOMContentLoaded', (event) => {
-        function updateGoal(player, team) {
-            const url = team === 'home' ? `/updateteamintagoal/${player}` : `/updateteamintbgoal/${player}`;
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'n') {
+                    event.preventDefault();
+                    pauseCountdown();
                 }
-                window.location.href = '/callintervalgoal';
+                else if (event.key === 'c') {
+                    event.preventDefault();
+                    window.location.href = '/major';
+                }
+                else if (event.key === 'v') {
+                    event.preventDefault();
+                    window.location.href = '/goal';
+                }
+                else if (event.key === 'b') {
+                    event.preventDefault();
+                    window.location.href = '/penalty';
+                }
+                else if (event.key === 't') {
+                    event.preventDefault();
+                    window.location.href = '/awaytimeout';
+                }
+                else if (event.key === 'f') {
+                    event.preventDefault();
+                    window.location.href = '/card';
+                }
+                else if (event.key === 'r') {
+                    event.preventDefault();
+                    window.location.href = '/hometimeout';
+                }
+                else if (event.key === 'g') {
+                    event.preventDefault();
+                    buzzer();
+                }
+                else if (event.key === 'x') {
+                    event.preventDefault();
+                    window.location.href = '/clear';
+                }
+                else if (event.key === 'y') {
+                    event.preventDefault();
+                    possession();
+                }
+                else if (event.key === 'u') {
+                    event.preventDefault();
+                    reset20();
+                }
+                else if (event.key === 'h') {
+                    event.preventDefault();
+                    pause30();
+                }
+                else if (event.key === 'j') {
+                    event.preventDefault();
+                    pause20();
+                }
+
+
+
             });
-        }
-        const playerKeys = {'1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,  '8': 8, '9': 9, '0': 10, '-': 11, '=': 12, 'q': 13, 'w': 14, 'r': 2, 't': 3, 'f': 6, 'g': 7, 'h': 9, 'y': 10, 'u': 11, 'j': 12,  'c': 13, 'v': 14};
-
-        document.addEventListener('keydown', function(event) {
-            const key = event.key.toLowerCase();
-            if (!event.ctrlKey && (key in playerKeys)) {
-                event.preventDefault();
-                updateGoal(playerKeys[key], 'home');
-            } else if (event.ctrlKey && (key in playerKeys)) {
-                event.preventDefault();
-                updateGoal(playerKeys[key], 'away');
-            } else if (key === 'x') {
-                event.preventDefault();
-                window.location.href = '/callintervalgoal';
-            }
         });
-    });
 
+        
         function playSound() {
             var audio = new Audio('/static/airhorn.mp3');
             audio.play();
