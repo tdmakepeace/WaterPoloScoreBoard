@@ -425,13 +425,22 @@ async def send_ble_command(command: str):
                 except Exception:
                     pass
 
-async def send_ble_int(value: str):
+def normalize_ble_int_payload(value: str | int | float) -> str:
+    """Coerce shot-clock values to a non-negative integer string for BLE (no float decimals)."""
+    try:
+        n = float(value)
+    except (ValueError, TypeError):
+        return str(value)
+    return str(int(max(0.0, n)))
+
+
+async def send_ble_int(value: str | int | float):
     global ble_clients
 
     for client in ble_clients:
         if client and client.is_connected:
             try:
-                cmd = str(value) + "\0"
+                cmd = normalize_ble_int_payload(value) + "\0"
                 await client.write_gatt_char(Config.RX_CHAR_UUID, cmd.encode('utf-8'))
                 # print(f"Sent int '{value}' to {client.address}")
             except Exception as e:
