@@ -17,6 +17,11 @@
             color: black;
             font-size: 30px;
         }
+        .player-row-red        { background-color: black; }
+        .player-row-major-1    { background-color: #00ff00; }
+        .player-row-major-2    { background-color: #ff9933; }
+        .player-row-major-3    { background-color: #ff3300; }
+        .player-row-default    { background-color: white; }
         table[style*="border: none"] td,
         table[style*="border: none"] th {
             border: none !important;
@@ -212,7 +217,7 @@
                         countdownElement.innerHTML = '<br> ' + minutes + ':' + seconds.toString().padStart(2, '0') + '';
                         shotdownElement.innerHTML = '<br> ' + shotseconds.toString().padStart(2, '0') + '';
                         // countdownElement.innerHTML = 'Remaining Time: ' + seconds.toString().padStart(2, '0') + 's';
-                        var quarter = {{ quarter }}
+                        var quarter = parseInt("{{ quarter }}", 10);
                         if (quarter < 4) {
                             if (timeLeft > 1) {
                                 if (timeLeft > shotLeft) {
@@ -238,19 +243,17 @@
                                 setTimeout(updateCountdown, 1000);
 
                             } else {
-                                playSound()
-                                $.ajax({
-                                    url: '/periodend',
-                                    success: function(response) {
-                                        reset30();
-                                    }
-                                });
-                                setTimeout(() => {
+                                playSound();
+                                // Mark that we are deliberately navigating. The force-reload
+                                // poller (below) must not reload() during this window, or the
+                                // setTimeout -> window.location.href = /callinterval is wiped.
+                                window.__navigatingToInterval = true;
+                                $.ajax({ url: '/periodend' });
+                                setTimeout(function () {
                                     window.location.href = "/callinterval";
                                 }, 2000);
-
                             }
-                        } else if (quarter = 4) {
+                        } else if (quarter === 4) {
                             if (timeLeft > 61) {
                                 if (timeLeft > shotLeft) {
                                     $.ajax({
@@ -304,21 +307,14 @@
                                 setTimeout(updateCountdown, 1000);
 
                             } else {
-                                playSound()
-                                $.ajax({
-                                        url: '/displayshotclock/' + 0,
-                                        method: 'GET', // or 'POST' depending on your backend
-                                    });
-                                $.ajax({
-                                    url: '/periodend',
-                                    success: function(response) {
-                                        reset30();
-                                    }
-                                });
-                                setTimeout(() => {
-                                    window.location.href = "/callinterval";
-                                }, 2000);
-
+                                playSound();
+                                // Same navigation guard as the Q1-Q3 branch above.
+                                window.__navigatingToInterval = true;
+                                $.ajax({ url: '/displayshotclock/' + 0, method: 'GET' });
+                                $.ajax({ url: '/periodend' });
+                                // setTimeout(function () {
+                                //     window.location.href = "/callinterval";
+                                // }, 2000);
                             }
                         }
 
@@ -392,8 +388,10 @@
             $.ajax({
                 url: '/shot_clock_plus',
                 dataType: 'json',
-                success: function() {
-                    updateShotClock();
+                success: function () {
+                    // updateShotClock() never existed; use the shared refresher that
+                    // actually repaints the shot-clock number from /get_countdown_status.
+                    updateCountdown();
                 }
             });
         }
@@ -402,8 +400,8 @@
             $.ajax({
                 url: '/shot_clock_minus',
                 dataType: 'json',
-                success: function() {
-                    updateShotClock();
+                success: function () {
+                    updateCountdown();
                 }
             });
         }
@@ -471,7 +469,12 @@
                 url: '/get_force_reload_token',
                 success: function(response) {
                     if (lastForceReloadToken !== null && response.token !== lastForceReloadToken) {
-                        location.reload();
+                        // Don't reload while the period-end -> /callinterval navigation is
+                        // in flight; a reload here wipes the pending setTimeout and the
+                        // redirect silently never happens.
+                        if (!window.__navigatingToInterval) {
+                            location.reload();
+                        }
                     }
                     lastForceReloadToken = response.token;
                 }
@@ -525,19 +528,12 @@
                 <th><small>Majors</small></th>
             </tr>
             {% for user_id, teama in teama.items() %}
-            <tr class="custom-text" style="background-color:
-                {% if teama.reds == 1 %}
-                    black;
-                {% elif teama.majors == 1 %}
-                    #00ff00;
-                {% elif teama.majors == 2 %}
-                    #ff9933;
-                {% elif teama.majors >= 3 %}
-                    #ff3300;
-                {% else %}
-                    white;
-                {% endif %}
-            ">
+            {% set row_class = 'player-row-red' if teama.reds == 1
+                               else ('player-row-major-1' if teama.majors == 1
+                               else ('player-row-major-2' if teama.majors == 2
+                               else ('player-row-major-3' if teama.majors >= 3
+                               else 'player-row-default'))) %}
+            <tr class="custom-text {{ row_class }}">
                 <td>{{ user_id }}</td>
                 <td>{{ teama.goals }}</td>
                 <td>{{ teama.majors }}</td>
@@ -666,19 +662,12 @@
                 <th><small>Majors</small></th>
             </tr>
             {% for user_id, teamb in teamb.items() %}
-            <tr class="custom-text" style="background-color:
-                {% if teamb.reds == 1 %}
-                    black;
-                {% elif teamb.majors == 1 %}
-                    #00ff00;
-                {% elif teamb.majors == 2 %}
-                    #ff9933;
-                {% elif teamb.majors >= 3 %}
-                    #ff3300;
-                {% else %}
-                    white;
-                {% endif %}
-            ">
+            {% set row_class = 'player-row-red' if teamb.reds == 1
+                               else ('player-row-major-1' if teamb.majors == 1
+                               else ('player-row-major-2' if teamb.majors == 2
+                               else ('player-row-major-3' if teamb.majors >= 3
+                               else 'player-row-default'))) %}
+            <tr class="custom-text {{ row_class }}">
                 <td>{{ user_id }}</td>
                 <td>{{ teamb.goals }}</td>
                 <td>{{ teamb.majors }}</td>

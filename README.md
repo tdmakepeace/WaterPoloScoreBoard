@@ -81,6 +81,42 @@ Routes are used by the UI buttons, for example:
 - `POST /updateteamamajor/<string:direction>/<int:user_id>`
 - `POST /updateteamapenalty/<string:direction>/<int:user_id>`
 
+### Bluetooth (BLE) controls
+
+The app can drive a hardware scoreboard buzzer over BLE (via `bleak`). Devices
+to connect to are configured through `Config.BLUETOOTH_NAME`. Three Flask
+routes wrap three async helpers in `start.py`:
+
+- `GET/POST /connectble` -> `init_ble()` (the "connect" action)
+  - Scans for every configured BLE device and connects to each one.
+  - Idempotent: if a device is already connected, the existing connection is
+    reused instead of being dropped and reopened. Clicking Connect twice is
+    safe.
+  - Sends a `TEST` command after connecting so you see feedback on the device.
+  - Returns JSON when called from the setup page (so the spinner works); a
+    plain browser GET still redirects to the index.
+
+- `GET/POST /reconnectble` -> `reconnect_ble()` (the "reconnect" action)
+  - Only touches slots that currently report as disconnected; healthy
+    connections are left alone.
+  - Pass 1: tries to reconnect by the last-known address.
+  - Pass 2: if that fails (for example because the device was power-cycled
+    and came back with a slightly different address), it rescans and matches
+    by device name.
+  - If nothing is known yet, it falls back to a fresh `init_ble()`.
+  - Use this after a device goes to sleep / loses power rather than fully
+    disconnecting first.
+
+- `GET/POST /disconnectble` -> `dis_ble()` (the "disconnect" action)
+  - Sends an `exit` command, sets `BLUETOOTH_CONNECT = 0` (so the watchdog
+    goes idle), then cleanly disconnects every known BLE client and clears
+    `ble_clients` / `ble_client_names` / `ble_client_addresses`.
+  - Redirects back to the settings page.
+
+All three run on a single persistent BLE event loop and are serialised by an
+internal lock (`_ble_op_lock`), so rapid double-clicks on Connect / Reconnect
+/ Disconnect cannot corrupt the client list.
+
 ### Export at end of match
 
 When you finish the game, the UI typically calls:

@@ -109,6 +109,43 @@
         </form>
     </article>
 
+    <div id="bleStatusBar" class="center"
+         style="margin: 12px auto; padding: 10px 16px; border: 1px solid #ccc; border-radius: 8px;
+                background: #fafafa; display: inline-block; font-size: 20px;">
+        <strong style="margin-right: 14px;">Bluetooth Status:</strong> <br>
+        <span id="wp1Badge" class="ble-badge ble-badge-unknown">
+            <span class="ble-dot"></span>WaterPolo_1: <span class="ble-label">unknown</span>
+        </span>
+        <span style="display:inline-block;width:18px;"></span>
+        <span id="wp2Badge" class="ble-badge ble-badge-unknown">
+            <span class="ble-dot"></span>WaterPolo_2: <span class="ble-label">unknown</span>
+        </span>
+    </div>
+
+    <style>
+        .ble-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-weight: 600;
+            border: 1px solid transparent;
+        }
+        .ble-badge .ble-dot {
+            display: inline-block;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+            background: #888;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+        }
+        .ble-badge-on      { background: #e6f5ea; color: #1b5e20; border-color: #a5d6a7; }
+        .ble-badge-on      .ble-dot { background: #2e7d32; box-shadow: 0 0 6px #66bb6a; }
+        .ble-badge-off     { background: #fdecea; color: #b71c1c; border-color: #ef9a9a; }
+        .ble-badge-off     .ble-dot { background: #c62828; }
+        .ble-badge-unknown { background: #f0f0f0; color: #555;   border-color: #ccc; }
+    </style>
+
     <footer>
         <table class="center" style="width:100%">
             <tr>
@@ -118,9 +155,12 @@
                     </form>
                 </td>
                 <td style="width:10%" rowspan="2">
-                    <form action="/connectble">
-                        <button class="btn-primary" style="height:80px;width:200px" type="submit">Connect</button>
-                    </form>
+                    <button id="connectBleBtn" class="btn-primary" style="height:80px;width:200px" type="button"
+                            onclick="connectBle(this)">Connect</button>
+                </td>
+                <td style="width:10%" rowspan="2">
+                    <button id="reconnectBleBtn" class="btn-warning" style="height:80px;width:200px" type="button"
+                            onclick="reconnectBle(this)">Reconnect</button>
                 </td>
                 <td style="width:10%" rowspan="2">
                     <form action="/disconnectble">
@@ -149,7 +189,95 @@
             </tr>
         </table>
         <span style="font-size: 20px; color: grey;">&nbsp;{{ble_clients}}&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        <span id="bleStatus" style="font-size: 16px; color: #666; margin-left: 12px;"></span>
     </footer>
+
+    <script>
+        // --- Live BLE status polling -------------------------------------
+        function applyFlagsToBadge(badgeEl, isOn, nameLabel) {
+            if (!badgeEl) return;
+            badgeEl.classList.remove('ble-badge-on', 'ble-badge-off', 'ble-badge-unknown');
+            var labelEl = badgeEl.querySelector('.ble-label');
+            if (isOn === true) {
+                badgeEl.classList.add('ble-badge-on');
+                if (labelEl) labelEl.textContent = 'connected';
+            } else if (isOn === false) {
+                badgeEl.classList.add('ble-badge-off');
+                if (labelEl) labelEl.textContent = 'offline';
+            } else {
+                badgeEl.classList.add('ble-badge-unknown');
+                if (labelEl) labelEl.textContent = 'unknown';
+            }
+        }
+
+        function updateBleStatusBar(flags) {
+            if (!flags) return;
+            applyFlagsToBadge(document.getElementById('wp1Badge'), !!flags.waterpolo_1, 'WaterPolo_1');
+            applyFlagsToBadge(document.getElementById('wp2Badge'), !!flags.waterpolo_2, 'WaterPolo_2');
+        }
+
+        function pollBleStatus() {
+            fetch('/ble_connection_status', { cache: 'no-store' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (flags) { if (flags) updateBleStatusBar(flags); })
+                .catch(function () { /* transient network blip -- leave last state */ });
+        }
+
+        // Poll on load and every 2s thereafter.
+        pollBleStatus();
+        setInterval(pollBleStatus, 2000);
+
+        // --- Button helpers ----------------------------------------------
+        function flagsSummary(flags) {
+            flags = flags || {};
+            return 'WaterPolo_1: ' + (flags.waterpolo_1 ? 'connected' : 'offline')
+                 + ' | WaterPolo_2: ' + (flags.waterpolo_2 ? 'connected' : 'offline');
+        }
+
+        function runBleAction(btn, url, busyLabel, doneLabelPrefix) {
+            var status = document.getElementById('bleStatus');
+            var originalLabel = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = busyLabel;
+            if (status) { status.textContent = busyLabel + '...'; }
+
+            fetch(url, { method: 'POST', cache: 'no-store',
+                         headers: { 'Accept': 'application/json' } })
+                .then(function (resp) {
+                    return resp.json().catch(function () { return {}; })
+                        .then(function (body) { return { ok: resp.ok, body: body }; });
+                })
+                .then(function (result) {
+                    var body = result.body || {};
+                    if (result.ok && body.status === 'success') {
+                        updateBleStatusBar(body.flags);
+                        if (status) {
+                            status.textContent = doneLabelPrefix + ' ' + flagsSummary(body.flags);
+                        }
+                    } else {
+                        var msg = body.message || (doneLabelPrefix + ' failed.');
+                        if (status) { status.textContent = doneLabelPrefix + ' failed: ' + msg; }
+                    }
+                })
+                .catch(function (err) {
+                    if (status) { status.textContent = doneLabelPrefix + ' error: ' + err; }
+                })
+                .finally(function () {
+                    btn.disabled = false;
+                    btn.textContent = originalLabel;
+                    // Pull a fresh snapshot in case state just settled.
+                    pollBleStatus();
+                });
+        }
+
+        function connectBle(btn) {
+            runBleAction(btn, '/connectble', 'Connecting', 'Connect done.');
+        }
+
+        function reconnectBle(btn) {
+            runBleAction(btn, '/reconnectble', 'Reconnecting', 'Reconnect done.');
+        }
+    </script>
 
     {% if listen_ip %}
     <div style="position: fixed; bottom: 10px; right: 10px; font-size: 14px; color: #555; background: rgba(255, 255, 255, 0.85); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(0, 0, 0, 0.1);">
