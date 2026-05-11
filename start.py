@@ -639,14 +639,25 @@ async def reconnect_ble():
     return ble_clients
 
 
-def _run_ble_coro(coro, timeout: float = 120.0):
+def ble_any_live_client() -> bool:
+    """True when at least one BLE slot currently reports is_connected."""
+    return any(c and getattr(c, "is_connected", False) for c in ble_clients)
+
+
+def _run_ble_coro(coro, timeout: float = 120.0, *, reraise: bool = False):
     """Run a heavy BLE operation (Connect / Reconnect / Disconnect) on the
     persistent BLE loop, serialised by _ble_op_lock so two clicks cannot
     mutate ble_clients concurrently.
+
+    By default errors are logged and suppressed so scoreboard routes keep
+    returning HTTP 200. Pass reraise=True from manual connect/reconnect
+    handlers so failures can be returned to the client.
     """
     with _ble_op_lock:
+        if reraise:
+            return _run_ble(coro, timeout=timeout)
         try:
-            _run_ble(coro, timeout=timeout)
+            return _run_ble(coro, timeout=timeout)
         except FuturesTimeoutError:
             print(f"[BLE] Long BLE operation timed out after {timeout}s")
         except Exception as e:
@@ -2267,12 +2278,19 @@ def connectble():
         except Exception as e:
             print(f"[BLE] exit command before connect failed: {e}")
         BLUETOOTH_CONNECT = 0
-        _run_ble_coro(dis_ble())
+        _run_ble_coro(dis_ble(), reraise=True)
         sleep(1)
         BLUETOOTH_CONNECT = 1
-        _run_ble_coro(init_ble())
+        _run_ble_coro(init_ble(), reraise=True)
         sleep(1)
-        ble_send_command("TEST")
+        if not ble_any_live_client():
+            error = "No BLE devices connected after scan/connect."
+            print(f"[BLE] /connectble: {error}")
+        else:
+            ble_send_command("TEST")
+    except FuturesTimeoutError:
+        error = "BLE operation timed out."
+        print(f"[BLE] /connectble failed: {error}")
     except Exception as e:
         error = str(e)
         print(f"[BLE] /connectble failed: {e}")
@@ -2303,15 +2321,40 @@ def reconnectble():
         if not ble_clients:
             # Nothing known yet -> behave like a fresh connect.
             BLUETOOTH_CONNECT = 1
-            _run_ble_coro(init_ble())
+            _run_ble_coro(init_ble(), reraise=True)
         else:
-            _run_ble_coro(reconnect_ble())
-        # Kick the devices so the user sees feedback.
+            _run_ble_coro(reconnect_ble(), reraise=True)
+        if not ble_any_live_client():
+            msg = "No BLE devices connected."
+            print(f"[BLE] /reconnectble: {msg}")
+            return jsonify(
+                {
+                    'status': 'error',
+                    'message': msg,
+                    'flags': get_ble_waterpolo_connection_flags(),
+                }
+            ), 500
         ble_send_command("TEST")
         return jsonify({'status': 'success', 'flags': get_ble_waterpolo_connection_flags()})
+    except FuturesTimeoutError:
+        msg = "BLE operation timed out."
+        print(f"[BLE] /reconnectble failed: {msg}")
+        return jsonify(
+            {
+                'status': 'error',
+                'message': msg,
+                'flags': get_ble_waterpolo_connection_flags(),
+            }
+        ), 500
     except Exception as e:
         print(f"[BLE] /reconnectble failed: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify(
+            {
+                'status': 'error',
+                'message': str(e),
+                'flags': get_ble_waterpolo_connection_flags(),
+            }
+        ), 500
 
 
 @app.route('/disconnectble', methods=['GET', 'POST'])
