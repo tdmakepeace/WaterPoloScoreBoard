@@ -457,6 +457,8 @@
             {% endfor %}
         </div>
 
+        <input type="submit" value="Submit">
+
         <div id="csvControls">
             <div style="font-weight:bold;font-size:16px;margin-bottom:8px;">Import Away roster CSV</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -467,11 +469,18 @@
             <div style="margin-top:8px;color:#555;font-size:13px;">
                 Players: <code>hat_number,name</code>. Staff: <code>HC</code>, <code>AC</code>, or <code>TM</code> in the first column, name in the second. One file can include both. Header row optional.
             </div>
+            <div style="margin-top:6px;font-size:13px;">
+                Example:
+                <pre style="margin:6px 0 0;padding:8px;background:#f7f7f7;border:1px solid #ddd;border-radius:6px;font-size:12px;">1,player 1
+2,player 2
+3,player 3
+HC,head coach
+AC,assistant coach
+TM,team manager</pre>
+            </div>
             <div id="csvStatus"></div>
             <div id="csvPreview"></div>
         </div>
-
-        <input type="submit" value="Submit">
     </form>
 </body>
 </html>

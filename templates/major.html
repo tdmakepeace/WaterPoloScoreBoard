@@ -23,43 +23,102 @@
 </head>
 
 <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-        function updateGoal(player, team) {
-            const url = team === 'home' ? `/updateteamamajor/increment/${player}` : `/updateteambmajor/increment/${player}`;
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                window.location.href = '/';
-            });
-        }
-        const playerKeys = {'1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,  '8': 8, '9': 9, '0': 10, '-': 11, '=': 12, 'q': 13, 'w': 14, 'r': 2, 't': 3, 'f': 6, 'g': 7, 'h': 9, 'y': 10, 'u': 11, 'j': 12,  'c': 13, 'v': 14};
+    //     document.addEventListener('DOMContentLoaded', (event) => {
+    //     function updateGoal(player, team) {
+    //         const url = team === 'home' ? `/updateteamamajor/increment/${player}` : `/updateteambmajor/increment/${player}`;
+    //         fetch(url, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json'
+    //             },
+    //             body: JSON.stringify({})
+    //         })
+    //         .then(response => {
+    //             if (!response.ok) {
+    //                 throw new Error('Network response was not ok');
+    //             }
+    //             window.location.href = '/';
+    //         });
+    //     }
+    //     const playerKeys = {'1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,  '8': 8, '9': 9, '0': 10, '-': 11, '=': 12, 'q': 13, 'w': 14, 'r': 2, 't': 3, 'f': 6, 'g': 7, 'h': 9, 'y': 10, 'u': 11, 'j': 12,  'c': 13, 'v': 14};
 
-        document.addEventListener('keydown', function(event) {
-            const key = event.key.toLowerCase();
-            if (!event.ctrlKey && (key in playerKeys)) {
-                event.preventDefault();
-                updateGoal(playerKeys[key], 'home');
-            } else if (event.ctrlKey && (key in playerKeys)) {
-                event.preventDefault();
-                updateGoal(playerKeys[key], 'away');
-            } else if (key === 'x') {
-                event.preventDefault();
-                window.location.href = '/';
-            } else if (key === 'n') {
-                event.preventDefault();
+    //     document.addEventListener('keydown', function(event) {
+    //         const key = event.key.toLowerCase();
+    //         if (!event.ctrlKey && (key in playerKeys)) {
+    //             event.preventDefault();
+    //             updateGoal(playerKeys[key], 'home');
+    //         } else if (event.ctrlKey && (key in playerKeys)) {
+    //             event.preventDefault();
+    //             updateGoal(playerKeys[key], 'away');
+    //         } else if (key === 'x') {
+    //             event.preventDefault();
+    //             window.location.href = '/';
+    //         } else if (key === 'n') {
+    //             event.preventDefault();
+    //                 pauseCountdown();
+    //         }
+    //     });
+    // });
+    document.addEventListener('DOMContentLoaded', (event) => {
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'n') {
+                    event.preventDefault();
                     pauseCountdown();
-            }
-        });
-    });
+                }
+                else if (event.key === 'c') {
+                    event.preventDefault();
+                    window.location.href = '/major';
+                }
+                else if (event.key === 'v') {
+                    event.preventDefault();
+                    window.location.href = '/goal';
+                }
+                else if (event.key === 'b') {
+                    event.preventDefault();
+                    window.location.href = '/penalty';
+                }
+                else if (event.key === 't') {
+                    event.preventDefault();
+                    window.location.href = '/awaytimeout';
+                }
+                else if (event.key === 'f') {
+                    event.preventDefault();
+                    window.location.href = '/card';
+                }
+                else if (event.key === 'r') {
+                    event.preventDefault();
+                    window.location.href = '/hometimeout';
+                }
+                else if (event.key === 'g') {
+                    event.preventDefault();
+                    buzzer();
+                }
+                else if (event.key === 'x') {
+                    event.preventDefault();
+                    window.location.href = '/clear';
+                }
+                else if (event.key === 'y') {
+                    event.preventDefault();
+                    possession();
+                }
+                else if (event.key === 'u') {
+                    event.preventDefault();
+                    reset20();
+                }
+                else if (event.key === 'h') {
+                    event.preventDefault();
+                    pause30();
+                }
+                else if (event.key === 'j') {
+                    event.preventDefault();
+                    pause20();
+                }
 
+
+
+            });
+        });
+        
         function playSound() {
             var audio = new Audio('/static/airhorn.mp3');
             audio.play();
@@ -374,25 +433,7 @@
     </script>
 
 <body>
-    <header>
-        <h1>
-            <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach['red'] }}</span>
-            <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
-            <!-- <span style="font-size: 28px; color: #888;">{{ home_coach['AC'] }}</span>
-            <span style="font-size: 28px; color: #888;">{{ home_coach['TM'] }}</span> -->
-            <span style="font-size: 30px; color: #333333;">spacer</span>
-            <span style="font-size: 30px; color: white;">{{ hometimeoutv }}</span>
-            <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }}</span>
-            <span style="font-size: 100px; color: grey; width: 1000px;">{{location}}</span>
-            <span style="font-size: 300px; color: Yellow;">{{ TeamAway['goals'] }}</span>
-            <span style="font-size: 30px; color: white;">{{ awaytimeoutv }}</span>
-            <span style="font-size: 30px; color: #333333;">spacer</span>
-            <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach['red'] }}</span>
-            <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
-            <!-- <span style="font-size: 28px; color: #888;">{{ away_coach['AC'] }}</span>
-            <span style="font-size: 28px; color: #888;">{{ away_coach['TM'] }}</span> -->
-        </h1>
-    </header>
+    {% include '_scoreboard_header.html' %}
 
 
    <nav>
@@ -445,7 +486,7 @@
                     <button class="btn-adjust" style="height:50px;width:50px" onclick="addmin()">+</button>
                 </td>
                 <td style="width:80%" rowspan="3">
-                    <span style="color:blue;font-size: 300px;font-weight: bold" id="countdown"></span>
+                    <span style="color:rgba(255, 191, 0, 1);font-size: 300px;font-weight: bold" id="countdown"></span>
                 </td>
                 <td style="width:10%">
                     <button class="btn-adjust" style="height:50px;width:50px" onclick="addsec()">+</button>

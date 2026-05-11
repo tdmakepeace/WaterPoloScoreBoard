@@ -1,0 +1,40 @@
+<table class="center" style="text-align: center; border: none;">
+    <tr>
+        <th colspan="2">
+            <button class="btn-primary" style="height:200px;width:150px" onclick="pauseCountdown()">
+                Start / Stop (N)
+            </button>
+        </th>
+        <th colspan="2">
+            <button class="btn-clock" style="height:150px;width:150px" onclick="possession()">
+                Running Change (Y)
+            </button>
+            <button class="btn-clock" style="height:150px;width:150px" onclick="pause30()">
+                Paused Change (H)
+            </button>
+        </th>
+        <th colspan="3">
+            <span style="font-size: 300px;font-weight: bold" id="shotdown">00</span>
+        </th>
+        <th colspan="2">
+            <button class="btn-shot" style="height:150px;width:150px" onclick="reset20()">
+                Shot (U)
+            </button>
+            <button class="btn-shot" style="height:150px;width:150px" onclick="pause20()">
+                Corner (J)
+            </button>
+        </th>
+        <th colspan="2">
+            <button class="btn-danger" style="height:100px;width:150px;font-size:10px" onclick="buzzer()">
+                Buzzer (G)
+            </button>
+            <button class="btn-warning" style="height:100px;width:150px" onclick="force20()">
+                Force short
+            </button>
+            <div style="display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;">
+                <button type="button" class="btn-adjust" style="height:36px;width:52px;font-size:20px;line-height:1;padding:0;" onclick="shotClockPlus()" title="Shot clock +1s">+</button>
+                <button type="button" class="btn-adjust" style="height:36px;width:52px;font-size:20px;line-height:1;padding:0;" onclick="shotClockMinus()" title="Shot clock -1s">&minus;</button>
+            </div>
+        </th>
+    </tr>
+</table>

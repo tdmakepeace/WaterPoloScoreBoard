@@ -147,3 +147,10 @@ data/es_backups/
 *.bak
 
 cert/*
+
+# Waterpolo testing
+Kingston*
+temp*
+
+# ignore cursor files
+.cursor/*

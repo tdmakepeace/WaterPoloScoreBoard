@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WaterPolo Controls</title>
+    <link rel="stylesheet" href="../static/style.css">
+    <script src="static/jquery.min.js"></script>
+    <style>
+        table[style*="border: none"] td,
+        table[style*="border: none"] th {
+            border: none !important;
+        }
+    </style>
+    <script>
+        // These functions are called by the button UI below.
+        function buzzer() {
+            $.ajax({
+                url: '/buzzer',
+                success: function() {
+                    try {
+                        var audio = new Audio('/static/airhorn.mp3');
+                        audio.play();
+                    } catch (e) {
+                        // audio is best-effort only
+                    }
+                }
+            });
+        }
+
+        function pauseCountdown() {
+            $.ajax({
+                url: '/pause_countdown'
+            });
+        }
+
+        function shotClockPlus() {
+            $.ajax({
+                url: '/shot_clock_plus',
+                dataType: 'json',
+                success: function() {
+                    updateShotClock();
+                }
+            });
+        }
+
+        function shotClockMinus() {
+            $.ajax({
+                url: '/shot_clock_minus',
+                dataType: 'json',
+                success: function() {
+                    updateShotClock();
+                }
+            });
+        }
+
+        function possession() {
+            $.ajax({
+                url: '/possession'
+            });
+        }
+
+        function reset20() {
+            $.ajax({
+                url: '/reset20'
+            });
+        }
+
+        function pause20() {
+            $.ajax({
+                url: '/pause20'
+            });
+        }
+
+        function force20() {
+            $.ajax({
+                url: '/force20'
+            });
+        }
+
+        function pause30() {
+            $.ajax({
+                url: '/reset30',
+                success: function() {
+                    // Intentionally no UI update here: this page is controls-only.
+                }
+            });
+        }
+
+        function updateShotClock() {
+            $.ajax({
+                url: '/get_countdown_status',
+                success: function(response) {
+                    if (!response || response.elapsed_shot === undefined) return;
+                    // Backend returns remaining shot clock seconds.
+                    let shotseconds = Math.floor(response.elapsed_shot % 60);
+                    let el = document.getElementById('shotdown');
+                    if (el) el.textContent = shotseconds.toString().padStart(2, '0');
+                }
+            });
+        }
+
+        // Poll frequently so the shot clock keeps running smoothly in controls-only mode.
+        setInterval(updateShotClock, 200);
+    </script>
+</head>
+
+<body>
+    {% include "_scoreboard_controls.html" %}
+</body>
+</html>
+

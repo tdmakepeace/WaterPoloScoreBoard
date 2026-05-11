@@ -61,7 +61,7 @@
         #countdown {
             font-size: 450px;
             font-weight: bold;
-            color: blue;
+            color: rgba(255, 191, 0, 1);
         }
         
         #shotdown {
@@ -155,7 +155,7 @@
 
                             // Color coding for main clock
                             if (timeLeft > 60) {
-                                countdownElement.style.color = "white";
+                                countdownElement.style.color = "rgba(255, 191, 0, 1)";
                             } else if (timeLeft > 28) {
                                 countdownElement.style.color = "orange";
                             } else {
@@ -206,34 +206,30 @@
             }
         });
     }, 200); // Check every 200ms for very fast updates
+
+    // Explicit forced-refresh channel shared by all clients
+    let lastForceReloadToken = null;
+    setInterval(function() {
+        $.ajax({
+            url: '/get_force_reload_token',
+            success: function(response) {
+                if (lastForceReloadToken !== null && response.token !== lastForceReloadToken) {
+                    location.reload();
+                }
+                lastForceReloadToken = response.token;
+            }
+        });
+    }, 250);
 </script>
 
 <body>
-    <header>
-        <h1>
-            <span class="{% if home_coach.red >= 1 %}red{% else %}none{% endif %}">{{ home_coach['red'] }}</span>
-            <span class="{% if home_coach.yellow >= 1 %}yellow{% else %}none{% endif %}">{{ home_coach.yellow }}</span>
-            <!-- <span style="font-size: 28px; color: #888;">{{ home_coach['AC'] }}</span>
-            <span style="font-size: 28px; color: #888;">{{ home_coach['TM'] }}</span> -->
-            <span style="font-size: 30px; color: #333333;">spacer</span>
-            <span style="font-size: 30px; color: white;">{{ hometimeoutv }}</span>
-            <span style="font-size: 300px; color: white;">{{ TeamHome['goals'] }}</span>
-            <span style="font-size: 100px; color: grey; width: 1000px;">{{location}}</span>
-            <span style="font-size: 300px; color: Yellow;">{{ TeamAway['goals'] }}</span>
-            <span style="font-size: 30px; color: white;">{{ awaytimeoutv }}</span>
-            <span style="font-size: 30px; color: #333333;">spacer</span>
-            <span class="{% if away_coach.red >= 1 %}red{% else %}none{% endif %}">{{ away_coach['red'] }}</span>
-            <span class="{% if away_coach.yellow == 1 %}yellow{% else %}none{% endif %}">{{ away_coach.yellow }}</span>
-            <!-- <span style="font-size: 28px; color: #888;">{{ away_coach['AC'] }}</span>
-            <span style="font-size: 28px; color: #888;">{{ away_coach['TM'] }}</span> -->
-        </h1>
-    </header>
+    {% include '_scoreboard_header.html' %}
 
     <div class="main-display">
         <div class="clocks-container">
             <div class="clock-display">
                 <div class="clock-label">GAME CLOCK</div>
-                <div id="countdown">0:00</div>
+                <div id="countdown" style="color: rgba(255, 191, 0, 1);">0:00</div>
             </div>
             
             <div class="clock-display">
@@ -275,7 +271,7 @@
         <div style="margin-top: 10px;">
             <span style="font-size: 40px; color: white;">{{HomeTeam}}</span>
             <span style="font-size: 40px; color: grey;"> vs </span>
-            <span style="font-size: 40px; color: Yellow;">{{AwayTeam}}</span>
+            <span style="font-size: 40px; color: rgba(255, 191, 0, 1);">{{AwayTeam}}</span>
             <span style="font-size: 30px; color: #999; margin-left: 50px;">Quarter: {{ quarter }}</span>
         </div>
     </div>

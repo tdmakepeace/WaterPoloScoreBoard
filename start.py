@@ -1,13 +1,19 @@
 
 import errno
 from time import sleep
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
+import socket
+from typing import Optional
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, has_request_context
 # from quart import Quart , render_template, request, redirect, url_for, jsonify, flash
 import time
 import csv
 import math
 import os
+import re
+import threading
+import urllib.request
 import webview
+from pathlib import Path
 from datetime import datetime, timedelta
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
@@ -48,6 +54,49 @@ periodscores = { 'Home': PeriodScores() ,     'Away': PeriodScores() }
 
 # Track when timer.html is loaded to notify display.html
 timer_reload_timestamp = time.time()
+webview_window = None
+force_reload_token = time.time()
+runtime_listening_port = 5000
+external_call_token = 0
+last_external_call = {"path": "", "method": "", "remote_addr": "", "timestamp": 0}
+
+# When these routes are serving a "next screen" (goal/major/penalty),
+# we must avoid bumping `force_reload_token` because timer.html's polling
+# will reload the timer page and interrupt navigation.
+SKIP_FORCE_RELOAD_PATHS = {
+    "/goal",
+    "/goalint",
+    "/major",
+    "/penalty",
+    # Shot-clock +/- nudges update state via AJAX + updateCountdown(); a full
+    # page reload here fights the user's click and makes the tweak look like
+    # it didn't happen.
+    "/shot_clock_plus",
+    "/shot_clock_minus",
+}
+
+AUTO_REFRESH_EXCLUDED_PATHS = {
+    "/",
+    "/display",
+    "/favicon.ico",
+    "/goal",
+    "/major",
+    "/penalty",
+    "/card",
+    "/awaytimeout",
+    "/hometimeout",
+    "/timeout",
+    "/interval",
+    "/callinterval",
+    "/returninterval",
+    "/trigger_refresh",
+    "/refresh_webview",
+}
+AUTO_REFRESH_EXCLUDED_PREFIXES = (
+    "/static/",
+    "/get_",
+    "/displayshotclock/",
+)
 
 # Group related constants at the top
 class Config:
@@ -67,7 +116,7 @@ class Config:
     SHOT_CLOCK = 28
     FOUL_CLOCK = SHOT_CLOCK -10
     BLUETOOTH_CONNECT = 0
-    MAJORS = 9
+    MAJORS = 3
 
     
     # Bluetooth constants
@@ -80,6 +129,108 @@ class Config:
     DEFAULT_LOCATION = 'New Malden'
     DEFAULT_HOME_TEAM = 'Kingston Royals'
     DEFAULT_AWAY_TEAM = 'Away Team'
+
+
+def _preferred_listening_ipv4_address() -> Optional[str]:
+    """Best-effort LAN IPv4 detection (never returns 127.0.0.1 or 0.0.0.0)."""
+
+    def _is_acceptable(ip: str) -> bool:
+        ip = (ip or "").strip()
+        return ip not in ("0.0.0.0", "127.0.0.1") and not ip.startswith("127.")
+
+    # UDP "connect" trick doesn't send packets, but selects the right outbound interface.
+    for dest in (("8.8.8.8", 80), ("1.1.1.1", 80)):
+        sock: Optional[socket.socket] = None
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.connect(dest)
+            ip = sock.getsockname()[0]
+            if _is_acceptable(ip):
+                return ip
+        except OSError:
+            continue
+        finally:
+            if sock is not None:
+                try:
+                    sock.close()
+                except OSError:
+                    pass
+
+    hostname = socket.gethostname()
+    try:
+        for info in socket.getaddrinfo(hostname, None, family=socket.AF_INET):
+            ip = info[4][0]
+            if _is_acceptable(ip):
+                return ip
+    except OSError:
+        pass
+
+    try:
+        _, _, ips = socket.gethostbyname_ex(hostname)
+        for ip in ips:
+            if _is_acceptable(ip):
+                return ip
+    except OSError:
+        pass
+
+    return None
+
+
+def load_scoreboard_config():
+    """Load runtime config values used during app startup."""
+    return {
+        "listening_port": os.environ.get("SCOREBOARD_LISTENING_PORT", Config.WEB_PORT),
+    }
+
+
+def refresh_webview_window():
+    """Best-effort native refresh for the pywebview window."""
+    if webview_window is None:
+        return False, "No active webview window"
+
+    try:
+        # Fast path: reload current page in-place.
+        webview_window.evaluate_js("window.location.reload(true);")
+        return True, "reload via evaluate_js"
+    except Exception as js_error:
+        try:
+            # Fallback: navigate to index with a cache-busting query param.
+            refresh_url = f"http://127.0.0.1:{runtime_listening_port}/?refresh={int(time.time() * 1000)}"
+            webview_window.load_url(refresh_url)
+            return True, "reload via load_url fallback"
+        except Exception as load_error:
+            return False, f"{js_error}; {load_error}"
+
+
+def _should_auto_refresh(req):
+    """Refresh for state-changing requests, excluding polling/noisy paths."""
+    if req.method not in ("GET", "POST"):
+        return False
+    if req.path in AUTO_REFRESH_EXCLUDED_PATHS:
+        return False
+    return not any(req.path.startswith(prefix) for prefix in AUTO_REFRESH_EXCLUDED_PREFIXES)
+
+
+def _is_external_browser_call(req):
+    remote_addr = (req.remote_addr or "").strip()
+    if not remote_addr:
+        return False
+    return not (remote_addr == "127.0.0.1" or remote_addr == "::1" or remote_addr.startswith("127."))
+
+
+def broadcast_refresh_event():
+    """Update shared refresh state (token)."""
+    global timer_reload_timestamp, force_reload_token
+    now = time.time()
+    timer_reload_timestamp = now
+    if has_request_context and request.path in SKIP_FORCE_RELOAD_PATHS:
+        return
+    force_reload_token = now
+    # IMPORTANT:
+    # Do not call `refresh_webview_window()` here.
+    # Many "goal/major/penalty" routes call pause/reset functions internally, and
+    # forcing a native WebView reload mid-navigation can interrupt the page change.
+    # timer.html / display.html reload themselves when `force_reload_token` changes.
 
 app = Flask(__name__, static_url_path='/static')
 # app = Quart(__name__, static_url_path='/static')
@@ -150,166 +301,494 @@ elapsedtimeout = 0
 reason = 'Timeout'
 timeout = Config.TIMEOUT_TIME
 BLUETOOTH_CONNECT = Config.BLUETOOTH_CONNECT
-window = webview.create_window('WaterPolo Scoreboard', app)
 
 
 ## Bluetooth code block ##
-ble_client = None  # global client
-ble_clients = []
-# async def init_ble():
-#     global ble_client
-#     devices = await BleakScanner.discover()
-#     for d in devices:
-#         print(f"Name: {d.name}, Address: {d.address}")
-#     nano = next((d for d in devices if d.name and Config.BLUETOOTH_NAME in d.name), None)
-#     if not nano:
-#         print(f"{Config.BLUETOOTH_NAME} not found.")
-#         return
-#
-#     ble_client = BleakClient(nano.address)
-#     await ble_client.connect()
-#     print(f"Connected to {nano.name} at {nano.address}")
+# Connection state. ble_clients / ble_client_names / ble_client_addresses are kept
+# as parallel lists so a single index identifies one target device across all three.
+ble_client = None  # kept for backward compatibility; not used directly
+ble_clients: list = []
+ble_client_names: list[str] = []
+ble_client_addresses: list[str] = []
+
+# Reliability / reconnect tuning
+_BLE_SCAN_TIMEOUT = 3.0          # seconds per BleakScanner.discover
+_BLE_SCAN_ATTEMPTS = 3           # how many scans to retry when nothing is found
+_BLE_CONNECT_TIMEOUT = 5.0      # seconds per BleakClient.connect
+_BLE_CONNECT_RETRIES = 3         # attempts per device during Connect
+_BLE_RECONNECT_RETRIES = 2       # attempts per device during Reconnect
+
+# _ble_op_lock serialises long-running BLE operations (Connect / Reconnect /
+# Disconnect buttons) so two clicks cannot mutate ble_clients concurrently.
+# Short read-only snapshots by send_* do not need it.
+_ble_op_lock = threading.Lock()
+
+# --- Persistent BLE event loop ----------------------------------------------
+# bleak's WinRT backend posts device notifications (services changed,
+# disconnect, etc.) back to the loop that created the BleakClient. If we use
+# asyncio.run() per Flask request that loop is closed immediately, and a
+# later notification from a powered-off device triggers
+# "RuntimeError: Event loop is closed". We therefore run *all* BLE work on
+# one long-lived loop in a dedicated thread, and dispatch coroutines onto it
+# via asyncio.run_coroutine_threadsafe().
+from concurrent.futures import TimeoutError as FuturesTimeoutError
+_ble_loop: Optional[asyncio.AbstractEventLoop] = None
+_ble_loop_thread: Optional[threading.Thread] = None
+_ble_loop_start_lock = threading.Lock()
+
+
+def _ensure_ble_loop() -> asyncio.AbstractEventLoop:
+    """Start (once) and return the persistent BLE event loop."""
+    global _ble_loop, _ble_loop_thread
+    with _ble_loop_start_lock:
+        if _ble_loop is not None and _ble_loop.is_running():
+            return _ble_loop
+
+        loop = asyncio.new_event_loop()
+
+        def _runner():
+            asyncio.set_event_loop(loop)
+            try:
+                loop.run_forever()
+            finally:
+                try:
+                    loop.close()
+                except Exception:
+                    pass
+
+        t = threading.Thread(target=_runner, name="ble-loop", daemon=True)
+        t.start()
+        _ble_loop = loop
+        _ble_loop_thread = t
+        print("[BLE] Persistent event loop started")
+        return loop
+
+
+def _run_ble(coro, timeout: Optional[float] = None):
+    """Dispatch a coroutine to the persistent BLE loop and wait for it.
+
+    This is the single funnel through which ALL BLE work is run so that
+    BleakClient objects are always bound to a loop that never closes.
+    Raises FuturesTimeoutError on timeout; callers should catch it.
+    """
+    loop = _ensure_ble_loop()
+    fut = asyncio.run_coroutine_threadsafe(coro, loop)
+    try:
+        return fut.result(timeout=timeout)
+    except FuturesTimeoutError:
+        fut.cancel()
+        raise
+
+
+def ble_send_command(command: str, timeout: float = 3.0) -> None:
+    """Thread-safe fire-and-forget wrapper for send_ble_command.
+
+    Swallows errors (including timeouts) so a flaky BLE device cannot turn
+    a scoreboard action into a 500 response.
+    """
+    try:
+        _run_ble(send_ble_command(command), timeout=timeout)
+    except FuturesTimeoutError:
+        print(f"[BLE] send_ble_command('{command}') timed out after {timeout}s")
+    except Exception as e:
+        print(f"[BLE] send_ble_command('{command}') failed: {e}")
+
+
+def ble_send_int(value, timeout: float = 3.0) -> None:
+    """Thread-safe fire-and-forget wrapper for send_ble_int."""
+    try:
+        _run_ble(send_ble_int(value), timeout=timeout)
+    except FuturesTimeoutError:
+        print(f"[BLE] send_ble_int({value}) timed out after {timeout}s")
+    except Exception as e:
+        print(f"[BLE] send_ble_int({value}) failed: {e}")
+
+
+def _on_ble_disconnect(client):
+    """bleak disconnect callback. We intentionally do NOT auto-reconnect
+    here; the user must press the Reconnect button to restore service."""
+    try:
+        addr = getattr(client, "address", "?")
+        print(f"[BLE] Device disconnected (callback): {addr}")
+    except Exception:
+        pass
+
+
+def _make_client(address: str):
+    """Create a BleakClient, passing the disconnect callback when supported."""
+    try:
+        return BleakClient(address, disconnected_callback=_on_ble_disconnect)
+    except TypeError:
+        # Older bleak versions may not accept the kwarg in the constructor.
+        return BleakClient(address)
+
+
+async def _connect_one(name: str, address: str, retries: int = _BLE_CONNECT_RETRIES):
+    """Connect to a single device by address with retries and backoff.
+
+    Returns a connected BleakClient, or None if every attempt failed.
+    """
+    last_err = None
+    for attempt in range(1, retries + 1):
+        client = _make_client(address)
+        try:
+            await client.connect(timeout=_BLE_CONNECT_TIMEOUT)
+            if client.is_connected:
+                print(f"[BLE] Connected to {name} at {address} (attempt {attempt}/{retries})")
+                return client
+            # Not connected but no exception -> treat as failure
+            last_err = "connect() returned but is_connected is False"
+        except Exception as e:
+            last_err = e
+            print(f"[BLE] Connect attempt {attempt}/{retries} to {name} ({address}) failed: {e}")
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
+        # Backoff before next try (skip after last attempt)
+        if attempt < retries:
+            await asyncio.sleep(min(1.0 * attempt, 3.0))
+    print(f"[BLE] Giving up connecting to {name} ({address}) after {retries} attempts: {last_err}")
+    return None
+
+
+async def _scan_for_targets(attempts: int = _BLE_SCAN_ATTEMPTS):
+    """Scan for BLE devices whose name matches Config.BLUETOOTH_NAME.
+
+    Retries the scan a few times before giving up, because the first scan
+    after Windows wakes up / the dongle resets often returns nothing.
+    """
+    for attempt in range(1, attempts + 1):
+        try:
+            devices = await BleakScanner.discover(timeout=_BLE_SCAN_TIMEOUT)
+        except Exception as e:
+            print(f"[BLE] Scan attempt {attempt}/{attempts} raised: {e}")
+            devices = []
+
+        found = [
+            d for d in devices
+            if d.name and any(n in d.name for n in Config.BLUETOOTH_NAME)
+        ]
+        # De-duplicate by address (some stacks report the same device twice)
+        seen = set()
+        unique = []
+        for d in found:
+            if d.address not in seen:
+                seen.add(d.address)
+                unique.append(d)
+        if unique:
+            return unique
+        print(f"[BLE] Scan {attempt}/{attempts}: no matching targets; retrying...")
+    return []
 
 
 async def init_ble():
-    global ble_clients
-    devices = await BleakScanner.discover(timeout=5.0)
-    targets = [
-        d for d in devices if d.name and any(name in d.name for name in Config.BLUETOOTH_NAME)
-    ]
+    """Discover and connect to every configured BLE device.
 
+    This is idempotent: if a device is already connected it is re-used rather
+    than forcibly reconnected, so calling /connectble repeatedly is safe.
+    """
+    global ble_clients, ble_client_names, ble_client_addresses
+
+    targets = await _scan_for_targets()
     if not targets:
-        print(f"None of {Config.BLUETOOTH_NAME} found.")
-        return
+        print(f"[BLE] None of {Config.BLUETOOTH_NAME} found after {_BLE_SCAN_ATTEMPTS} scans.")
+        # Keep any still-connected clients intact; just return.
+        return ble_clients
 
-    ble_clients = []  # reset before reconnecting
+    # Snapshot existing state so we can preserve healthy connections.
+    existing_by_addr: dict = {}
+    for c, n, a in zip(list(ble_clients), list(ble_client_names), list(ble_client_addresses)):
+        existing_by_addr[a] = (c, n)
+
+    new_clients: list = []
+    new_names: list[str] = []
+    new_addresses: list[str] = []
+
     for d in targets:
-        client = BleakClient(d.address)
-        await client.connect()
-        print(f"Connected to {d.name} at {d.address}")
-        ble_clients.append(client)
-    # print(ble_clients)
-    return ble_clients   # now returns the actual list
+        addr = d.address
+        nm = (d.name or "").strip()
 
+        # Re-use a healthy existing connection to this same address.
+        if addr in existing_by_addr:
+            c, _ = existing_by_addr.pop(addr)
+            try:
+                if c and c.is_connected:
+                    print(f"[BLE] Reusing existing connection to {nm} at {addr}")
+                    new_clients.append(c)
+                    new_names.append(nm)
+                    new_addresses.append(addr)
+                    continue
+            except Exception:
+                pass
+            # Existing client is stale -> drop it cleanly before reconnecting.
+            try:
+                await c.disconnect()
+            except Exception:
+                pass
 
-# async def dis_ble():
-#     global ble_client
-#     await ble_client.disconnect()
-#     print(f"Disconnected bluetooth")
+        client = await _connect_one(nm, addr)
+        if client is not None:
+            new_clients.append(client)
+            new_names.append(nm)
+            new_addresses.append(addr)
 
-async def dis_ble():
-    global ble_clients
-    for client in ble_clients:
-        # print(client)
+    # Clean up any previously-known clients that weren't seen in this scan.
+    for addr, (c, nm) in existing_by_addr.items():
         try:
-            if client.is_connected:
-                await client.disconnect()
-                print(f"Disconnected safely from {client.address}")
-            else:
-                print(f"Already disconnected from {client.address}, skipping.")
-        except BleakError as e:
-            print(f"Error during disconnect from {client.address}: {e}")
-        except Exception as e:
-            print(f"Unexpected error with {client.address}: {e}")
+            if c and c.is_connected:
+                await c.disconnect()
+                print(f"[BLE] Disconnected stale device {nm} at {addr}")
+        except Exception:
+            pass
 
-    # Clear the list once all are disconnected
-    ble_clients = []
+    ble_clients = new_clients
+    ble_client_names = new_names
+    ble_client_addresses = new_addresses
+
     return ble_clients
 
 
-# async def send_ble_command(command: str):
-#     global ble_client
-#     if Config.BLUETOOTH_CONNECT == 1:
-#         if ble_client and ble_client.is_connected:
-#             command = command + "\0"
-#             await ble_client.write_gatt_char(Config.RX_CHAR_UUID, command.encode())
-#
-#
-#
-# async def send_ble_int(value: str):
-#     global ble_client
-#     if Config.BLUETOOTH_CONNECT == 1:
-#         if ble_client and ble_client.is_connected:
-#             command = str(value) + "\0"
-#             await ble_client.write_gatt_char(Config.RX_CHAR_UUID, command.encode('utf-8'))
+async def dis_ble():
+    """Disconnect from every known BLE client and clear the state."""
+    global ble_clients, ble_client_names, ble_client_addresses
+    for client in list(ble_clients):
+        try:
+            if client and client.is_connected:
+                await client.disconnect()
+                print(f"[BLE] Disconnected safely from {getattr(client, 'address', '?')}")
+            else:
+                print(f"[BLE] Already disconnected from {getattr(client, 'address', '?')}, skipping.")
+        except BleakError as e:
+            print(f"[BLE] Error during disconnect from {getattr(client, 'address', '?')}: {e}")
+        except Exception as e:
+            print(f"[BLE] Unexpected error with {getattr(client, 'address', '?')}: {e}")
+
+    ble_clients = []
+    ble_client_names = []
+    ble_client_addresses = []
+    return ble_clients
 
 
-# async def send_ble_command(command: str):
-#     global ble_clients
-#     for client in ble_clients:
-#         if client and client.is_connected:
-#             try:
-#                 cmd = command + "\0"
-#                 await client.write_gatt_char(Config.RX_CHAR_UUID, cmd.encode('utf-8'))
-#                 # print(f"Sent command '{command}' to {client.address}")
-#             except Exception as e:
-#                 print(f"Error sending command to {client.address}: {e}")
+async def reconnect_ble():
+    """Reconnect any known BLE targets that currently report as disconnected.
+
+    Strategy:
+      1. Try a direct reconnect by the previously-known address.
+      2. If that still fails, rescan: a device that was power-cycled may
+         reappear at the same name but a (slightly) different address.
+    """
+    global ble_clients, ble_client_names, ble_client_addresses
+
+    # Build the list of disconnected slots (index-based so we can update in place).
+    slots = list(enumerate(zip(list(ble_clients), list(ble_client_names), list(ble_client_addresses))))
+    disconnected = [
+        (i, nm, addr) for i, (c, nm, addr) in slots
+        if not (c and getattr(c, "is_connected", False))
+    ]
+
+    if not disconnected:
+        return ble_clients
+
+    print(f"[BLE] Reconnect: {len(disconnected)} target(s) disconnected: "
+          f"{[(nm, addr) for _, nm, addr in disconnected]}")
+
+    # Pass 1: reconnect by known address.
+    still_missing = []
+    for i, nm, addr in disconnected:
+        # Drop any stale handle first
+        old = ble_clients[i] if i < len(ble_clients) else None
+        if old is not None:
+            try:
+                await old.disconnect()
+            except Exception:
+                pass
+
+        new_c = await _connect_one(nm, addr, retries=_BLE_RECONNECT_RETRIES)
+        if new_c is not None:
+            if i < len(ble_clients):
+                ble_clients[i] = new_c
+                ble_client_addresses[i] = addr
+        else:
+            still_missing.append((i, nm, addr))
+
+    # Pass 2: rescan if anything is still missing (the address may have changed).
+    if still_missing:
+        print(f"[BLE] Rescanning to find {len(still_missing)} missing target(s)...")
+        found = await _scan_for_targets(attempts=1)
+        by_name: dict[str, list] = {}
+        for d in found:
+            by_name.setdefault((d.name or "").strip(), []).append(d)
+
+        for i, nm, addr in still_missing:
+            candidates = by_name.get(nm, [])
+            new_c = None
+            for cand in candidates:
+                if cand.address == addr:
+                    continue  # already tried in pass 1
+                new_c = await _connect_one(nm, cand.address, retries=_BLE_RECONNECT_RETRIES)
+                if new_c is not None:
+                    if i < len(ble_clients):
+                        ble_clients[i] = new_c
+                        ble_client_addresses[i] = cand.address
+                    break
+            if new_c is None:
+                print(f"[BLE] Still cannot reconnect to {nm} (last known {addr}). "
+                      f"Press Reconnect again after the device is powered back on.")
+
+    return ble_clients
+
+
+def _run_ble_coro(coro, timeout: float = 120.0):
+    """Run a heavy BLE operation (Connect / Reconnect / Disconnect) on the
+    persistent BLE loop, serialised by _ble_op_lock so two clicks cannot
+    mutate ble_clients concurrently.
+    """
+    with _ble_op_lock:
+        try:
+            _run_ble(coro, timeout=timeout)
+        except FuturesTimeoutError:
+            print(f"[BLE] Long BLE operation timed out after {timeout}s")
+        except Exception as e:
+            print(f"[BLE] Background BLE op failed: {e}")
+
+
+# --- Watchdog intentionally disabled ----------------------------------------
+# Auto-reconnect has been removed so BLE failures cannot delay the main game
+# loop. The only way to re-establish a dropped link is the Reconnect button
+# (/reconnectble). The no-op stubs below keep any stray call sites safe.
+def start_ble_watchdog():
+    """Disabled: automatic BLE reconnect has been turned off by design."""
+    return
+
+
+def stop_ble_watchdog():
+    """Disabled: automatic BLE reconnect has been turned off by design."""
+    return
+
+
+def get_ble_waterpolo_connection_flags() -> dict[str, bool]:
+    """True when a live BLE client matches WaterPolo_1 / WaterPolo_2 (name substring, case-insensitive)."""
+    wp1 = False
+    wp2 = False
+    for name, client in zip(ble_client_names, ble_clients):
+        if not client or not getattr(client, "is_connected", False):
+            continue
+        n = (name or "").lower()
+        if "waterpolo_1" in n:
+            wp1 = True
+        if "waterpolo_2" in n:
+            wp2 = True
+    return {"waterpolo_1": wp1, "waterpolo_2": wp2}
+
+
+# Short upper bound on any individual BLE write from the game loop. If the
+# Windows BLE stack is wedged we fail fast instead of holding up a Flask
+# request. Users must press Reconnect to restore service.
+_BLE_SEND_TIMEOUT = 1.5  # seconds
+
+
+def _mark_slot_dead(index: int, reason: str) -> None:
+    """Drop the client handle for `index` so status flags flip to False.
+
+    We intentionally do NOT await client.disconnect() here -- that can itself
+    hang the main request. Python will release the underlying handle when the
+    BleakClient object is garbage-collected. The name/address stay in the
+    parallel lists so Reconnect can restore this exact slot.
+    """
+    if 0 <= index < len(ble_clients):
+        addr = getattr(ble_clients[index], "address", "?") if ble_clients[index] else "?"
+        ble_clients[index] = None
+        print(f"[BLE] Slot {index} ({addr}) marked disconnected: {reason}. "
+              f"Press Reconnect to restore.")
+
 
 async def send_ble_command(command: str):
-    global ble_clients
-    for client in ble_clients:
-        if client and client.is_connected:
-            try:
-                cmd = command + "\0"
-                await client.write_gatt_char(Config.RX_CHAR_UUID, cmd.encode("utf-8"))
-                # print(f"Sent command '{command}' to {client.address}")
-            except Exception as e:
-                # Log the error with more context
-                print(f"[ERROR] Failed to send '{command}' to {client.address}: {e}")
-                # Optionally: disconnect or remove the client if it's broken
-                try:
-                    await client.disconnect()
-                except Exception:
-                    pass
+    """Send a text command to every currently-connected BLE device.
 
-async def send_ble_int(value: str):
-    global ble_clients
+    Failure policy (by design):
+      * If the slot is already flagged as disconnected -> skip silently.
+      * If the write raises / times out -> mark that slot dead and move on.
+      * No inline reconnect is attempted. Use the Reconnect button.
+    """
+    payload = (command + "\0").encode("utf-8")
+    for i in range(len(ble_clients)):
+        client = ble_clients[i]
+        if not (client and getattr(client, "is_connected", False)):
+            continue
+        try:
+            await asyncio.wait_for(
+                client.write_gatt_char(Config.RX_CHAR_UUID, payload),
+                timeout=_BLE_SEND_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            _mark_slot_dead(i, f"write timeout on '{command}'")
+        except Exception as e:
+            _mark_slot_dead(i, f"write error on '{command}': {e}")
 
-    for client in ble_clients:
-        if client and client.is_connected:
-            try:
-                cmd = str(value) + "\0"
-                await client.write_gatt_char(Config.RX_CHAR_UUID, cmd.encode('utf-8'))
-                # print(f"Sent int '{value}' to {client.address}")
-            except Exception as e:
-                print(f"Error sending int to {client.address}: {e}")
-                try:
-                    await client.disconnect()
-                except Exception:
-                    pass
+
+def normalize_ble_int_payload(value: str | int | float) -> str:
+    """Coerce shot-clock values to a non-negative integer string for BLE (no float decimals)."""
+    try:
+        n = float(value)
+    except (ValueError, TypeError):
+        return str(value)
+    return str(int(max(0.0, n)))
+
+
+async def send_ble_int(value: str | int | float):
+    """Send a numeric (shot-clock) value to every currently-connected BLE device.
+
+    Same failure policy as send_ble_command: fail fast, mark the slot dead,
+    never attempt an inline reconnect.
+    """
+    payload = (normalize_ble_int_payload(value) + "\0").encode("utf-8")
+    for i in range(len(ble_clients)):
+        client = ble_clients[i]
+        if not (client and getattr(client, "is_connected", False)):
+            continue
+        try:
+            await asyncio.wait_for(
+                client.write_gatt_char(Config.RX_CHAR_UUID, payload),
+                timeout=_BLE_SEND_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            _mark_slot_dead(i, f"write timeout on int '{value}'")
+        except Exception as e:
+            _mark_slot_dead(i, f"write error on int '{value}': {e}")
 
 @app.route('/changeposs')
 def changeposs():
     command = "CHANGE"
-    asyncio.run(send_ble_command(command))
+    ble_send_command(command)
     return jsonify({'status': 'success'})
 
 
 @app.route('/periodend')
 def periodend():
     command = "END"
-    asyncio.run(send_ble_command(command))
+    ble_send_command(command)
     return jsonify({'status': 'success'})
 
 
 @app.route('/buzzer')
 def buzzer():
     command = "BUZZER"
-    asyncio.run(send_ble_command(command))
+    ble_send_command(command)
     return jsonify({'status': 'success'})
 
 # @app.route('/displayshotclock/<int:shot>')
 # def displayshotclock(shot):
 #     command = shot
 #     # print(f"Sent command to int: {command}")
-#     asyncio.run(send_ble_int(command))
+#     ble_send_int(command)
 #     return jsonify({'status': 'success'})
 
 @app.route('/displayshotclock/<int:shot>')
 def displayshotclock(shot):
     command = shot
     try:
-        asyncio.run(send_ble_int(command))
+        ble_send_int(command)
         return jsonify({'status': 'success'})
     except Exception as e:
         # Log the error and return a controlled response
@@ -339,10 +818,76 @@ def display():
                            hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
                            home_coach=home_team_red, away_coach=away_team_red)
 
+@app.route('/controls')
+def controls():
+    """Controls-only page containing just the function buttons."""
+    return render_template('controls.html')
+
 @app.route('/get_timer_reload_timestamp')
 def get_timer_reload_timestamp():
     """Return the timestamp of when timer.html was last loaded."""
     return jsonify({'timestamp': timer_reload_timestamp})
+
+@app.route('/get_force_reload_token')
+def get_force_reload_token():
+    """Shared token polled by pages to coordinate forced reloads."""
+    return jsonify({'token': force_reload_token})
+
+
+@app.route('/ble_connection_status')
+def ble_connection_status():
+    """JSON for timer UI: WaterPolo_1 / WaterPolo_2 BLE link state."""
+    return jsonify(get_ble_waterpolo_connection_flags())
+
+@app.route('/get_external_call_token')
+def get_external_call_token():
+    """Token and metadata updated when external browser calls are received."""
+    return jsonify({
+        'token': external_call_token,
+        'path': last_external_call["path"],
+        'method': last_external_call["method"],
+        'remote_addr': last_external_call["remote_addr"],
+        'timestamp': last_external_call["timestamp"],
+    })
+
+@app.route('/trigger_refresh', methods=['GET', 'POST'])
+def trigger_refresh():
+    """External hook: trigger all connected clients to reload."""
+    global timer_reload_timestamp, force_reload_token
+    now = time.time()
+    timer_reload_timestamp = now
+    force_reload_token = now
+    refreshed, detail = refresh_webview_window()
+    return jsonify({'status': 'success', 'token': force_reload_token, 'webview_refreshed': refreshed, 'detail': detail})
+
+@app.route('/refresh_webview', methods=['GET', 'POST'])
+def refresh_webview():
+    """External hook to refresh the running WebView app."""
+    global timer_reload_timestamp, force_reload_token
+    now = time.time()
+    timer_reload_timestamp = now
+    force_reload_token = now
+
+    refreshed, detail = refresh_webview_window()
+    return jsonify({'status': 'success', 'webview_refreshed': refreshed, 'detail': detail})
+
+
+@app.after_request
+def auto_refresh_on_external_call(response):
+    global timer_reload_timestamp, force_reload_token, external_call_token, last_external_call
+    if _is_external_browser_call(request) and _should_auto_refresh(request):
+        now = time.time()
+        timer_reload_timestamp = now
+        force_reload_token = now
+        external_call_token = now
+        last_external_call = {
+            "path": request.path,
+            "method": request.method,
+            "remote_addr": request.remote_addr or "",
+            "timestamp": now,
+        }
+        refresh_webview_window()
+    return response
 
 
 # CLOCK CONTROLS
@@ -352,6 +897,7 @@ def start_countdown():
     countdown_running = True
     start_time = time.time() - elapsed_time
     start_shot = time.time() - elapsed_shot
+    broadcast_refresh_event()
     return jsonify({'status': 'success'})
 
 
@@ -364,6 +910,7 @@ def stop_countdown():
     elapsed_time = 0
     start_shot = 0
     elapsed_shot = 0
+    broadcast_refresh_event()
     return jsonify({'status': 'success'})
 
 
@@ -379,6 +926,7 @@ def pause_countdown():
         countdown_running = True
         start_time = time.time() - elapsed_time
         start_shot = time.time() - elapsed_shot
+    broadcast_refresh_event()
     return jsonify({'status': 'success'})
 
 
@@ -419,6 +967,55 @@ def get_countdown_status():
     })
 
 
+def _shot_clock_apply_delta(delta):
+    """Set shot remaining to current_remaining + delta (clamped). Fixes 00-display where elapsed > clock."""
+    global countdown_running, start_time, elapsed_time, start_shot, elapsed_shot, remaining_shot, clock_shot
+
+    if delta not in (-1, 1):
+        return jsonify({'status': 'error', 'message': 'delta must be -1 or 1'}), 400
+
+    max_shot_remaining = 60
+
+    if countdown_running:
+        elapsed_time = time.time() - start_time
+        elapsed_shot = time.time() - start_shot
+        remaining_shot = max(clock_shot - elapsed_shot, 0)
+    else:
+        remaining_shot = max(clock_shot - elapsed_shot, 0)
+
+    new_remaining = max(0, min(max_shot_remaining, remaining_shot + delta))
+    if new_remaining == remaining_shot:
+        return jsonify({'status': 'success'})
+
+    now = time.time()
+    if countdown_running:
+        # remaining = clock_shot - (now - start_shot)  =>  start_shot = now - (clock_shot - new_remaining)
+        start_shot = now - (clock_shot - new_remaining)
+        elapsed_shot = now - start_shot
+        remaining_shot = max(clock_shot - elapsed_shot, 0)
+    else:
+        # remaining = clock_shot - elapsed_shot  =>  clock_shot = elapsed_shot + new_remaining
+        clock_shot = elapsed_shot + new_remaining
+        remaining_shot = max(clock_shot - elapsed_shot, 0)
+
+    command = str(remaining_shot)
+    ble_send_int(command)
+    broadcast_refresh_event()
+    return jsonify({'status': 'success'})
+
+
+@app.route('/shot_clock_plus')
+def shot_clock_plus():
+    """Shot clock +1s (no negative path segment; reliable in all browsers)."""
+    return _shot_clock_apply_delta(1)
+
+
+@app.route('/shot_clock_minus')
+def shot_clock_minus():
+    """Shot clock -1s."""
+    return _shot_clock_apply_delta(-1)
+
+
 @app.route('/reset30')
 def reset30():
     global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
@@ -431,7 +1028,7 @@ def reset30():
     # start_countdown()
     command = str(remaining_shot)
     # print(f"Sent command to int: {command}")
-    asyncio.run(send_ble_int(command))
+    ble_send_int(command)
 
     return jsonify({'status': 'success'})
 
@@ -447,7 +1044,7 @@ def possession():
     start_countdown()
     command = str(remaining_shot -1)
     # print(f"Sent command to int: {command}")
-    asyncio.run(send_ble_int(command))
+    ble_send_int(command)
 
     return jsonify({'status': 'success'})
 
@@ -472,7 +1069,7 @@ def reset20():
         start_countdown()
     command = str(remaining_shot-1)
     # print(f"Sent command to int: {command}")
-    asyncio.run(send_ble_int(command))
+    ble_send_int(command)
     return jsonify({'status': 'success'})
 
 @app.route('/pause20')
@@ -493,7 +1090,7 @@ def pause20():
             start_shot = 0
     command = str(remaining_shot)
     # print(f"Sent command to int: {command}")
-    asyncio.run(send_ble_int(command))
+    ble_send_int(command)
     return jsonify({'status': 'success'})
     # return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
 
@@ -510,7 +1107,7 @@ def force20():
     start_shot = 0
     command = str(remaining_shot)
     # print(f"Sent command to int: {command}")
-    asyncio.run(send_ble_int(command))
+    ble_send_int(command)
     return jsonify({'status': 'success'})
 
 @app.route('/pause30')
@@ -524,7 +1121,7 @@ def pause30():
     start_shot = 0
     command = str(remaining_shot)
     # print(f"Sent command to int: {command}")
-    asyncio.run(send_ble_int(command))
+    ble_send_int(command)
     return jsonify({'status': 'success'})
 
 @app.route('/start_timeout')
@@ -1651,22 +2248,84 @@ def direction():
 
 @app.route('/connectble', methods=['GET', 'POST'])
 def connectble():
+    """Connect to all configured BLE devices.
+
+    Always disconnects existing sessions first (exit + dis_ble), waits one
+    second, then runs init_ble(), so reconnecting does not fight the prior link.
+
+    Historically this redirected to the index page. It now returns JSON so
+    the Connect button on setup.html can show a spinner and stay on the
+    settings page; a plain GET from a browser address bar still works.
+    """
     global BLUETOOTH_CONNECT
-    asyncio.run(init_ble())
-    sleep(1)
-    asyncio.run(send_ble_command("TEST"))
-    BLUETOOTH_CONNECT = 1
+    error = None
+    try:
+        # Clean slate: notify devices, drop links, wait for the stack to settle,
+        # then scan/connect (avoids messy overlap when a device was already connected).
+        try:
+            ble_send_command("exit")
+        except Exception as e:
+            print(f"[BLE] exit command before connect failed: {e}")
+        BLUETOOTH_CONNECT = 0
+        _run_ble_coro(dis_ble())
+        sleep(1)
+        BLUETOOTH_CONNECT = 1
+        _run_ble_coro(init_ble())
+        sleep(1)
+        ble_send_command("TEST")
+    except Exception as e:
+        error = str(e)
+        print(f"[BLE] /connectble failed: {e}")
+
+    # If the client explicitly asked for JSON (fetch from setup.html) or this
+    # is a POST, return JSON. Otherwise keep the old redirect behaviour.
+    wants_json = (
+        request.method == 'POST'
+        or 'application/json' in (request.headers.get('Accept') or '')
+        or request.args.get('format') == 'json'
+    )
+    if wants_json:
+        payload = {
+            'status': 'error' if error else 'success',
+            'flags': get_ble_waterpolo_connection_flags(),
+        }
+        if error:
+            payload['message'] = error
+        return jsonify(payload), (500 if error else 200)
     return redirect(url_for('index'))
+
+
+@app.route('/reconnectble', methods=['GET', 'POST'])
+def reconnectble():
+    """Manual reconnect trigger: re-scan and reconnect any missing/dropped BLE clients."""
+    global BLUETOOTH_CONNECT
+    try:
+        if not ble_clients:
+            # Nothing known yet -> behave like a fresh connect.
+            BLUETOOTH_CONNECT = 1
+            _run_ble_coro(init_ble())
+        else:
+            _run_ble_coro(reconnect_ble())
+        # Kick the devices so the user sees feedback.
+        ble_send_command("TEST")
+        return jsonify({'status': 'success', 'flags': get_ble_waterpolo_connection_flags()})
+    except Exception as e:
+        print(f"[BLE] /reconnectble failed: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 @app.route('/disconnectble', methods=['GET', 'POST'])
 def disconnectble():
     global BLUETOOTH_CONNECT
-    asyncio.run(send_ble_command("exit"))
+    try:
+        ble_send_command("exit")
+    except Exception as e:
+        print(f"[BLE] exit command failed: {e}")
     BLUETOOTH_CONNECT = 0
-    asyncio.run(dis_ble())
-    return redirect(url_for('index'))
-
+    # Watchdog will go idle on its own because BLUETOOTH_CONNECT == 0.
+    _run_ble_coro(dis_ble())
+    return redirect(url_for('settings'))
+    
 @app.route('/start', methods=['GET', 'POST'])
 def start():
     global quarter, scores, TeamHome, TeamAway, periodscores, teama, teamb
@@ -1674,7 +2333,7 @@ def start():
     if request.method == 'POST':
 
 
-        asyncio.run(send_ble_command("TEST"))
+        ble_send_command("TEST")
 
         filename = datetime.now().strftime(
             Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '-%Y-%m-%d-%H-%M.csv')
@@ -1785,8 +2444,8 @@ def finish():
         # timestamp = datetime.now()
         command = str(0)
         # print(f"Sent command to int: {command}")
-        asyncio.run(send_ble_int(command))
-        asyncio.run(send_ble_command("exit"))
+        ble_send_int(command)
+        ble_send_command("exit")
         # now = datetime.now()  # current date and time
         # timestamp = now.strftime("%d/%m/%Y, %H:%M:%S")
 
@@ -2173,7 +2832,14 @@ def callintervalgoal():
 
 @app.route('/settings')
 def settings():
-    return render_template('setup.html' , HomeTeam=Config.DEFAULT_HOME_TEAM, AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION , ble_clients=ble_clients  )
+    return render_template(
+        'setup.html',
+        HomeTeam=Config.DEFAULT_HOME_TEAM,
+        AwayTeam=Config.DEFAULT_AWAY_TEAM,
+        location=Config.DEFAULT_LOCATION,
+        ble_clients=ble_clients,
+        listen_ip=_preferred_listening_ipv4_address(),
+    )
 
 @app.route('/help')
 def help():
@@ -2233,7 +2899,63 @@ def savehomeplayers(user_id):
         user_id=user_id,
         data=existing_data,
         staff_data=staff_rows,
+        club_name=Config.DEFAULT_HOME_TEAM,
     )
+
+
+# Characters not allowed in filenames on Windows/macOS/Linux. Spaces collapse to underscores.
+_FILENAME_STRIP_RE = re.compile(r'[\\/:*?"<>|\r\n\t]+')
+
+
+def _safeRosterFilename(raw_name: str) -> str:
+    """Reduce a user-provided filename to a safe basename with a .csv extension.
+
+    Strips path separators and reserved characters, collapses whitespace, blocks
+    parent-directory traversal, and clamps length. Always returns a `.csv` file.
+    """
+    base = Path((raw_name or "").strip()).name
+    base = _FILENAME_STRIP_RE.sub("", base)
+    base = re.sub(r"\s+", "_", base).strip("._")
+    if not base or base in {".", ".."}:
+        base = "home_roster"
+    if not base.lower().endswith(".csv"):
+        base = f"{base}.csv"
+    return base[:120]
+
+
+@app.route('/exporthomeplayers/<user_id>', methods=['POST'])
+def exporthomeplayers(user_id):
+    """Write the supplied roster CSV to the same directory as start.py.
+
+    The browser cannot save to an arbitrary OS folder, so the page POSTs the
+    already-built CSV here and the server writes it next to this script.
+    """
+    payload = request.get_json(silent=True) or {}
+    csv_text = payload.get("csv", "")
+    requested_name = payload.get("filename", "")
+
+    if not isinstance(csv_text, str) or not csv_text.strip():
+        return jsonify({"ok": False, "error": "Roster is empty."}), 400
+
+    safe_name = _safeRosterFilename(requested_name)
+    target_dir = Path(__file__).resolve().parent
+    target_path = (target_dir / safe_name).resolve()
+
+    if target_dir not in target_path.parents and target_path != target_dir / safe_name:
+        return jsonify({"ok": False, "error": "Invalid filename."}), 400
+
+    try:
+        target_path.write_text(csv_text, encoding="utf-8", newline="")
+    except OSError as exc:
+        return jsonify({"ok": False, "error": f"Failed to write file: {exc}"}), 500
+
+    return jsonify({
+        "ok": True,
+        "filename": safe_name,
+        "path": str(target_path),
+        "user_id": user_id,
+    })
+
 
 @app.route('/saveawayplayers/<user_id>' , methods=['GET', 'POST'])
 def saveawayplayers(user_id):
@@ -2676,8 +3398,39 @@ def convert_csv_to_pdf():
 
 
 if __name__ == '__main__':
-    # app.run(debug=True, host=Config.WEB_HOST, port=Config.WEB_PORT)
-    webview.start()
+    config = load_scoreboard_config()
+    listening_port = int(config.get("listening_port", Config.WEB_PORT))
+    runtime_listening_port = listening_port
+    browser_only = os.environ.get("SCOREBOARD_BROWSER_ONLY", "").lower() in ("1", "true", "yes")
+
+    def run_flask():
+        app.run(
+            host=Config.WEB_HOST,
+            port=listening_port,
+            debug=False,
+            use_reloader=False,
+            threaded=True,
+        )
+
+    if browser_only:
+        app.run(
+            host=Config.WEB_HOST,
+            port=listening_port,
+            debug=False,
+            use_reloader=False,
+        )
+    else:
+        threading.Thread(target=run_flask, daemon=True).start()
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline:
+            try:
+                urllib.request.urlopen(f"http://127.0.0.1:{listening_port}/", timeout=0.25)
+                break
+            except OSError:
+                time.sleep(0.05)
+
+        webview_window = webview.create_window("WaterPolo Scoreboard", f"http://127.0.0.1:{listening_port}")
+        webview.start()
     
 
 
