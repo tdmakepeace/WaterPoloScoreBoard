@@ -308,13 +308,17 @@
 
                             } else {
                                 playSound();
-                                // Same navigation guard as the Q1-Q3 branch above.
-                                window.__navigatingToInterval = true;
+                                // Regulation end (no 5th period): zero arena shot clock, signal
+                                // period end on BLE, then pause server clocks so the timer page
+                                // and /get_countdown_status stay frozen (no /callinterval).
                                 $.ajax({ url: '/displayshotclock/' + 0, method: 'GET' });
                                 $.ajax({ url: '/periodend' });
-                                // setTimeout(function () {
-                                //     window.location.href = "/callinterval";
-                                // }, 2000);
+                                $.ajax({
+                                    url: '/pause_countdown',
+                                    success: function () {
+                                        updateCountdown();
+                                    },
+                                });
                             }
                         }
 
