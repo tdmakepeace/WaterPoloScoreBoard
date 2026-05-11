@@ -425,6 +425,90 @@
 
             previewEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
+
+        // Build a CSV string that matches the importer's expected format:
+        //   <hat>,<name>      for each player row (skipped if both fields are empty)
+        //   HC,<name> / AC,<name> / TM,<name>  for staff (only included when name is non-empty)
+        function _csvEscape(value) {
+            const s = (value ?? "").toString();
+            return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        }
+
+        function _buildRosterCsv() {
+            const numEntries = parseInt(document.getElementById("num_entries").value, 10) || 0;
+            const lines = [];
+
+            for (let i = 0; i < numEntries; i++) {
+                const hatEl = document.getElementById(`hatnum_${i}`);
+                const nameEl = document.getElementById(`name_${i}`);
+                if (!hatEl || !nameEl) continue;
+                const hat = (hatEl.value ?? "").toString().trim();
+                const name = (nameEl.value ?? "").toString().trim();
+                if (!hat && !name) continue;
+                lines.push(`${_csvEscape(hat)},${_csvEscape(name)}`);
+            }
+
+            for (const role of ["HC", "AC", "TM"]) {
+                const el = document.getElementById(`staff_name_${role}`);
+                if (!el) continue;
+                const name = (el.value ?? "").toString().trim();
+                if (!name) continue;
+                lines.push(`${role},${_csvEscape(name)}`);
+            }
+
+            return lines.join("\n") + "\n";
+        }
+
+        // Strip/replace characters that would be problematic in a filename across OSes
+        function _sanitizeForFilename(value) {
+            return (value ?? "")
+                .toString()
+                .trim()
+                .replace(/[\\/:*?"<>|]+/g, "")
+                .replace(/\s+/g, "_")
+                .substring(0, 80) || "home_roster";
+        }
+
+        async function exportRosterCsv() {
+            const statusEl = document.getElementById("csvStatus");
+            const csv = _buildRosterCsv();
+
+            if (csv.trim().length === 0) {
+                if (statusEl) statusEl.textContent = "Nothing to export - the roster is empty.";
+                return;
+            }
+
+            const club = _sanitizeForFilename("{{ club_name|default('Home') }}");
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, "0");
+            const dd = String(today.getDate()).padStart(2, "0");
+            const filename = `${club}_${yyyy}-${mm}-${dd}.csv`;
+
+            if (statusEl) statusEl.textContent = `Saving ${filename}...`;
+
+            try {
+                const resp = await fetch("/exporthomeplayers/{{ user_id }}", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ csv, filename }),
+                });
+
+                const body = await resp.json().catch(() => ({}));
+                if (!resp.ok || !body.ok) {
+                    const msg = (body && body.error) ? body.error : `HTTP ${resp.status}`;
+                    if (statusEl) statusEl.textContent = `Export failed: ${msg}`;
+                    return;
+                }
+
+                if (statusEl) {
+                    statusEl.textContent = `Saved ${body.filename} to ${body.path}`;
+                }
+            } catch (err) {
+                console.error(err);
+                if (statusEl) statusEl.textContent = `Export failed: ${err.message || err}`;
+            }
+        }
     </script>
 </head>
 <body>
@@ -461,11 +545,12 @@
         <input type="submit" value="Submit">
 
         <div id="csvControls">
-            <div style="font-weight:bold;font-size:16px;margin-bottom:8px;">Import Home roster CSV</div>
+            <div style="font-weight:bold;font-size:16px;margin-bottom:8px;">Import / Export Home roster CSV</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                 <input type="file" id="csvFile" accept=".csv,text/csv">
                 <button type="button" onclick="refreshCsvPreview()">Refresh Preview</button>
                 <button type="button" onclick="applyCsvToForm()">Apply to Form</button>
+                <button type="button" onclick="exportRosterCsv()">Export CSV</button>
             </div>
             <div style="margin-top:8px;color:#555;font-size:13px;">
                 Players: <code>hat_number,name</code>. Staff: <code>HC</code>, <code>AC</code>, or <code>TM</code> in the first column, name in the second. One file can include both. Header row optional.

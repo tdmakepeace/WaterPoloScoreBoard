@@ -9,9 +9,11 @@ import time
 import csv
 import math
 import os
+import re
 import threading
 import urllib.request
 import webview
+from pathlib import Path
 from datetime import datetime, timedelta
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
@@ -2248,14 +2250,26 @@ def direction():
 def connectble():
     """Connect to all configured BLE devices.
 
+    Always disconnects existing sessions first (exit + dis_ble), waits one
+    second, then runs init_ble(), so reconnecting does not fight the prior link.
+
     Historically this redirected to the index page. It now returns JSON so
     the Connect button on setup.html can show a spinner and stay on the
     settings page; a plain GET from a browser address bar still works.
     """
     global BLUETOOTH_CONNECT
-    BLUETOOTH_CONNECT = 1
     error = None
     try:
+        # Clean slate: notify devices, drop links, wait for the stack to settle,
+        # then scan/connect (avoids messy overlap when a device was already connected).
+        try:
+            ble_send_command("exit")
+        except Exception as e:
+            print(f"[BLE] exit command before connect failed: {e}")
+        BLUETOOTH_CONNECT = 0
+        _run_ble_coro(dis_ble())
+        sleep(1)
+        BLUETOOTH_CONNECT = 1
         _run_ble_coro(init_ble())
         sleep(1)
         ble_send_command("TEST")
@@ -2885,7 +2899,63 @@ def savehomeplayers(user_id):
         user_id=user_id,
         data=existing_data,
         staff_data=staff_rows,
+        club_name=Config.DEFAULT_HOME_TEAM,
     )
+
+
+# Characters not allowed in filenames on Windows/macOS/Linux. Spaces collapse to underscores.
+_FILENAME_STRIP_RE = re.compile(r'[\\/:*?"<>|\r\n\t]+')
+
+
+def _safeRosterFilename(raw_name: str) -> str:
+    """Reduce a user-provided filename to a safe basename with a .csv extension.
+
+    Strips path separators and reserved characters, collapses whitespace, blocks
+    parent-directory traversal, and clamps length. Always returns a `.csv` file.
+    """
+    base = Path((raw_name or "").strip()).name
+    base = _FILENAME_STRIP_RE.sub("", base)
+    base = re.sub(r"\s+", "_", base).strip("._")
+    if not base or base in {".", ".."}:
+        base = "home_roster"
+    if not base.lower().endswith(".csv"):
+        base = f"{base}.csv"
+    return base[:120]
+
+
+@app.route('/exporthomeplayers/<user_id>', methods=['POST'])
+def exporthomeplayers(user_id):
+    """Write the supplied roster CSV to the same directory as start.py.
+
+    The browser cannot save to an arbitrary OS folder, so the page POSTs the
+    already-built CSV here and the server writes it next to this script.
+    """
+    payload = request.get_json(silent=True) or {}
+    csv_text = payload.get("csv", "")
+    requested_name = payload.get("filename", "")
+
+    if not isinstance(csv_text, str) or not csv_text.strip():
+        return jsonify({"ok": False, "error": "Roster is empty."}), 400
+
+    safe_name = _safeRosterFilename(requested_name)
+    target_dir = Path(__file__).resolve().parent
+    target_path = (target_dir / safe_name).resolve()
+
+    if target_dir not in target_path.parents and target_path != target_dir / safe_name:
+        return jsonify({"ok": False, "error": "Invalid filename."}), 400
+
+    try:
+        target_path.write_text(csv_text, encoding="utf-8", newline="")
+    except OSError as exc:
+        return jsonify({"ok": False, "error": f"Failed to write file: {exc}"}), 500
+
+    return jsonify({
+        "ok": True,
+        "filename": safe_name,
+        "path": str(target_path),
+        "user_id": user_id,
+    })
+
 
 @app.route('/saveawayplayers/<user_id>' , methods=['GET', 'POST'])
 def saveawayplayers(user_id):
