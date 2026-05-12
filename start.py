@@ -2484,11 +2484,10 @@ def finish():
     global quarter
     if  request.method == 'GET' or request.method == 'POST':
 
-        # timestamp = datetime.now()
-        command = str(0)
-        # print(f"Sent command to int: {command}")
-        ble_send_int(command)
-        ble_send_command("exit")
+        # command = str(0)
+        # ble_send_int(command)
+        # ble_send_command("exit")
+
         # now = datetime.now()  # current date and time
         # timestamp = now.strftime("%d/%m/%Y, %H:%M:%S")
 
@@ -2577,7 +2576,7 @@ def finish():
         #     if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
         #         raise  # re-raise exception if a different error occurred...
 
-    return redirect(url_for('convert_csv_to_pdf'))
+        return redirect(url_for('convert_csv_to_pdf'))
 
 
 @app.route('/hometimeout')
@@ -2950,17 +2949,19 @@ def savehomeplayers(user_id):
 _FILENAME_STRIP_RE = re.compile(r'[\\/:*?"<>|\r\n\t]+')
 
 
-def _safeRosterFilename(raw_name: str) -> str:
+def _safeRosterFilename(raw_name: str, default_stem: str = "home_roster") -> str:
     """Reduce a user-provided filename to a safe basename with a .csv extension.
 
     Strips path separators and reserved characters, collapses whitespace, blocks
     parent-directory traversal, and clamps length. Always returns a `.csv` file.
     """
+    fallback = default_stem if (default_stem or "").strip() else "home_roster"
+
     base = Path((raw_name or "").strip()).name
     base = _FILENAME_STRIP_RE.sub("", base)
     base = re.sub(r"\s+", "_", base).strip("._")
     if not base or base in {".", ".."}:
-        base = "home_roster"
+        base = fallback
     if not base.lower().endswith(".csv"):
         base = f"{base}.csv"
     return base[:120]
@@ -2981,6 +2982,36 @@ def exporthomeplayers(user_id):
         return jsonify({"ok": False, "error": "Roster is empty."}), 400
 
     safe_name = _safeRosterFilename(requested_name)
+    target_dir = Path(__file__).resolve().parent
+    target_path = (target_dir / safe_name).resolve()
+
+    if target_dir not in target_path.parents and target_path != target_dir / safe_name:
+        return jsonify({"ok": False, "error": "Invalid filename."}), 400
+
+    try:
+        target_path.write_text(csv_text, encoding="utf-8", newline="")
+    except OSError as exc:
+        return jsonify({"ok": False, "error": f"Failed to write file: {exc}"}), 500
+
+    return jsonify({
+        "ok": True,
+        "filename": safe_name,
+        "path": str(target_path),
+        "user_id": user_id,
+    })
+
+
+@app.route('/exportawayplayers/<user_id>', methods=['POST'])
+def exportawayplayers(user_id):
+    """Write away roster CSV next to start.py (same contract as exporthomeplayers)."""
+    payload = request.get_json(silent=True) or {}
+    csv_text = payload.get("csv", "")
+    requested_name = payload.get("filename", "")
+
+    if not isinstance(csv_text, str) or not csv_text.strip():
+        return jsonify({"ok": False, "error": "Roster is empty."}), 400
+
+    safe_name = _safeRosterFilename(requested_name, default_stem="away_roster")
     target_dir = Path(__file__).resolve().parent
     target_path = (target_dir / safe_name).resolve()
 
@@ -3037,6 +3068,7 @@ def saveawayplayers(user_id):
         user_id=user_id,
         data=existing_data,
         staff_data=staff_rows,
+        club_name=Config.DEFAULT_AWAY_TEAM,
     )
 
 @app.route('/saverefdata/<user_id>' , methods=['GET', 'POST'])
