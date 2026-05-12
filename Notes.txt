@@ -7,8 +7,8 @@ venv\Scripts\Activate.ps1
 pip install auto-py-to-exe
 # cd .\PycharmProjects\WaterpoloSC\
 pip install -r .\requirements.txt
-# python -m pip install pyinstaller --upgrade
-# python -m pip install auto-py-to-exe --upgrade
+python -m pip install pyinstaller --upgrade
+python -m pip install auto-py-to-exe --upgrade
 
 auto-py-to-exe
 
