@@ -99,6 +99,39 @@ Open the scoreboard in your browser at [http://localhost:5000](http://localhost:
 
 The Dockerfile declares `VOLUME ["/app/results"]`; if you omit `-v`, Docker or Podman still creates an anonymous volume, but binding `./results` is recommended so you can open exported files directly.
 
+### Run in the background (always restart)
+
+Use `-d` to run detached in the background and `--restart always` so the container starts again after a reboot or if the process exits:
+
+Docker:
+
+```bash
+docker run -d --name waterpolo-scoreboard --restart always -p 5000:5000 -v ./results:/app/results waterpolo-scoreboard
+```
+
+Podman:
+
+```bash
+podman run -d --name waterpolo-scoreboard --restart always -p 5000:5000 -v ./results:/app/results waterpolo-scoreboard
+```
+
+On Windows PowerShell:
+
+```powershell
+docker run -d --name waterpolo-scoreboard --restart always -p 5000:5000 -v ${PWD}/results:/app/results waterpolo-scoreboard
+```
+
+Useful commands:
+
+```bash
+docker ps
+docker logs -f waterpolo-scoreboard
+docker stop waterpolo-scoreboard
+docker rm waterpolo-scoreboard
+```
+
+Replace `docker` with `podman` if you use Podman.
+
 ## Build (optional)
 
 If you want an EXE, you can use `pyinstaller` or `auto-py-to-exe`.

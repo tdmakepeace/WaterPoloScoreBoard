@@ -847,26 +847,37 @@ def displayshotclock(shot):
 def index():
     global timer_reload_timestamp
     timer_reload_timestamp = time.time()  # Update timestamp when timer.html loads
+    clock_display = getCountdownDisplayValues()
     return render_template('timer.html', scores=scores, teama=teama, teamb=teamb,
                            elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
                            periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
                            AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
                            hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
-                           home_coach=home_team_red, away_coach=away_team_red)
+                           home_coach=home_team_red, away_coach=away_team_red,
+                           initial_game_clock=clock_display['game_clock'],
+                           initial_shot_clock=clock_display['shot_clock'])
 
 @app.route('/display')
 def display():
+    clock_display = getCountdownDisplayValues()
     return render_template('display.html', scores=scores, teama=teama, teamb=teamb, 
                            elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
                            periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
                            AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, 
                            hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
-                           home_coach=home_team_red, away_coach=away_team_red)
+                           home_coach=home_team_red, away_coach=away_team_red,
+                           initial_game_clock=clock_display['game_clock'],
+                           initial_shot_clock=clock_display['shot_clock'])
 
 @app.route('/controls')
 def controls():
     """Controls-only page containing just the function buttons."""
-    return render_template('controls.html')
+    clock_display = getCountdownDisplayValues()
+    return render_template(
+        'controls.html',
+        initial_game_clock=clock_display['game_clock'],
+        initial_shot_clock=clock_display['shot_clock'],
+    )
 
 @app.route('/get_timer_reload_timestamp')
 def get_timer_reload_timestamp():
@@ -992,24 +1003,35 @@ def return_countdown():
 
 @app.route('/get_countdown_status')
 def get_countdown_status():
-    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot , clock_shot
-    if countdown_running:
-        elapsed_time = time.time() - start_time
-        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
-        elapsed_shot = time.time() - start_shot
-        remaining_shot = max((clock_shot) - elapsed_shot, 0 )
-    else:
-        # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
-        # elapsed_time = time.time() - start_time
-        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
-        # elapsed_shot = time.time() - start_shot
-        remaining_shot = max((clock_shot) - elapsed_shot, 0 )
-    
+    values = getCountdownDisplayValues()
     return jsonify({
-        'countdown_running': countdown_running, 
-        'elapsed_time': remaining_time, 
-        'elapsed_shot': remaining_shot
+        'countdown_running': values['countdown_running'],
+        'elapsed_time': values['remaining_time'],
+        'elapsed_shot': values['remaining_shot'],
     })
+
+
+def getCountdownDisplayValues() -> dict:
+    """Remaining game/shot clock values for API responses and template rendering."""
+    global countdown_running, start_time, elapsed_time, start_shot, elapsed_shot, clock_shot
+
+    if countdown_running:
+        remaining_time = max((Config.GAME_TIME * 30) - (time.time() - start_time), 0)
+        remaining_shot = max(clock_shot - (time.time() - start_shot), 0)
+    else:
+        remaining_time = max((Config.GAME_TIME * 30) - elapsed_time, 0)
+        remaining_shot = max(clock_shot - elapsed_shot, 0)
+
+    game_minutes = int(remaining_time // 60)
+    game_seconds = int(remaining_time % 60)
+    shot_seconds = int(remaining_shot % 60)
+    return {
+        'countdown_running': countdown_running,
+        'remaining_time': remaining_time,
+        'remaining_shot': remaining_shot,
+        'game_clock': f'{game_minutes}:{game_seconds:02d}',
+        'shot_clock': f'{shot_seconds:02d}',
+    }
 
 
 def _shot_clock_apply_delta(delta):

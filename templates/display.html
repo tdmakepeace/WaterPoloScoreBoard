@@ -181,15 +181,10 @@
     // Initial update
     updateCountdown();
     
-    // Refresh the entire page every 30 seconds as a fallback
-    setInterval(function() {
-        location.reload();
-    }, 30000);
-    
     // Listen for storage changes from timer.html - works in regular browser
     window.addEventListener('storage', function(e) {
         if (e.key === 'timerReloadTimestamp' && e.newValue) {
-            location.reload();
+            updateCountdown();
         }
     });
     
@@ -200,7 +195,7 @@
             url: '/get_timer_reload_timestamp',
             success: function(response) {
                 if (lastServerTimestamp !== null && response.timestamp !== lastServerTimestamp) {
-                    location.reload();
+                    updateCountdown();
                 }
                 lastServerTimestamp = response.timestamp;
             }
@@ -214,7 +209,7 @@
             url: '/get_force_reload_token',
             success: function(response) {
                 if (lastForceReloadToken !== null && response.token !== lastForceReloadToken) {
-                    location.reload();
+                    updateCountdown();
                 }
                 lastForceReloadToken = response.token;
             }
@@ -229,12 +224,12 @@
         <div class="clocks-container">
             <div class="clock-display">
                 <div class="clock-label">GAME CLOCK</div>
-                <div id="countdown" style="color: rgba(255, 191, 0, 1);">0:00</div>
+                <div id="countdown" style="color: rgba(255, 191, 0, 1);">{{ initial_game_clock }}</div>
             </div>
             
             <div class="clock-display">
                 <div class="clock-label">SHOT CLOCK</div>
-                <div id="shotdown">00</div>
+                <div id="shotdown">{{ initial_shot_clock }}</div>
             </div>
         </div>
 
