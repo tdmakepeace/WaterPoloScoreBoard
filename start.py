@@ -890,6 +890,12 @@ def get_force_reload_token():
     return jsonify({'token': force_reload_token})
 
 
+@app.route('/get_scoreboard_snapshot')
+def get_scoreboard_snapshot():
+    """JSON snapshot of scores and period breakdown for live display updates."""
+    return jsonify(getScoreboardSnapshot())
+
+
 @app.route('/ble_connection_status')
 def ble_connection_status():
     """JSON for timer UI: WaterPolo_1 / WaterPolo_2 BLE link state."""
@@ -1031,6 +1037,46 @@ def getCountdownDisplayValues() -> dict:
         'remaining_shot': remaining_shot,
         'game_clock': f'{game_minutes}:{game_seconds:02d}',
         'shot_clock': f'{shot_seconds:02d}',
+    }
+
+
+def getScoreboardSnapshot() -> dict:
+    """Live scoreboard state for display pages that refresh without a full reload."""
+    period_data = {}
+    for team_id, team_scores in periodscores.items():
+        if isinstance(team_scores, PeriodScores):
+            period_data[team_id] = {
+                'goals1': team_scores.goals1,
+                'goals2': team_scores.goals2,
+                'goals3': team_scores.goals3,
+                'goals4': team_scores.goals4,
+                'majors1': team_scores.majors1,
+                'majors2': team_scores.majors2,
+                'majors3': team_scores.majors3,
+                'majors4': team_scores.majors4,
+            }
+        else:
+            period_data[team_id] = dict(team_scores)
+
+    clock_display = getCountdownDisplayValues()
+    return {
+        'home_goals': scores['Home']['goals'],
+        'away_goals': scores['Away']['goals'],
+        'home_majors': scores['Home']['majors'],
+        'away_majors': scores['Away']['majors'],
+        'hometimeoutv': hometimeoutv,
+        'awaytimeoutv': awaytimeoutv,
+        'quarter': quarter,
+        'home_team': Config.DEFAULT_HOME_TEAM,
+        'away_team': Config.DEFAULT_AWAY_TEAM,
+        'location': Config.DEFAULT_LOCATION,
+        'home_team_red': home_team_red.get('red', 0),
+        'home_team_yellow': home_team_red.get('yellow', 0),
+        'away_team_red': away_team_red.get('red', 0),
+        'away_team_yellow': away_team_red.get('yellow', 0),
+        'periodscores': period_data,
+        'game_clock': clock_display['game_clock'],
+        'shot_clock': clock_display['shot_clock'],
     }
 
 

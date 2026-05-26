@@ -103,6 +103,60 @@
         audio.play();
     }
 
+    function updateCardIndicator(elementId, count, activeClass) {
+        var el = document.getElementById(elementId);
+        if (!el) {
+            return;
+        }
+        el.textContent = count;
+        el.className = count >= 1 ? activeClass : 'none';
+    }
+
+    function applyScoreboardSnapshot(data) {
+        updateCardIndicator('sb-home-red', data.home_team_red, 'red');
+        updateCardIndicator('sb-home-yellow', data.home_team_yellow, 'yellow');
+        updateCardIndicator('sb-away-red', data.away_team_red, 'red');
+        updateCardIndicator('sb-away-yellow', data.away_team_yellow, 'yellow');
+
+        var homeGoals = document.getElementById('sb-home-goals');
+        var awayGoals = document.getElementById('sb-away-goals');
+        var homeTimeout = document.getElementById('sb-hometimeout');
+        var awayTimeout = document.getElementById('sb-awaytimeout');
+        var locationEl = document.getElementById('sb-location');
+        var homeTeam = document.getElementById('display-home-team');
+        var awayTeam = document.getElementById('display-away-team');
+        var quarterEl = document.getElementById('display-quarter');
+
+        if (homeGoals) homeGoals.textContent = data.home_goals;
+        if (awayGoals) awayGoals.textContent = data.away_goals;
+        if (homeTimeout) homeTimeout.textContent = data.hometimeoutv;
+        if (awayTimeout) awayTimeout.textContent = data.awaytimeoutv;
+        if (locationEl) locationEl.textContent = data.location;
+        if (homeTeam) homeTeam.textContent = data.home_team;
+        if (awayTeam) awayTeam.textContent = data.away_team;
+        if (quarterEl) quarterEl.textContent = data.quarter;
+
+        ['Home', 'Away'].forEach(function (team) {
+            ['goals1', 'goals2', 'goals3', 'goals4', 'majors1', 'majors2', 'majors3', 'majors4'].forEach(function (field) {
+                var cell = document.getElementById('display-period-' + team + '-' + field);
+                if (cell && data.periodscores && data.periodscores[team]) {
+                    cell.textContent = data.periodscores[team][field];
+                }
+            });
+        });
+    }
+
+    function refreshDisplayState() {
+        $.ajax({
+            url: '/get_scoreboard_snapshot',
+            dataType: 'json',
+            success: function (data) {
+                applyScoreboardSnapshot(data);
+                updateCountdown();
+            }
+        });
+    }
+
     function updateCountdown() {
         // First check if timeout is running
         $.ajax({
@@ -184,7 +238,7 @@
     // Listen for storage changes from timer.html - works in regular browser
     window.addEventListener('storage', function(e) {
         if (e.key === 'timerReloadTimestamp' && e.newValue) {
-            updateCountdown();
+            refreshDisplayState();
         }
     });
     
@@ -195,7 +249,7 @@
             url: '/get_timer_reload_timestamp',
             success: function(response) {
                 if (lastServerTimestamp !== null && response.timestamp !== lastServerTimestamp) {
-                    updateCountdown();
+                    refreshDisplayState();
                 }
                 lastServerTimestamp = response.timestamp;
             }
@@ -209,7 +263,7 @@
             url: '/get_force_reload_token',
             success: function(response) {
                 if (lastForceReloadToken !== null && response.token !== lastForceReloadToken) {
-                    updateCountdown();
+                    refreshDisplayState();
                 }
                 lastForceReloadToken = response.token;
             }
@@ -250,24 +304,24 @@
             {% for team_id, scores in periodscores.items() %}
             <tr>
                 <td style="background-color:powderblue; font-size: 30px;">{{ team_id }}</td>
-                <td style="background-color:powderblue; font-size: 30px;">{{ scores.goals1 }}</td>
-                <td style="background-color:powderblue; font-size: 30px;">{{ scores.goals2 }}</td>
-                <td style="background-color:powderblue; font-size: 30px;">{{ scores.goals3 }}</td>
-                <td style="background-color:powderblue; font-size: 30px;">{{ scores.goals4 }}</td>
+                <td id="display-period-{{ team_id }}-goals1" style="background-color:powderblue; font-size: 30px;">{{ scores.goals1 }}</td>
+                <td id="display-period-{{ team_id }}-goals2" style="background-color:powderblue; font-size: 30px;">{{ scores.goals2 }}</td>
+                <td id="display-period-{{ team_id }}-goals3" style="background-color:powderblue; font-size: 30px;">{{ scores.goals3 }}</td>
+                <td id="display-period-{{ team_id }}-goals4" style="background-color:powderblue; font-size: 30px;">{{ scores.goals4 }}</td>
                 <td style="background-color:powderblue; font-size: 30px;">{{ team_id }}</td>
-                <td style="background-color:powderblue; font-size: 30px;">{{ scores.majors1 }}</td>
-                <td style="background-color:powderblue; font-size: 30px;">{{ scores.majors2 }}</td>
-                <td style="background-color:powderblue; font-size: 30px;">{{ scores.majors3 }}</td>
-                <td style="background-color:powderblue; font-size: 30px;">{{ scores.majors4 }}</td>
+                <td id="display-period-{{ team_id }}-majors1" style="background-color:powderblue; font-size: 30px;">{{ scores.majors1 }}</td>
+                <td id="display-period-{{ team_id }}-majors2" style="background-color:powderblue; font-size: 30px;">{{ scores.majors2 }}</td>
+                <td id="display-period-{{ team_id }}-majors3" style="background-color:powderblue; font-size: 30px;">{{ scores.majors3 }}</td>
+                <td id="display-period-{{ team_id }}-majors4" style="background-color:powderblue; font-size: 30px;">{{ scores.majors4 }}</td>
             </tr>
             {% endfor %}
             </table>
         </div>
         <div style="margin-top: 10px;">
-            <span style="font-size: 40px; color: white;">{{HomeTeam}}</span>
+            <span id="display-home-team" style="font-size: 40px; color: white;">{{HomeTeam}}</span>
             <span style="font-size: 40px; color: grey;"> vs </span>
-            <span style="font-size: 40px; color: rgba(255, 191, 0, 1);">{{AwayTeam}}</span>
-            <span style="font-size: 30px; color: #999; margin-left: 50px;">Quarter: {{ quarter }}</span>
+            <span id="display-away-team" style="font-size: 40px; color: rgba(255, 191, 0, 1);">{{AwayTeam}}</span>
+            <span style="font-size: 30px; color: #999; margin-left: 50px;">Quarter: <span id="display-quarter">{{ quarter }}</span></span>
         </div>
     </div>
 </body>
