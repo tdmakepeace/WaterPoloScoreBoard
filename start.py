@@ -12,7 +12,6 @@ import os
 import re
 import threading
 import urllib.request
-import webview
 from pathlib import Path
 from datetime import datetime, timedelta
 from fpdf import FPDF
@@ -129,6 +128,40 @@ class Config:
     DEFAULT_LOCATION = 'New Malden'
     DEFAULT_HOME_TEAM = 'Kingston Royals'
     DEFAULT_AWAY_TEAM = 'Away Team'
+
+
+RESULTS_DIR = Path("results")
+TEMP_DIR = RESULTS_DIR / "temp"
+
+
+def ensureResultsDirs() -> None:
+    """Create output directories for temp CSV logs and final PDF exports."""
+    TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def buildGameCsvBasename() -> str:
+    return datetime.now().strftime(
+        Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '-%Y-%m-%d-%H-%M.csv'
+    )
+
+
+def buildCompressCsvBasename() -> str:
+    return datetime.now().strftime(
+        Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '_END_' + '-%Y-%m-%d-%H-%M.csv'
+    )
+
+
+def buildTempCsvPath() -> Path:
+    return TEMP_DIR / datetime.now().strftime('temp' + '-%Y-%m-%d-%H-%M.csv')
+
+
+def buildGameCsvPath() -> Path:
+    return TEMP_DIR / buildGameCsvBasename()
+
+
+def buildFinalPdfPath() -> Path:
+    return RESULTS_DIR / f"{Path(buildCompressCsvBasename()).stem}.pdf"
 
 
 def _preferred_listening_ipv4_address() -> Optional[str]:
@@ -278,10 +311,11 @@ away_team_red = {'red': 0, 'yellow': 0}
 runningclock = "no"
 
 
-filename = datetime.now().strftime(Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '-%Y-%m-%d-%H-%M.csv')
+ensureResultsDirs()
+filename = str(buildGameCsvPath())
 filenamebak = filename + '.bak'
-running_file = datetime.now().strftime('temp' + '-%Y-%m-%d-%H-%M.csv')
-compress_file = datetime.now().strftime(Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '_END_' + '-%Y-%m-%d-%H-%M.csv')
+running_file = str(buildTempCsvPath())
+compress_file = buildCompressCsvBasename()
 countdown_running = False
 quarter= 0
 direction = "increment"
@@ -2372,14 +2406,17 @@ def disconnectble():
 @app.route('/start', methods=['GET', 'POST'])
 def start():
     global quarter, scores, TeamHome, TeamAway, periodscores, teama, teamb
-    global direction, hometimeoutv, awaytimeoutv, filename
+    global direction, hometimeoutv, awaytimeoutv, filename, filenamebak, running_file, compress_file
     if request.method == 'POST':
 
 
         ble_send_command("TEST")
 
-        filename = datetime.now().strftime(
-            Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '-%Y-%m-%d-%H-%M.csv')
+        ensureResultsDirs()
+        filename = str(buildGameCsvPath())
+        filenamebak = filename + '.bak'
+        running_file = str(buildTempCsvPath())
+        compress_file = buildCompressCsvBasename()
         now = datetime.now()  # current date and time
         timestamp = now.strftime("%d/%m/%Y, %H:%M:%S")
 
@@ -3467,7 +3504,8 @@ def convert_csv_to_pdf():
     # else:
     #     write_line("(CSV file not found; only array data was exported.)")
 
-    pdf_file_path = compress_file.rsplit('.', 1)[0] + '.pdf'
+    ensureResultsDirs()
+    pdf_file_path = str(buildFinalPdfPath())
     pdf.output(pdf_file_path)
     return redirect(url_for('index'))
 
@@ -3503,6 +3541,8 @@ if __name__ == '__main__':
                 break
             except OSError:
                 time.sleep(0.05)
+
+        import webview
 
         webview_window = webview.create_window("WaterPolo Scoreboard", f"http://127.0.0.1:{listening_port}")
         webview.start()

@@ -152,5 +152,8 @@ cert/*
 Kingston*
 temp*
 
+# Generated match logs and PDF exports
+results/
+
 # ignore cursor files
 .cursor/*

@@ -1,0 +1,17 @@
+__pycache__
+*.py[cod]
+.git
+.gitignore
+.cursor
+venv
+.venv
+env
+output
+*.exe
+*.bak
+results
+WaterPoloPytoExe*.json
+Notes.txt
+tests
+pytest.ini
+ruff.toml
