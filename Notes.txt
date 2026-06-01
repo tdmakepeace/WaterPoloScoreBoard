@@ -7,8 +7,8 @@ venv\Scripts\Activate.ps1
 pip install auto-py-to-exe
 # cd .\PycharmProjects\WaterpoloSC\
 pip install -r .\requirements.txt
-# python -m pip install pyinstaller --upgrade
-# python -m pip install auto-py-to-exe --upgrade
+python -m pip install pyinstaller --upgrade
+python -m pip install auto-py-to-exe --upgrade
 
 auto-py-to-exe
 
@@ -20,6 +20,7 @@ python.exe .\start.py
 or
 
 pyinstaller --noconfirm --onefile --windowed --icon "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/static/Water Polo Logo.ico" --add-data "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/static;static/" --add-data "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/templates;templates/"  "C:/Users/tmakepea/PycharmProjects/WaterpoloSC/start.py"
+pyinstaller --noconfirm --onefile --windowed --icon "C:\Users\tdmak\OneDrive\Documents\GitHub\WaterPoloScoreBoard/static/Water Polo Logo.ico" --add-data "C:\Users\tdmak\OneDrive\Documents\GitHub\WaterPoloScoreBoard/static;static/" --add-data "C:\Users\tdmak\OneDrive\Documents\GitHub\WaterPoloScoreBoard/templates;templates/"  "C:\Users\tdmak\OneDrive\Documents\GitHub\WaterPoloScoreBoard/start.py"
 
 
 delete the venv folder under C:\Users\tmakepea\PycharmProjects\WaterpoloSC

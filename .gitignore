@@ -152,5 +152,18 @@ cert/*
 Kingston*
 temp*
 
+# Generated match logs and PDF exports
+results/
+dist/
+
 # ignore cursor files
 .cursor/*
+
+# Docker local overrides (base docker-compose.yaml stays tracked)
+docker-compose.override.yaml
+docker-compose.override.yml
+
+# PyInstaller build artifacts
+build/
+output/
+*.exe

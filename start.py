@@ -12,7 +12,6 @@ import os
 import re
 import threading
 import urllib.request
-import webview
 from pathlib import Path
 from datetime import datetime, timedelta
 from fpdf import FPDF
@@ -129,6 +128,40 @@ class Config:
     DEFAULT_LOCATION = 'New Malden'
     DEFAULT_HOME_TEAM = 'Kingston Royals'
     DEFAULT_AWAY_TEAM = 'Away Team'
+
+
+RESULTS_DIR = Path("results")
+TEMP_DIR = RESULTS_DIR / "temp"
+
+
+def ensureResultsDirs() -> None:
+    """Create output directories for temp CSV logs and final PDF exports."""
+    TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def buildGameCsvBasename() -> str:
+    return datetime.now().strftime(
+        Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '-%Y-%m-%d-%H-%M.csv'
+    )
+
+
+def buildCompressCsvBasename() -> str:
+    return datetime.now().strftime(
+        Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '_END_' + '-%Y-%m-%d-%H-%M.csv'
+    )
+
+
+def buildTempCsvPath() -> Path:
+    return TEMP_DIR / datetime.now().strftime('temp' + '-%Y-%m-%d-%H-%M.csv')
+
+
+def buildGameCsvPath() -> Path:
+    return TEMP_DIR / buildGameCsvBasename()
+
+
+def buildFinalPdfPath() -> Path:
+    return RESULTS_DIR / f"{Path(buildCompressCsvBasename()).stem}.pdf"
 
 
 def _preferred_listening_ipv4_address() -> Optional[str]:
@@ -278,10 +311,11 @@ away_team_red = {'red': 0, 'yellow': 0}
 runningclock = "no"
 
 
-filename = datetime.now().strftime(Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '-%Y-%m-%d-%H-%M.csv')
+ensureResultsDirs()
+filename = str(buildGameCsvPath())
 filenamebak = filename + '.bak'
-running_file = datetime.now().strftime('temp' + '-%Y-%m-%d-%H-%M.csv')
-compress_file = datetime.now().strftime(Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '_END_' + '-%Y-%m-%d-%H-%M.csv')
+running_file = str(buildTempCsvPath())
+compress_file = buildCompressCsvBasename()
 countdown_running = False
 quarter= 0
 direction = "increment"
@@ -639,14 +673,25 @@ async def reconnect_ble():
     return ble_clients
 
 
-def _run_ble_coro(coro, timeout: float = 120.0):
+def ble_any_live_client() -> bool:
+    """True when at least one BLE slot currently reports is_connected."""
+    return any(c and getattr(c, "is_connected", False) for c in ble_clients)
+
+
+def _run_ble_coro(coro, timeout: float = 120.0, *, reraise: bool = False):
     """Run a heavy BLE operation (Connect / Reconnect / Disconnect) on the
     persistent BLE loop, serialised by _ble_op_lock so two clicks cannot
     mutate ble_clients concurrently.
+
+    By default errors are logged and suppressed so scoreboard routes keep
+    returning HTTP 200. Pass reraise=True from manual connect/reconnect
+    handlers so failures can be returned to the client.
     """
     with _ble_op_lock:
+        if reraise:
+            return _run_ble(coro, timeout=timeout)
         try:
-            _run_ble(coro, timeout=timeout)
+            return _run_ble(coro, timeout=timeout)
         except FuturesTimeoutError:
             print(f"[BLE] Long BLE operation timed out after {timeout}s")
         except Exception as e:
@@ -802,26 +847,37 @@ def displayshotclock(shot):
 def index():
     global timer_reload_timestamp
     timer_reload_timestamp = time.time()  # Update timestamp when timer.html loads
+    clock_display = getCountdownDisplayValues()
     return render_template('timer.html', scores=scores, teama=teama, teamb=teamb,
                            elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
                            periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
                            AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION,
                            hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
-                           home_coach=home_team_red, away_coach=away_team_red)
+                           home_coach=home_team_red, away_coach=away_team_red,
+                           initial_game_clock=clock_display['game_clock'],
+                           initial_shot_clock=clock_display['shot_clock'])
 
 @app.route('/display')
 def display():
+    clock_display = getCountdownDisplayValues()
     return render_template('display.html', scores=scores, teama=teama, teamb=teamb, 
                            elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
                            periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
                            AwayTeam=Config.DEFAULT_AWAY_TEAM, location=Config.DEFAULT_LOCATION, 
                            hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
-                           home_coach=home_team_red, away_coach=away_team_red)
+                           home_coach=home_team_red, away_coach=away_team_red,
+                           initial_game_clock=clock_display['game_clock'],
+                           initial_shot_clock=clock_display['shot_clock'])
 
 @app.route('/controls')
 def controls():
     """Controls-only page containing just the function buttons."""
-    return render_template('controls.html')
+    clock_display = getCountdownDisplayValues()
+    return render_template(
+        'controls.html',
+        initial_game_clock=clock_display['game_clock'],
+        initial_shot_clock=clock_display['shot_clock'],
+    )
 
 @app.route('/get_timer_reload_timestamp')
 def get_timer_reload_timestamp():
@@ -832,6 +888,12 @@ def get_timer_reload_timestamp():
 def get_force_reload_token():
     """Shared token polled by pages to coordinate forced reloads."""
     return jsonify({'token': force_reload_token})
+
+
+@app.route('/get_scoreboard_snapshot')
+def get_scoreboard_snapshot():
+    """JSON snapshot of scores and period breakdown for live display updates."""
+    return jsonify(getScoreboardSnapshot())
 
 
 @app.route('/ble_connection_status')
@@ -947,24 +1009,75 @@ def return_countdown():
 
 @app.route('/get_countdown_status')
 def get_countdown_status():
-    global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot , clock_shot
-    if countdown_running:
-        elapsed_time = time.time() - start_time
-        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
-        elapsed_shot = time.time() - start_shot
-        remaining_shot = max((clock_shot) - elapsed_shot, 0 )
-    else:
-        # return jsonify({'countdown_running': countdown_running, 'elapsed_time': elapsed_time})
-        # elapsed_time = time.time() - start_time
-        remaining_time = max((Config.GAME_TIME*30) - elapsed_time, 0)
-        # elapsed_shot = time.time() - start_shot
-        remaining_shot = max((clock_shot) - elapsed_shot, 0 )
-    
+    values = getCountdownDisplayValues()
     return jsonify({
-        'countdown_running': countdown_running, 
-        'elapsed_time': remaining_time, 
-        'elapsed_shot': remaining_shot
+        'countdown_running': values['countdown_running'],
+        'elapsed_time': values['remaining_time'],
+        'elapsed_shot': values['remaining_shot'],
     })
+
+
+def getCountdownDisplayValues() -> dict:
+    """Remaining game/shot clock values for API responses and template rendering."""
+    global countdown_running, start_time, elapsed_time, start_shot, elapsed_shot, clock_shot
+
+    if countdown_running:
+        remaining_time = max((Config.GAME_TIME * 30) - (time.time() - start_time), 0)
+        remaining_shot = max(clock_shot - (time.time() - start_shot), 0)
+    else:
+        remaining_time = max((Config.GAME_TIME * 30) - elapsed_time, 0)
+        remaining_shot = max(clock_shot - elapsed_shot, 0)
+
+    game_minutes = int(remaining_time // 60)
+    game_seconds = int(remaining_time % 60)
+    shot_seconds = int(remaining_shot % 60)
+    return {
+        'countdown_running': countdown_running,
+        'remaining_time': remaining_time,
+        'remaining_shot': remaining_shot,
+        'game_clock': f'{game_minutes}:{game_seconds:02d}',
+        'shot_clock': f'{shot_seconds:02d}',
+    }
+
+
+def getScoreboardSnapshot() -> dict:
+    """Live scoreboard state for display pages that refresh without a full reload."""
+    period_data = {}
+    for team_id, team_scores in periodscores.items():
+        if isinstance(team_scores, PeriodScores):
+            period_data[team_id] = {
+                'goals1': team_scores.goals1,
+                'goals2': team_scores.goals2,
+                'goals3': team_scores.goals3,
+                'goals4': team_scores.goals4,
+                'majors1': team_scores.majors1,
+                'majors2': team_scores.majors2,
+                'majors3': team_scores.majors3,
+                'majors4': team_scores.majors4,
+            }
+        else:
+            period_data[team_id] = dict(team_scores)
+
+    clock_display = getCountdownDisplayValues()
+    return {
+        'home_goals': scores['Home']['goals'],
+        'away_goals': scores['Away']['goals'],
+        'home_majors': scores['Home']['majors'],
+        'away_majors': scores['Away']['majors'],
+        'hometimeoutv': hometimeoutv,
+        'awaytimeoutv': awaytimeoutv,
+        'quarter': quarter,
+        'home_team': Config.DEFAULT_HOME_TEAM,
+        'away_team': Config.DEFAULT_AWAY_TEAM,
+        'location': Config.DEFAULT_LOCATION,
+        'home_team_red': home_team_red.get('red', 0),
+        'home_team_yellow': home_team_red.get('yellow', 0),
+        'away_team_red': away_team_red.get('red', 0),
+        'away_team_yellow': away_team_red.get('yellow', 0),
+        'periodscores': period_data,
+        'game_clock': clock_display['game_clock'],
+        'shot_clock': clock_display['shot_clock'],
+    }
 
 
 def _shot_clock_apply_delta(delta):
@@ -2267,12 +2380,19 @@ def connectble():
         except Exception as e:
             print(f"[BLE] exit command before connect failed: {e}")
         BLUETOOTH_CONNECT = 0
-        _run_ble_coro(dis_ble())
+        _run_ble_coro(dis_ble(), reraise=True)
         sleep(1)
         BLUETOOTH_CONNECT = 1
-        _run_ble_coro(init_ble())
+        _run_ble_coro(init_ble(), reraise=True)
         sleep(1)
-        ble_send_command("TEST")
+        if not ble_any_live_client():
+            error = "No BLE devices connected after scan/connect."
+            print(f"[BLE] /connectble: {error}")
+        else:
+            ble_send_command("TEST")
+    except FuturesTimeoutError:
+        error = "BLE operation timed out."
+        print(f"[BLE] /connectble failed: {error}")
     except Exception as e:
         error = str(e)
         print(f"[BLE] /connectble failed: {e}")
@@ -2303,15 +2423,40 @@ def reconnectble():
         if not ble_clients:
             # Nothing known yet -> behave like a fresh connect.
             BLUETOOTH_CONNECT = 1
-            _run_ble_coro(init_ble())
+            _run_ble_coro(init_ble(), reraise=True)
         else:
-            _run_ble_coro(reconnect_ble())
-        # Kick the devices so the user sees feedback.
+            _run_ble_coro(reconnect_ble(), reraise=True)
+        if not ble_any_live_client():
+            msg = "No BLE devices connected."
+            print(f"[BLE] /reconnectble: {msg}")
+            return jsonify(
+                {
+                    'status': 'error',
+                    'message': msg,
+                    'flags': get_ble_waterpolo_connection_flags(),
+                }
+            ), 500
         ble_send_command("TEST")
         return jsonify({'status': 'success', 'flags': get_ble_waterpolo_connection_flags()})
+    except FuturesTimeoutError:
+        msg = "BLE operation timed out."
+        print(f"[BLE] /reconnectble failed: {msg}")
+        return jsonify(
+            {
+                'status': 'error',
+                'message': msg,
+                'flags': get_ble_waterpolo_connection_flags(),
+            }
+        ), 500
     except Exception as e:
         print(f"[BLE] /reconnectble failed: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify(
+            {
+                'status': 'error',
+                'message': str(e),
+                'flags': get_ble_waterpolo_connection_flags(),
+            }
+        ), 500
 
 
 @app.route('/disconnectble', methods=['GET', 'POST'])
@@ -2329,14 +2474,17 @@ def disconnectble():
 @app.route('/start', methods=['GET', 'POST'])
 def start():
     global quarter, scores, TeamHome, TeamAway, periodscores, teama, teamb
-    global direction, hometimeoutv, awaytimeoutv, filename
+    global direction, hometimeoutv, awaytimeoutv, filename, filenamebak, running_file, compress_file
     if request.method == 'POST':
 
 
         ble_send_command("TEST")
 
-        filename = datetime.now().strftime(
-            Config.DEFAULT_HOME_TEAM + ' vs ' + Config.DEFAULT_AWAY_TEAM + '-%Y-%m-%d-%H-%M.csv')
+        ensureResultsDirs()
+        filename = str(buildGameCsvPath())
+        filenamebak = filename + '.bak'
+        running_file = str(buildTempCsvPath())
+        compress_file = buildCompressCsvBasename()
         now = datetime.now()  # current date and time
         timestamp = now.strftime("%d/%m/%Y, %H:%M:%S")
 
@@ -2441,11 +2589,10 @@ def finish():
     global quarter
     if  request.method == 'GET' or request.method == 'POST':
 
-        # timestamp = datetime.now()
-        command = str(0)
-        # print(f"Sent command to int: {command}")
-        ble_send_int(command)
-        ble_send_command("exit")
+        # command = str(0)
+        # ble_send_int(command)
+        # ble_send_command("exit")
+
         # now = datetime.now()  # current date and time
         # timestamp = now.strftime("%d/%m/%Y, %H:%M:%S")
 
@@ -2534,7 +2681,7 @@ def finish():
         #     if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
         #         raise  # re-raise exception if a different error occurred...
 
-    return redirect(url_for('convert_csv_to_pdf'))
+        return redirect(url_for('convert_csv_to_pdf'))
 
 
 @app.route('/hometimeout')
@@ -2907,17 +3054,19 @@ def savehomeplayers(user_id):
 _FILENAME_STRIP_RE = re.compile(r'[\\/:*?"<>|\r\n\t]+')
 
 
-def _safeRosterFilename(raw_name: str) -> str:
+def _safeRosterFilename(raw_name: str, default_stem: str = "home_roster") -> str:
     """Reduce a user-provided filename to a safe basename with a .csv extension.
 
     Strips path separators and reserved characters, collapses whitespace, blocks
     parent-directory traversal, and clamps length. Always returns a `.csv` file.
     """
+    fallback = default_stem if (default_stem or "").strip() else "home_roster"
+
     base = Path((raw_name or "").strip()).name
     base = _FILENAME_STRIP_RE.sub("", base)
     base = re.sub(r"\s+", "_", base).strip("._")
     if not base or base in {".", ".."}:
-        base = "home_roster"
+        base = fallback
     if not base.lower().endswith(".csv"):
         base = f"{base}.csv"
     return base[:120]
@@ -2938,6 +3087,36 @@ def exporthomeplayers(user_id):
         return jsonify({"ok": False, "error": "Roster is empty."}), 400
 
     safe_name = _safeRosterFilename(requested_name)
+    target_dir = Path(__file__).resolve().parent
+    target_path = (target_dir / safe_name).resolve()
+
+    if target_dir not in target_path.parents and target_path != target_dir / safe_name:
+        return jsonify({"ok": False, "error": "Invalid filename."}), 400
+
+    try:
+        target_path.write_text(csv_text, encoding="utf-8", newline="")
+    except OSError as exc:
+        return jsonify({"ok": False, "error": f"Failed to write file: {exc}"}), 500
+
+    return jsonify({
+        "ok": True,
+        "filename": safe_name,
+        "path": str(target_path),
+        "user_id": user_id,
+    })
+
+
+@app.route('/exportawayplayers/<user_id>', methods=['POST'])
+def exportawayplayers(user_id):
+    """Write away roster CSV next to start.py (same contract as exporthomeplayers)."""
+    payload = request.get_json(silent=True) or {}
+    csv_text = payload.get("csv", "")
+    requested_name = payload.get("filename", "")
+
+    if not isinstance(csv_text, str) or not csv_text.strip():
+        return jsonify({"ok": False, "error": "Roster is empty."}), 400
+
+    safe_name = _safeRosterFilename(requested_name, default_stem="away_roster")
     target_dir = Path(__file__).resolve().parent
     target_path = (target_dir / safe_name).resolve()
 
@@ -2994,6 +3173,7 @@ def saveawayplayers(user_id):
         user_id=user_id,
         data=existing_data,
         staff_data=staff_rows,
+        club_name=Config.DEFAULT_AWAY_TEAM,
     )
 
 @app.route('/saverefdata/<user_id>' , methods=['GET', 'POST'])
@@ -3392,7 +3572,8 @@ def convert_csv_to_pdf():
     # else:
     #     write_line("(CSV file not found; only array data was exported.)")
 
-    pdf_file_path = compress_file.rsplit('.', 1)[0] + '.pdf'
+    ensureResultsDirs()
+    pdf_file_path = str(buildFinalPdfPath())
     pdf.output(pdf_file_path)
     return redirect(url_for('index'))
 
@@ -3428,6 +3609,8 @@ if __name__ == '__main__':
                 break
             except OSError:
                 time.sleep(0.05)
+
+        import webview
 
         webview_window = webview.create_window("WaterPolo Scoreboard", f"http://127.0.0.1:{listening_port}")
         webview.start()

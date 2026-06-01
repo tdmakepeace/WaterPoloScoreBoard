@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Git and IDE
+.git/
+.gitignore
+.gitattributes
+.cursor/
+.vscode/
+
+# Build and packaging
+build/
+dist/
+output/
+*.exe
+*.spec
+*.manifest
+
+# Test and lint (not needed in image)
+tests/
+pytest.ini
+ruff.toml
+
+# Local data and exports
+results/
+*.csv
+*.pdf
+*.bak
+
+# Project-specific local files
+WaterPoloPytoExe*.json
+Notes.txt
+Kingston*
+temp*
+
+# Hardware / firmware (not used in container)
+ard_ble_buzzer/
+BLE_small_sample/
+huion_k20/
+
+# Docker (not needed inside image)
+Dockerfile
+docker-compose.yaml
+docker-compose.override.yaml
+docker-compose.override.yml
+.dockerignore
+
+# Certs
+cert/

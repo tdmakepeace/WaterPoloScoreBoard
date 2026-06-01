@@ -308,13 +308,17 @@
 
                             } else {
                                 playSound();
-                                // Same navigation guard as the Q1-Q3 branch above.
-                                window.__navigatingToInterval = true;
+                                // Regulation end (no 5th period): zero arena shot clock, signal
+                                // period end on BLE, then pause server clocks so the timer page
+                                // and /get_countdown_status stay frozen (no /callinterval).
                                 $.ajax({ url: '/displayshotclock/' + 0, method: 'GET' });
                                 $.ajax({ url: '/periodend' });
-                                // setTimeout(function () {
-                                //     window.location.href = "/callinterval";
-                                // }, 2000);
+                                $.ajax({
+                                    url: '/pause_countdown',
+                                    success: function () {
+                                        updateCountdown();
+                                    },
+                                });
                             }
                         }
 
@@ -463,17 +467,16 @@
         updateCountdown();
 
         // Shared forced-refresh polling (works for browser + webview).
+        // Soft-refresh clocks only: a full reload resets #shotdown to "00" and
+        // flashes the main clock while AJAX catches up (especially in Docker).
         let lastForceReloadToken = null;
         setInterval(function() {
             $.ajax({
                 url: '/get_force_reload_token',
                 success: function(response) {
                     if (lastForceReloadToken !== null && response.token !== lastForceReloadToken) {
-                        // Don't reload while the period-end -> /callinterval navigation is
-                        // in flight; a reload here wipes the pending setTimeout and the
-                        // redirect silently never happens.
                         if (!window.__navigatingToInterval) {
-                            location.reload();
+                            updateCountdown();
                         }
                     }
                     lastForceReloadToken = response.token;
@@ -558,7 +561,7 @@
                     <button class="btn-adjust" style="height:50px;width:50px" onclick="addmin()">+</button>
                 </td>
                 <td style="width:80%" rowspan="3">
-                    <span style="color:rgba(255, 191, 0, 1);font-size: 300px;font-weight: bold" id="countdown"></span>
+                    <span style="color:rgba(255, 191, 0, 1);font-size: 300px;font-weight: bold" id="countdown"><br> {{ initial_game_clock }}</span>
                 </td>
                 <td style="width:10%">
                     <button class="btn-adjust" style="height:50px;width:50px" onclick="addsec()">+</button>

@@ -53,6 +53,85 @@ python start.py
 
 The app launches a `pywebview` window and serves the Flask app.
 
+## Docker
+
+The Docker image runs the scoreboard in **browser-only mode** (`SCOREBOARD_BROWSER_ONLY=true`): Flask serves the UI on port 5000 and there is no desktop `pywebview` window. Bluetooth is not available inside the container.
+
+Match logs and PDFs are written under `/app/results` in the container. Mount a local folder there so exports persist on your machine.
+
+### Build the image
+
+Docker:
+
+```bash
+docker build -t waterpolo-scoreboard .
+```
+
+Podman:
+
+```bash
+podman build -t waterpolo-scoreboard .
+```
+
+### Run the container
+
+Bind port 5000 and mount a local `results` folder (creates `results/temp/` for in-progress CSV logs and stores finished PDFs in `results/`):
+
+Docker:
+
+```bash
+docker run --rm -p 5000:5000 -v ./results:/app/results waterpolo-scoreboard
+```
+
+Podman:
+
+```bash
+podman run --rm -p 5000:5000 -v ./results:/app/results waterpolo-scoreboard
+```
+
+On Windows PowerShell, use an absolute path for the volume if `./results` does not resolve as expected, for example:
+
+```powershell
+docker run --rm -p 5000:5000 -v ${PWD}/results:/app/results waterpolo-scoreboard
+```
+
+Open the scoreboard in your browser at [http://localhost:5000](http://localhost:5000). From another device on the same network, use `http://<host-ip>:5000/controls` for the control view and `http://<host-ip>:5000/display` for the scoreboard display.
+
+The Dockerfile declares `VOLUME ["/app/results"]`; if you omit `-v`, Docker or Podman still creates an anonymous volume, but binding `./results` is recommended so you can open exported files directly.
+
+### Run in the background (always restart)
+
+Use `-d` to run detached in the background and `--restart always` so the container starts again after a reboot or if the process exits:
+
+Docker:
+
+```bash
+docker run -d --name waterpolo-scoreboard --restart always -p 5000:5000 -v ./results:/app/results waterpolo-scoreboard
+```
+
+Podman:
+
+```bash
+podman run -d --name waterpolo-scoreboard --restart always -p 5000:5000 -v ./results:/app/results waterpolo-scoreboard
+```
+
+On Windows PowerShell:
+
+```powershell
+docker run -d --name waterpolo-scoreboard --restart always -p 5000:5000 -v ${PWD}/results:/app/results waterpolo-scoreboard
+```
+
+Useful commands:
+
+```bash
+docker ps
+docker logs -f waterpolo-scoreboard
+docker stop waterpolo-scoreboard
+docker rm waterpolo-scoreboard
+```
+
+Replace `docker` with `podman` if you use Podman.
+
 ## Build (optional)
 
 If you want an EXE, you can use `pyinstaller` or `auto-py-to-exe`.
@@ -135,16 +214,16 @@ Once the match log CSV exists, opening:
 
 `http://127.0.0.1:5000/convert`
 
-creates:
+creates a PDF in `results/` with a name derived from the match, for example:
 
-- `<home team> vs <away team>_END_-YYYY-MM-DD-HH-MM.csv` -> PDF with the same base name (`.pdf`)
+- `results/<home team> vs <away team>_END_-YYYY-MM-DD-HH-MM.pdf`
 
 ## File Outputs
 
-Exports depend on `Config.DEFAULT_HOME_TEAM` and `Config.DEFAULT_AWAY_TEAM`, for example:
+Exports depend on `Config.DEFAULT_HOME_TEAM` and `Config.DEFAULT_AWAY_TEAM`:
 
-- CSV: `..._END_-YYYY-MM-DD-HH-MM.csv`
-- PDF: same name with `.pdf`
+- Temp/working CSV logs: `results/temp/` (for example `temp-YYYY-MM-DD-HH-MM.csv` and per-game CSV files)
+- Final PDF: `results/<home team> vs <away team>_END_-YYYY-MM-DD-HH-MM.pdf`
 
 ## Customization Notes
 

@@ -1,0 +1,5 @@
+flask~=3.0.0
+bleak==2.1.1
+fpdf2==2.7.9
+quart==0.20.0
+hypercorn==0.18.0
