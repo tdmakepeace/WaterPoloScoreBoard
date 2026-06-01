@@ -40,7 +40,7 @@ results/
 WaterPoloPytoExe*.json
 Notes.txt
 Kingston*
-temp*
+temp-*
 
 # Hardware / firmware (not used in container)
 ard_ble_buzzer/
