@@ -55,87 +55,180 @@ The app launches a `pywebview` window and serves the Flask app.
 
 ## Docker
 
-The Docker image runs the scoreboard in **browser-only mode** (`SCOREBOARD_BROWSER_ONLY=true`): Flask serves the UI on port 5000 and there is no desktop `pywebview` window. Bluetooth is not available inside the container.
+The scoreboard runs in Docker via `docker-compose.yaml`. The container uses **browser-only mode** (`SCOREBOARD_BROWSER_ONLY=true`): Flask serves the UI on port 5000 and there is no desktop `pywebview` window. Bluetooth is not available inside the container.
 
-Match logs and PDFs are written under `/app/results` in the container. Mount a local folder there so exports persist on your machine.
+`docker-compose.yaml` defines one service (`scoreboard`):
 
-### Build the image
+- **Image / container name:** `waterpolo-scoreboard`
+- **Port:** host `5000` → container `5000` (override with `SCOREBOARD_HOST_PORT`, e.g. `SCOREBOARD_HOST_PORT=10080`)
+- **Volume:** `./results:/app/results` — match CSV logs and PDF exports persist on the host
+- **Restart policy:** `unless-stopped`
 
-Docker:
+Match exports land under `results/` on your machine (`results/temp/` for in-progress CSV logs, finished PDFs in `results/`).
 
-```bash
-docker build -t waterpolo-scoreboard .
-```
+Run all commands from the repo root (where `docker-compose.yaml` lives). Replace `docker` with `podman` if you use Podman.
 
-Podman:
+### Build / rebuild image
 
-```bash
-podman build -t waterpolo-scoreboard .
-```
-
-### Run the container
-
-Bind port 5000 and mount a local `results` folder (creates `results/temp/` for in-progress CSV logs and stores finished PDFs in `results/`):
-
-Docker:
+First build, or after changing Python code, templates, static files, or `requirements-docker.txt`:
 
 ```bash
-docker run --rm -p 5000:5000 -v ./results:/app/results waterpolo-scoreboard
+docker compose build --no-cache
 ```
 
-Podman:
+Build and start in one step:
 
 ```bash
-podman run --rm -p 5000:5000 -v ./results:/app/results waterpolo-scoreboard
+docker compose up -d --build
 ```
 
-On Windows PowerShell, use an absolute path for the volume if `./results` does not resolve as expected, for example:
+### Start container
+
+```bash
+docker compose up -d
+```
+
+### Restart after config / page changes
+
+Quick restart (same image — fine for env-only tweaks):
+
+```bash
+docker compose restart
+```
+
+After changes to app code, templates, or static assets, rebuild the image and recreate the container:
+
+```bash
+docker compose up -d --build
+```
+
+### Stop container
+
+```bash
+docker compose down
+```
+
+### Useful commands
+
+```bash
+docker compose ps
+docker compose logs -f scoreboard
+```
+
+Open the scoreboard at [http://localhost:5000](http://localhost:5000). From another device on the same network, use `http://<host-ip>:5000/controls` for the control view and `http://<host-ip>:5000/display` for the scoreboard display.
+
+### Local overrides (`docker-compose.override.yaml`)
+
+Docker Compose automatically merges `docker-compose.override.yaml` with `docker-compose.yaml` when you run `docker compose` commands. Use it for **machine-specific settings** that should not be committed to git.
+
+`docker-compose.override.yaml` and `docker-compose.override.yml` are listed in `.gitignore`, so each developer or host can keep their own copy locally.
+
+Create the file in the repo root (same folder as `docker-compose.yaml`). You only need to include the keys you want to change — Compose deep-merges them onto the base service definition.
+
+**When to use an override file**
+
+- Windows or Podman volume paths that do not work with `./results`
+- A different host port without editing the shared compose file
+- Extra environment variables for one machine
+- Local debugging (e.g. bind-mounting source for live edits — not recommended for production)
+
+**Example — Windows results path**
+
+If `./results:/app/results` fails on Windows PowerShell, create `docker-compose.override.yaml`:
+
+```yaml
+services:
+  scoreboard:
+    volumes:
+      - ${PWD}/results:/app/results
+```
+
+Or use a fixed absolute path:
+
+```yaml
+services:
+  scoreboard:
+    volumes:
+      - C:/Users/you/WaterPoloScoreBoard/results:/app/results
+```
+
+Use forward slashes in Windows paths inside the YAML.
+
+**Example — custom host port**
+
+Change the published port without touching `docker-compose.yaml`:
+
+```yaml
+services:
+  scoreboard:
+    ports:
+      - "10080:5000"
+```
+
+Alternatively, set an env var when starting (no override file needed):
 
 ```powershell
-docker run --rm -p 5000:5000 -v ${PWD}/results:/app/results waterpolo-scoreboard
+$env:SCOREBOARD_HOST_PORT = "10080"
+docker compose up -d
 ```
 
-Open the scoreboard in your browser at [http://localhost:5000](http://localhost:5000). From another device on the same network, use `http://<host-ip>:5000/controls` for the control view and `http://<host-ip>:5000/display` for the scoreboard display.
+**Example — combine overrides**
 
-The Dockerfile declares `VOLUME ["/app/results"]`; if you omit `-v`, Docker or Podman still creates an anonymous volume, but binding `./results` is recommended so you can open exported files directly.
+```yaml
+services:
+  scoreboard:
+    ports:
+      - "10080:5000"
+    volumes:
+      - ${PWD}/results:/app/results
+    environment:
+      SCOREBOARD_LISTENING_PORT: "5000"
+```
 
-### Run in the background (always restart)
-
-Use `-d` to run detached in the background and `--restart always` so the container starts again after a reboot or if the process exits:
-
-Docker:
+After creating or editing the override file, recreate the container so mounts and ports apply:
 
 ```bash
-docker run -d --name waterpolo-scoreboard --restart always -p 5000:5000 -v ./results:/app/results waterpolo-scoreboard
+docker compose up -d
 ```
 
-Podman:
+To confirm the merged config:
 
 ```bash
-podman run -d --name waterpolo-scoreboard --restart always -p 5000:5000 -v ./results:/app/results waterpolo-scoreboard
+docker compose config
 ```
-
-On Windows PowerShell:
-
-```powershell
-docker run -d --name waterpolo-scoreboard --restart always -p 5000:5000 -v ${PWD}/results:/app/results waterpolo-scoreboard
-```
-
-Useful commands:
-
-```bash
-docker ps
-docker logs -f waterpolo-scoreboard
-docker stop waterpolo-scoreboard
-docker rm waterpolo-scoreboard
-```
-
-Replace `docker` with `podman` if you use Podman.
 
 ## Build (optional)
 
 If you want an EXE, you can use `pyinstaller` or `auto-py-to-exe`.
 See `Notes.txt` for your current workflow.
+
+## Project layout and cleanup
+
+Suggested layout (core app):
+
+| Path | Purpose |
+| --- | --- |
+| `start.py`, `BLE.py` | Application code |
+| `templates/`, `static/` | Web UI |
+| `tests/` | Pytest suite |
+| `results/` | Match CSV/PDF exports (runtime data; gitignored) |
+| `docker-compose.yaml`, `Dockerfile` | Container deployment |
+
+Optional / hardware-related folders:
+
+| Path | Purpose |
+| --- | --- |
+| `huion_k20/` | Huion K20 keypad layout and config |
+| `ard_ble_buzzer/`, `BLE_small_sample/` | Arduino / BLE firmware samples |
+
+Things worth cleaning up locally:
+
+1. **Root stray exports** — Move or delete `Kingston*`, `temp-*.csv`, and `*.bak` files in the repo root; keep exports under `results/` only.
+2. **Duplicate virtual envs** — You likely only need one of `venv/` or `.venv/` (both are gitignored).
+3. **PyInstaller output** — `build/`, `dist/`, and `output/` are build artifacts. Prefer a single release folder (e.g. `dist/`) and publish EXEs via GitHub Releases instead of committing large binaries in `output/`.
+4. **Personal build configs** — `WaterPoloPytoExe_personal.json` and `Notes.txt` are machine-specific; keep them local or under a `build/` folder rather than in the repo root.
+5. **Backup files** — Remove `README.md.bak` and similar `.bak` files once you no longer need them.
+6. **Firmware grouping (optional)** — Consider moving `ard_ble_buzzer/` and `BLE_small_sample/` under a single `firmware/` parent to keep the root tidy.
 
 ## Function / Route Examples
 
