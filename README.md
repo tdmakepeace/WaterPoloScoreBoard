@@ -60,11 +60,13 @@ The scoreboard runs in Docker via `docker-compose.yaml`. The container uses **br
 `docker-compose.yaml` defines one service (`scoreboard`):
 
 - **Image / container name:** `waterpolo-scoreboard`
-- **Port:** host `5000` → container `5000` (override with `SCOREBOARD_HOST_PORT`, e.g. `SCOREBOARD_HOST_PORT=10080`)
+- **Port:** host `10080` → container `5000` (Flask listens on 5000 inside the container only; override the host side with `SCOREBOARD_HOST_PORT`)
 - **Volume:** `./results:/app/results` — match CSV logs and PDF exports persist on the host
 - **Restart policy:** `unless-stopped`
 
 Match exports land under `results/` on your machine (`results/temp/` for in-progress CSV logs, finished PDFs in `results/`).
+
+Port mapping uses `HOST:CONTAINER`. The app always listens on port **5000 inside the container**; by default only host port **10080** is published to your machine — port 5000 is not exposed on the host unless you set `SCOREBOARD_HOST_PORT=5000`.
 
 Run all commands from the repo root (where `docker-compose.yaml` lives). Replace `docker` with `podman` if you use Podman.
 
@@ -115,7 +117,7 @@ docker compose ps
 docker compose logs -f scoreboard
 ```
 
-Open the scoreboard at [http://localhost:5000](http://localhost:5000). From another device on the same network, use `http://<host-ip>:5000/controls` for the control view and `http://<host-ip>:5000/display` for the scoreboard display.
+Open the scoreboard at [http://localhost:10080](http://localhost:10080). From another device on the same network, use `http://<host-ip>:10080/controls` for the control view and `http://<host-ip>:10080/display` for the scoreboard display.
 
 ### Local overrides (`docker-compose.override.yaml`)
 
