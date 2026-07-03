@@ -44,25 +44,35 @@
             align-items: center;
             gap: 6px;
         }
-        .ble-status-item span.label {
-            font-size: 12px;
-            color: #ccc;
-            min-width: 1em;
-        }
         .ble-light {
-            width: 18px;
-            height: 18px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             box-shadow: 0 0 8px currentColor;
             border: 2px solid rgba(255, 255, 255, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+            user-select: none;
         }
         .ble-light--on {
             background: #22c55e;
-            color: #22c55e;
+            color: #fff;
+            box-shadow: 0 0 8px #22c55e;
         }
         .ble-light--off {
             background: #ef4444;
-            color: #ef4444;
+            color: #fff;
+            box-shadow: 0 0 8px #ef4444;
+        }
+        .ble-light--unknown {
+            background: #6b7280;
+            color: #f3f4f6;
+            box-shadow: 0 0 6px #6b7280;
         }
     </style>
 </head>
@@ -484,6 +494,13 @@
             });
         }, 250);
 
+        function setBleLight(el, state) {
+            if (!el) {
+                return;
+            }
+            el.className = 'ble-light ble-light--' + state;
+        }
+
         function updateBleLights() {
             $.ajax({
                 url: '/ble_connection_status',
@@ -491,11 +508,24 @@
                 success: function (data) {
                     var l1 = document.getElementById('ble-light-wp1');
                     var l2 = document.getElementById('ble-light-wp2');
+                    var lSerial = document.getElementById('ble-light-serial');
+                    setBleLight(l1, data.waterpolo_1 ? 'on' : 'off');
+                    setBleLight(l2, data.waterpolo_2 ? 'on' : 'off');
                     if (l1) {
-                        l1.className = 'ble-light ' + (data.waterpolo_1 ? 'ble-light--on' : 'ble-light--off');
+                        l1.title = 'WaterPolo_1: ' + (data.waterpolo_1 ? 'connected' : 'offline');
                     }
                     if (l2) {
-                        l2.className = 'ble-light ' + (data.waterpolo_2 ? 'ble-light--on' : 'ble-light--off');
+                        l2.title = 'WaterPolo_2: ' + (data.waterpolo_2 ? 'connected' : 'offline');
+                    }
+                    if (lSerial) {
+                        var port = data.serial_port || '';
+                        if (!port) {
+                            setBleLight(lSerial, 'unknown');
+                            lSerial.title = 'COM port: not configured';
+                        } else {
+                            setBleLight(lSerial, data.serial ? 'on' : 'off');
+                            lSerial.title = port + ': ' + (data.serial ? 'connected' : 'offline');
+                        }
                     }
                 }
             });
@@ -759,14 +789,15 @@
         </table>
     </footer>
 
-    <div class="ble-status-corner" title="BLE scoreboard links: green = connected, red = not connected">
+    <div class="ble-status-corner" title="Device links: green = connected, red = offline, grey = not configured">
         <div class="ble-status-item">
-            <span class="label">1</span>
-            <div id="ble-light-wp1" class="ble-light ble-light--off" title="WaterPolo_1"></div>
+            <div id="ble-light-wp1" class="ble-light ble-light--off" title="WaterPolo_1">1</div>
         </div>
         <div class="ble-status-item">
-            <span class="label">2</span>
-            <div id="ble-light-wp2" class="ble-light ble-light--off" title="WaterPolo_2"></div>
+            <div id="ble-light-wp2" class="ble-light ble-light--off" title="WaterPolo_2">2</div>
+        </div>
+        <div class="ble-status-item">
+            <div id="ble-light-serial" class="ble-light ble-light--unknown" title="COM port">C</div>
         </div>
     </div>
 </body>

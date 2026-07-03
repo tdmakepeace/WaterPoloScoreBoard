@@ -20,6 +20,7 @@ In the `huion_k20` folder you can find the key layout image and cfg.
 - Controls page works well on a mobile device for table-side game management
 - Player setup (home/away) + referee setup
 - Bluetooth integration (optional) for controlling the hardware scoreboard buzzer
+- USB serial relay (optional) — mirror BLE-style text commands to a COM port (e.g. LoRa master); configure **Serial port** on the settings page (`/setup`) or via `Config.SERIAL_PORT`
 - Export at game end:
   - CSV log file
   - PDF output created from the logged data (`/convert`)
@@ -27,35 +28,66 @@ In the `huion_k20` folder you can find the key layout image and cfg.
 ## Tech Stack
 
 - Flask (`start.py`)
-- `pywebview` to show the UI as a desktop window
+- `pywebview` to show the UI as a desktop window (local Windows runs)
 - `bleak` for Bluetooth (optional)
+- `pyserial` for USB serial relay to hardware (optional; e.g. LoRa master on COM port)
 - `fpdf2` for PDF generation
 
 ## Requirements
 
-Install dependencies with:
+- **Python 3.12+** (3.12 is what the Docker image uses)
+- Windows for the full desktop experience (`pywebview` + BLE + serial COM ports)
 
-```bash
-python -m venv venv
-venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+Install dependencies into a single virtual environment. Use **one** env for the project — either `.venv` or `venv`, not both:
+
+```powershell
+# From the repo root
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-Python packages are pinned in `requirements.txt`.
+Runtime packages are pinned in `requirements.txt`:
+
+| Package | Purpose |
+| --- | --- |
+| `flask` | Web UI and HTTP API |
+| `pywebview` | Native desktop window around the Flask UI |
+| `bleak` | BLE buzzer / scoreboard devices (optional) |
+| `pyserial` | USB serial relay (`import serial`; optional) |
+| `fpdf2` | PDF export at end of match |
+
+If you see `ModuleNotFoundError: No module named 'serial'`, install deps into the **same** interpreter you use to run `start.py` (the module comes from the `pyserial` package).
+
+### Tests (optional)
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install pytest
+.\.venv\Scripts\python.exe -m pytest tests/
+```
 
 ## Running
 
-Start the app:
+Start the app (use your venv’s Python so imports match):
 
-```bash
+```powershell
+.\.venv\Scripts\python.exe start.py
+```
+
+Or, with the venv activated:
+
+```powershell
 python start.py
 ```
 
-The app launches a `pywebview` window and serves the Flask app.
+The app launches a `pywebview` window and serves the Flask app on port **5000** by default (`Config.WEB_PORT`). Override with env var `SCOREBOARD_LISTENING_PORT` if needed.
 
 ## Docker
 
-The scoreboard runs in Docker via `docker-compose.yaml`. The container uses **browser-only mode** (`SCOREBOARD_BROWSER_ONLY=true`): Flask serves the UI on port 5000 and there is no desktop `pywebview` window. Bluetooth is not available inside the container.
+The scoreboard runs in Docker via `docker-compose.yaml`. The container uses **browser-only mode** (`SCOREBOARD_BROWSER_ONLY=true`): Flask serves the UI on port 5000 and there is no desktop `pywebview` window. Bluetooth and USB serial are not available inside the container.
+
+Container Python deps are listed in `requirements-docker.txt` (copied into the image as `requirements.txt`). Local Windows installs use the root `requirements.txt`, which additionally includes `pywebview` and `pyserial`.
 
 `docker-compose.yaml` defines one service (`scoreboard`):
 
@@ -221,12 +253,12 @@ Optional / hardware-related folders:
 | Path | Purpose |
 | --- | --- |
 | `huion_k20/` | Huion K20 keypad layout and config |
-| `ard_ble_buzzer/`, `BLE_small_sample/` | Arduino / BLE firmware samples |
+| `ard_ble_buzzer/`, `BLE_small_sample/` | Arduino / BLE / LoRa firmware samples (`BLE_small_sample/lora_setup_notes.md`) |
 
 Things worth cleaning up locally:
 
 1. **Root stray exports** — Move or delete `Kingston*`, `temp-*.csv`, and `*.bak` files in the repo root; keep exports under `results/` only.
-2. **Duplicate virtual envs** — You likely only need one of `venv/` or `.venv/` (both are gitignored).
+2. **Duplicate virtual envs** — Pick one of `venv/` or `.venv/` and install `requirements.txt` into it (both are gitignored). The README examples use `.venv`.
 3. **PyInstaller output** — `build/`, `dist/`, and `output/` are build artifacts. Prefer a single release folder (e.g. `dist/`) and publish EXEs via GitHub Releases instead of committing large binaries in `output/`.
 4. **Personal build configs** — `WaterPoloPytoExe_personal.json` and `Notes.txt` are machine-specific; keep them local or under a `build/` folder rather than in the repo root.
 5. **Backup files** — Remove `README.md.bak` and similar `.bak` files once you no longer need them.
@@ -254,6 +286,12 @@ Routes are used by the UI buttons, for example:
 - `POST /updateteamagoal/<string:direction>/<int:user_id>`
 - `POST /updateteamamajor/<string:direction>/<int:user_id>`
 - `POST /updateteamapenalty/<string:direction>/<int:user_id>`
+
+### Serial relay (optional)
+
+When a USB serial device is configured (`Config.SERIAL_PORT` on the settings page), scoreboard commands are mirrored over the COM port as newline-delimited text — the same payloads used for BLE (`TEST`, `BUZZER`, integers, etc.). Useful for a LoRa master or other wired relay. Leave the port empty to disable serial output.
+
+Connection status appears on the setup page alongside BLE device flags (`get_device_connection_flags()`).
 
 ### Bluetooth (BLE) controls
 
@@ -325,11 +363,14 @@ Exports depend on `Config.DEFAULT_HOME_TEAM` and `Config.DEFAULT_AWAY_TEAM`:
 - PDF layout is controlled in `convert_csv_to_pdf()` in `start.py`.
 - Team, referee, and per-player stats are sourced from in-memory arrays (`home_data`, `away_data`, `ref_data`) and the generated CSV logs (`compress_file`, `running_file`).
 
-## Access controls and Display 
-To open the display page either click on the display button in the app, or got direct to the broswer
+## Access controls and display
+
+Open the display page from the app, or go directly in a browser:
 
 `http://127.0.0.1:5000/display`
 
-To run the controls on a mobile device as long as on the same network.
+For table-side controls on a phone or tablet on the same LAN:
 
 `http://<IP of the app machine>:5000/controls`
+
+The setup page shows the detected LAN IPv4 when available (`/setup`).

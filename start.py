@@ -2,7 +2,7 @@
 import errno
 from time import sleep
 import socket
-from typing import Optional
+from typing import Optional, TypedDict, Union
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, has_request_context
 # from quart import Quart , render_template, request, redirect, url_for, jsonify, flash
 import time
@@ -18,38 +18,55 @@ from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 
 ## Bluetooth ##
-from bleak import BleakClient, BleakScanner , BleakError
+from bleak import BleakClient, BleakScanner
+from bleak.exc import BleakError
 import asyncio
+import serial
+from serial.tools import list_ports
 
 
-# Instead of nested dictionaries, use dataclasses
-from dataclasses import dataclass
-
-@dataclass
-class PlayerStats:
+class PlayerStats(TypedDict):
     """Statistics for a single player."""
-    assists: int = 0
-    goals: int = 0
-    majors: int = 0
-    reds: int = 0
+    assists: int
+    goals: int
+    majors: int
+    reds: int
 
-@dataclass
-class PeriodScores:
+
+class PeriodScores(TypedDict):
     """Period-by-period scoring."""
-    goals1: int = 0
-    majors1: int = 0
-    goals2: int = 0
-    majors2: int = 0
-    goals3: int = 0
-    majors3: int = 0
-    goals4: int = 0
-    majors4: int = 0
+    goals1: int
+    majors1: int
+    goals2: int
+    majors2: int
+    goals3: int
+    majors3: int
+    goals4: int
+    majors4: int
+
+
+def newPlayerStats() -> PlayerStats:
+    return {"assists": 0, "goals": 0, "majors": 0, "reds": 0}
+
+
+def newPeriodScores() -> PeriodScores:
+    return {
+        "goals1": 0,
+        "majors1": 0,
+        "goals2": 0,
+        "majors2": 0,
+        "goals3": 0,
+        "majors3": 0,
+        "goals4": 0,
+        "majors4": 0,
+    }
+
 
 # Initialize teams
-teama = {i: PlayerStats() for i in range(1, 15)}
-teamb = {i: PlayerStats() for i in range(1, 15)}
+teama: dict[int, PlayerStats] = {i: newPlayerStats() for i in range(1, 15)}
+teamb: dict[int, PlayerStats] = {i: newPlayerStats() for i in range(1, 15)}
 
-periodscores = { 'Home': PeriodScores() ,     'Away': PeriodScores() }
+periodscores: dict[str, PeriodScores] = {"Home": newPeriodScores(), "Away": newPeriodScores()}
 
 # Track when timer.html is loaded to notify display.html
 timer_reload_timestamp = time.time()
@@ -100,34 +117,37 @@ AUTO_REFRESH_EXCLUDED_PREFIXES = (
 # Group related constants at the top
 class Config:
     """Application configuration constants."""
-    WEB_TIMEOUT = 180
-    WEB_HOST = '0.0.0.0'
-    WEB_PORT = 5000
-    SESSION_TYPE = 'filesystem'
-    SECRET_KEY = 'waterpolo'
-    
+    WEB_TIMEOUT: int = 180
+    WEB_HOST: str = "0.0.0.0"
+    WEB_PORT: int = 5000
+    SESSION_TYPE: str = "filesystem"
+    SECRET_KEY: str = "waterpolo"
+
     # Game settings
     # All time is based on 30 second increments
-    INTERVAL_TIME = 4
-    HALFTIME = 4
-    TIMEOUT_TIME = 2
-    GAME_TIME = 13
-    SHOT_CLOCK = 28
-    FOUL_CLOCK = SHOT_CLOCK -10
-    BLUETOOTH_CONNECT = 0
-    MAJORS = 3
+    INTERVAL_TIME: int = 4
+    HALFTIME: int = 4
+    TIMEOUT_TIME: int = 2
+    GAME_TIME: int = 13
+    SHOT_CLOCK: int = 28
+    FOUL_CLOCK: int = SHOT_CLOCK - 10
+    BLUETOOTH_CONNECT: int = 0
+    MAJORS: int = 3
 
-    
     # Bluetooth constants
-    UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
-    RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
-    TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
-    BLUETOOTH_NAME = ["Nano33BLE" , "WaterPolo_1" , "WaterPolo_2"]
-    
+    UART_SERVICE_UUID: str = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
+    RX_CHAR_UUID: str = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+    TX_CHAR_UUID: str = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+    BLUETOOTH_NAME: list[str] = ["Nano33BLE", "WaterPolo_1", "WaterPolo_2"]
+
+    # Serial relay (e.g. LoRa master on USB). Empty string disables serial output.
+    SERIAL_PORT: str = ""
+    SERIAL_BAUD: int = 9600
+
     # Default values
-    DEFAULT_LOCATION = 'New Malden'
-    DEFAULT_HOME_TEAM = 'Kingston Royals'
-    DEFAULT_AWAY_TEAM = 'Away Team'
+    DEFAULT_LOCATION: str = "New Malden"
+    DEFAULT_HOME_TEAM: str = "Kingston Royals"
+    DEFAULT_AWAY_TEAM: str = "Away Team"
 
 
 RESULTS_DIR = Path("results")
@@ -192,7 +212,7 @@ def _preferred_listening_ipv4_address() -> Optional[str]:
     hostname = socket.gethostname()
     try:
         for info in socket.getaddrinfo(hostname, None, family=socket.AF_INET):
-            ip = info[4][0]
+            ip = str(info[4][0])
             if _is_acceptable(ip):
                 return ip
     except OSError:
@@ -318,7 +338,7 @@ running_file = str(buildTempCsvPath())
 compress_file = buildCompressCsvBasename()
 countdown_running = False
 quarter= 0
-direction = "increment"
+direction: str = "increment"
 hometimeoutv = 0
 awaytimeoutv = 0
 start_time = 0
@@ -333,7 +353,7 @@ starttimeout = 0
 elapsedtimeout = 0
 
 reason = 'Timeout'
-timeout = Config.TIMEOUT_TIME
+timeout: int = Config.TIMEOUT_TIME
 BLUETOOTH_CONNECT = Config.BLUETOOTH_CONNECT
 
 
@@ -418,7 +438,8 @@ def ble_send_command(command: str, timeout: float = 3.0) -> None:
     """Thread-safe fire-and-forget wrapper for send_ble_command.
 
     Swallows errors (including timeouts) so a flaky BLE device cannot turn
-    a scoreboard action into a 500 response.
+    a scoreboard action into a 500 response. Also mirrors the command to
+    the configured serial port when connected.
     """
     try:
         _run_ble(send_ble_command(command), timeout=timeout)
@@ -426,6 +447,7 @@ def ble_send_command(command: str, timeout: float = 3.0) -> None:
         print(f"[BLE] send_ble_command('{command}') timed out after {timeout}s")
     except Exception as e:
         print(f"[BLE] send_ble_command('{command}') failed: {e}")
+    serial_send_command(command)
 
 
 def ble_send_int(value, timeout: float = 3.0) -> None:
@@ -436,6 +458,7 @@ def ble_send_int(value, timeout: float = 3.0) -> None:
         print(f"[BLE] send_ble_int({value}) timed out after {timeout}s")
     except Exception as e:
         print(f"[BLE] send_ble_int({value}) failed: {e}")
+    serial_send_command(normalize_ble_int_payload(value))
 
 
 def _on_ble_disconnect(client):
@@ -727,6 +750,110 @@ def get_ble_waterpolo_connection_flags() -> dict[str, bool]:
     return {"waterpolo_1": wp1, "waterpolo_2": wp2}
 
 
+# --- Serial relay (USB COM port) --------------------------------------------
+_serial_lock = threading.Lock()
+_serial_conn: Optional[serial.Serial] = None
+_serial_drop_warned = False
+
+
+def list_com_ports() -> list[dict[str, str]]:
+    """Return available COM ports for the settings dropdown."""
+    ports: list[dict[str, str]] = []
+    for entry in list_ports.comports():
+        device = (entry.device or "").strip()
+        if not device:
+            continue
+        description = (entry.description or "").strip()
+        ports.append({"device": device, "description": description})
+    return ports
+
+
+def serial_is_connected() -> bool:
+    with _serial_lock:
+        return _serial_conn is not None and _serial_conn.is_open
+
+
+def _close_serial_locked() -> None:
+    global _serial_conn
+    if _serial_conn is None:
+        return
+    try:
+        if _serial_conn.is_open:
+            _serial_conn.close()
+    except Exception as e:
+        print(f"[SERIAL] close failed: {e}")
+    finally:
+        _serial_conn = None
+
+
+def disconnect_serial() -> None:
+    """Close the open serial port, if any."""
+    with _serial_lock:
+        _close_serial_locked()
+    print("[SERIAL] Disconnected")
+
+
+def connect_serial(port: Optional[str] = None, baud: Optional[int] = None) -> str:
+    """Open the configured COM port. Returns an error message, or empty string on success."""
+    global _serial_conn, _serial_drop_warned
+    port_name = (port if port is not None else Config.SERIAL_PORT).strip()
+    if not port_name:
+        return "No COM port selected."
+    baud_rate = baud if baud is not None else Config.SERIAL_BAUD
+
+    with _serial_lock:
+        _close_serial_locked()
+        try:
+            _serial_conn = serial.Serial(port_name, baud_rate, timeout=1)
+        except Exception as e:
+            _serial_conn = None
+            return str(e)
+    _serial_drop_warned = False
+    print(f"[SERIAL] Connected on {port_name} @ {baud_rate}")
+    serial_send_command("TEST")
+    return ""
+
+
+def try_autoconnect_serial() -> None:
+    """Best-effort open of Config.SERIAL_PORT (logs errors, never raises)."""
+    if not (Config.SERIAL_PORT or "").strip():
+        return
+    error = connect_serial()
+    if error:
+        print(f"[SERIAL] Auto-connect failed: {error}")
+
+
+def serial_send_command(command: str) -> None:
+    """Mirror a scoreboard text command to the serial port (newline-delimited)."""
+    global _serial_drop_warned
+    if not command:
+        return
+    with _serial_lock:
+        if _serial_conn is None or not _serial_conn.is_open:
+            if not _serial_drop_warned:
+                print(
+                    f"[SERIAL] Port not open; dropped '{command}'. "
+                    "Save your COM port on Settings, click Serial Connect, and confirm the badge shows connected."
+                )
+                _serial_drop_warned = True
+            return
+        try:
+            _serial_conn.write((command + "\n").encode("utf-8"))
+            _serial_conn.flush()
+            print(f"[SERIAL] TX: {command}")
+        except Exception as e:
+            print(f"[SERIAL] write '{command}' failed: {e}")
+            _close_serial_locked()
+
+
+def get_device_connection_flags() -> dict[str, Union[bool, str]]:
+    """BLE WaterPolo slots plus serial relay link state for the settings UI."""
+    flags: dict[str, Union[bool, str]] = dict(get_ble_waterpolo_connection_flags())
+    flags["serial"] = serial_is_connected()
+    flags["serial_port"] = Config.SERIAL_PORT or ""
+    return flags
+
+
 # Short upper bound on any individual BLE write from the game loop. If the
 # Windows BLE stack is wedged we fail fast instead of holding up a Flask
 # request. Users must press Reconnect to restore service.
@@ -898,8 +1025,8 @@ def get_scoreboard_snapshot():
 
 @app.route('/ble_connection_status')
 def ble_connection_status():
-    """JSON for timer UI: WaterPolo_1 / WaterPolo_2 BLE link state."""
-    return jsonify(get_ble_waterpolo_connection_flags())
+    """JSON for settings UI: WaterPolo BLE slots and serial relay link state."""
+    return jsonify(get_device_connection_flags())
 
 @app.route('/get_external_call_token')
 def get_external_call_token():
@@ -1044,19 +1171,7 @@ def getScoreboardSnapshot() -> dict:
     """Live scoreboard state for display pages that refresh without a full reload."""
     period_data = {}
     for team_id, team_scores in periodscores.items():
-        if isinstance(team_scores, PeriodScores):
-            period_data[team_id] = {
-                'goals1': team_scores.goals1,
-                'goals2': team_scores.goals2,
-                'goals3': team_scores.goals3,
-                'goals4': team_scores.goals4,
-                'majors1': team_scores.majors1,
-                'majors2': team_scores.majors2,
-                'majors3': team_scores.majors3,
-                'majors4': team_scores.majors4,
-            }
-        else:
-            period_data[team_id] = dict(team_scores)
+        period_data[team_id] = dict(team_scores)
 
     clock_display = getCountdownDisplayValues()
     return {
@@ -1640,14 +1755,12 @@ def updateteamacard(direction,user_id):
             # print('help2')
             teama[user_id]['reds'] = 1
             home_team_red['red'] = home_team_red['red'] + 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Home', user_id, home_data['home'][user_id - 1][1], 
-                 teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Home', user_id, home_data['home'][user_id - 1][1], teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
         elif direction == 'decrement':
             teama[user_id]['reds'] = 0
             home_team_red['red'] = home_team_red['red'] - 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', 'Home', user_id, home_data['home'][user_id - 1][1],
-                    teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', 'Home', user_id, home_data['home'][user_id - 1][1], teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
 
             direction = "increment"
@@ -1680,16 +1793,13 @@ def updateteamabrut(direction,user_id):
             # print('help2')
             teama[user_id]['reds'] = 1
             home_team_red['red'] = home_team_red['red'] + 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED BRUT', 'Home', user_id, home_data['home'][user_id - 1][1], 
-                 teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED BRUT', 'Home', user_id, home_data['home'][user_id - 1][1], teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
         elif direction == 'decrement':
             teama[user_id]['reds'] = 0
             home_team_red['red'] = home_team_red['red'] - 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', 'Home', user_id, home_data['home'][user_id - 1][1],
-                    teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', 'Home', user_id, home_data['home'][user_id - 1][1], teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
             writer.writerow(data)
-
             direction = "increment"
         f.close()
 
@@ -1720,14 +1830,12 @@ def updateteambcard(direction, user_id):
             # print('help2')
             teamb[user_id]['reds'] = 1
             away_team_red['red'] = away_team_red['red'] + 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Away', user_id, away_data['away'][user_id - 1][1], 
-                   teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED', 'Away', user_id, away_data['away'][user_id - 1][1], teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
             writer.writerow(data)
         elif direction == 'decrement':
             teamb[user_id]['reds'] = 0
             away_team_red['red'] = away_team_red['red'] - 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', 'Away', user_id, away_data['away'][user_id - 1][1],
-                   teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', 'Away', user_id, away_data['away'][user_id - 1][1], teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
             writer.writerow(data)
 
             direction = "increment"
@@ -1761,14 +1869,12 @@ def updateteambbrut(direction, user_id):
             # print('help2')
             teamb[user_id]['reds'] = 1
             away_team_red['red'] = away_team_red['red'] + 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED BRUT', 'Away', user_id, away_data['away'][user_id - 1][1], 
-                   teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'RED BRUT', 'Away', user_id, away_data['away'][user_id - 1][1], teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
             writer.writerow(data)
         elif direction == 'decrement':
             teamb[user_id]['reds'] = 0
             away_team_red['red'] = away_team_red['red'] - 1
-            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', 'Away', user_id, away_data['away'][user_id - 1][1],
-                   teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'CANCEL RED', 'Away', user_id, away_data['away'][user_id - 1][1], teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
             writer.writerow(data)
 
             direction = "increment"
@@ -1824,8 +1930,12 @@ def updateteamagoal(user_id):
         x = td_str.split(':')
         f = open(running_file, 'a')
         writer = csv.writer(f)
-        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' ,  'Home',  user_id , home_data['home'][user_id - 1][1], teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
-        writer.writerow(data)
+        if direction == 'increment':
+            data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' ,  'Home',  user_id , home_data['home'][user_id - 1][1], teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Remove Goal' ,  'Home',  user_id , home_data['home'][user_id - 1][1], teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
+            writer.writerow(data)
         f.close()
 
 
@@ -1875,8 +1985,12 @@ def updateteamagoal_direction(direction,user_id):
         x = td_str.split(':')
         f = open(running_file, 'a')
         writer = csv.writer(f)
-        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , 'Home',  user_id , home_data['home'][user_id - 1][1],  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
-        writer.writerow(data)
+        if direction == 'increment':
+            data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' , 'Home',  user_id , home_data['home'][user_id - 1][1],  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Remove Goal' , 'Home',  user_id , home_data['home'][user_id - 1][1],  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
+            writer.writerow(data)
         f.close()
 
 
@@ -1919,8 +2033,12 @@ def updateteamaintgoal(direction,user_id):
         x = td_str.split(':')
         f = open(running_file, 'a')
         writer = csv.writer(f)
-        data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' ,'Home',  user_id , home_data['home'][user_id - 1][1],  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
-        writer.writerow(data)
+        if direction == 'increment':
+            data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Goal' ,'Home',  user_id , home_data['home'][user_id - 1][1],  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            data = [ quarter , x[1],x[2], scores['Home']['goals'] , scores['Away']['goals'] , 'Remove Goal' ,'Home',  user_id , home_data['home'][user_id - 1][1],  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds'] ]
+            writer.writerow(data)
         f.close()
 
     # callintervalgoal
@@ -1976,8 +2094,12 @@ def updateteamamajor(direction,user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Majors',  'Home', user_id, home_data['home'][user_id - 1][1],  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
-        writer.writerow(data)
+        if direction == 'increment':
+            data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Majors',  'Home', user_id, home_data['home'][user_id - 1][1],  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Remove Majors',  'Home', user_id, home_data['home'][user_id - 1][1],  teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            writer.writerow(data)
         f.close()
 
     return redirect(url_for('index'))
@@ -2035,9 +2157,12 @@ def updateteamapenalty(direction,user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', 'Home', user_id, home_data['home'][user_id - 1][1],
-                teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
-        writer.writerow(data)
+        if direction == 'increment':
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', 'Home', user_id, home_data['home'][user_id - 1][1], teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Remove Penalty', 'Home', user_id, home_data['home'][user_id - 1][1], teama[user_id]['goals'], teama[user_id]['majors'], teama[user_id]['reds']]
+            writer.writerow(data)
         f.close()
 
     return redirect(url_for('index'))
@@ -2130,9 +2255,12 @@ def updateteambgoal_direction(direction, user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', 'Away', user_id, away_data['away'][user_id - 1][1], 
-        teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
-        writer.writerow(data)
+        if direction == 'increment':
+            data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', 'Away', user_id, away_data['away'][user_id - 1][1], teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Remove Goal', 'Away', user_id, away_data['away'][user_id - 1][1], teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            writer.writerow(data)
         f.close()
 
     return redirect(url_for('index'))
@@ -2178,9 +2306,12 @@ def updateteambintgoal(direction,user_id):
 
         f = open(running_file, 'a')
         writer = csv.writer(f)
-        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', 'Away', user_id, away_data['away'][user_id - 1][1], 
-        teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
-        writer.writerow(data)
+        if direction == 'increment':
+            data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Goal', 'Away', user_id, away_data['away'][user_id - 1][1],             teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Remove Goal', 'Away', user_id, away_data['away'][user_id - 1][1],             teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            writer.writerow(data)
         f.close()
 
     return redirect(url_for('runintervalgoal'))
@@ -2239,9 +2370,12 @@ def updateteambmajor(direction,user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Major', 'Away', user_id, away_data['away'][user_id - 1][1], 
-        teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
-        writer.writerow(data)
+        if direction == 'increment':
+            data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Major', 'Away', user_id, away_data['away'][user_id - 1][1], teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            data = [quarter, x[1],x[2], scores['Home']['goals'], scores['Away']['goals'], 'Remove Major', 'Away', user_id, away_data['away'][user_id - 1][1], teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            writer.writerow(data)
         f.close()
 
     return redirect(url_for('index'))
@@ -2298,9 +2432,12 @@ def updateteambpenalty(direction,user_id):
         f = open(running_file, 'a')
         writer = csv.writer(f)
         # header = ['Quarter', 'time', 'HomeScore', 'AwayScore', 'action', 'player', 'team' , 'goals' , 'majors', 'assists' ]
-        data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', 'Away', user_id, away_data['away'][user_id - 1][1], 
-        teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
-        writer.writerow(data)
+        if direction == 'increment':
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Penalty', 'Away', user_id, away_data['away'][user_id - 1][1], teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            writer.writerow(data)
+        elif direction == 'decrement':
+            data = [quarter, x[1], x[2], scores['Home']['goals'], scores['Away']['goals'], 'Remove Penalty', 'Away', user_id, away_data['away'][user_id - 1][1], teamb[user_id]['goals'], teamb[user_id]['majors'], teamb[user_id]['reds']]
+            writer.writerow(data)
         f.close()
 
     return redirect(url_for('index'))
@@ -2354,7 +2491,7 @@ def period():
     return redirect(url_for('index'))
 
 @app.route('/clear', methods=['GET', 'POST'])
-def direction():
+def clear_direction():
     global direction
     direction = "decrement"
     return redirect(url_for('index'))
@@ -2407,7 +2544,7 @@ def connectble():
     if wants_json:
         payload = {
             'status': 'error' if error else 'success',
-            'flags': get_ble_waterpolo_connection_flags(),
+            'flags': get_device_connection_flags(),
         }
         if error:
             payload['message'] = error
@@ -2433,11 +2570,11 @@ def reconnectble():
                 {
                     'status': 'error',
                     'message': msg,
-                    'flags': get_ble_waterpolo_connection_flags(),
+                    'flags': get_device_connection_flags(),
                 }
             ), 500
         ble_send_command("TEST")
-        return jsonify({'status': 'success', 'flags': get_ble_waterpolo_connection_flags()})
+        return jsonify({'status': 'success', 'flags': get_device_connection_flags()})
     except FuturesTimeoutError:
         msg = "BLE operation timed out."
         print(f"[BLE] /reconnectble failed: {msg}")
@@ -2445,7 +2582,7 @@ def reconnectble():
             {
                 'status': 'error',
                 'message': msg,
-                'flags': get_ble_waterpolo_connection_flags(),
+                'flags': get_device_connection_flags(),
             }
         ), 500
     except Exception as e:
@@ -2454,7 +2591,7 @@ def reconnectble():
             {
                 'status': 'error',
                 'message': str(e),
-                'flags': get_ble_waterpolo_connection_flags(),
+                'flags': get_device_connection_flags(),
             }
         ), 500
 
@@ -2470,6 +2607,44 @@ def disconnectble():
     # Watchdog will go idle on its own because BLUETOOTH_CONNECT == 0.
     _run_ble_coro(dis_ble())
     return redirect(url_for('settings'))
+
+
+@app.route('/connectserial', methods=['GET', 'POST'])
+def connectserial():
+    """Open the COM port saved in settings (JSON for setup.html fetch)."""
+    requested_port = (request.args.get("port") or request.form.get("port") or "").strip()
+    if requested_port:
+        Config.SERIAL_PORT = requested_port
+    error = connect_serial()
+    wants_json = (
+        request.method == 'POST'
+        or 'application/json' in (request.headers.get('Accept') or '')
+        or request.args.get('format') == 'json'
+    )
+    if wants_json:
+        payload = {
+            'status': 'error' if error else 'success',
+            'flags': get_device_connection_flags(),
+        }
+        if error:
+            payload['message'] = error
+        return jsonify(payload), (500 if error else 200)
+    return redirect(url_for('settings'))
+
+
+@app.route('/disconnectserial', methods=['GET', 'POST'])
+def disconnectserial():
+    """Close the serial relay port."""
+    disconnect_serial()
+    wants_json = (
+        request.method == 'POST'
+        or 'application/json' in (request.headers.get('Accept') or '')
+        or request.args.get('format') == 'json'
+    )
+    if wants_json:
+        return jsonify({'status': 'success', 'flags': get_device_connection_flags()})
+    return redirect(url_for('settings'))
+
     
 @app.route('/start', methods=['GET', 'POST'])
 def start():
@@ -2683,6 +2858,8 @@ def finish():
 
         return redirect(url_for('convert_csv_to_pdf'))
 
+    return redirect(url_for('index'))
+
 
 @app.route('/hometimeout')
 def hometimeout():
@@ -2714,7 +2891,7 @@ def hometimeout():
             # pause_countdown()
             time.sleep(1)
             start_timeout()
-            return redirect(url_for('timeout'))
+            return redirect(url_for('timeout_page'))
 
         elif direction == 'decrement':
             hometimeoutv = int(hometimeoutv) - 1
@@ -2749,7 +2926,7 @@ def hometimeout():
             # pause_countdown()
             time.sleep(1)
             start_timeout()
-            return redirect(url_for('timeout'))
+            return redirect(url_for('timeout_page'))
 
         elif direction == 'decrement':
             hometimeoutv = int(hometimeoutv) - 1
@@ -2800,7 +2977,7 @@ def awaytimeout():
             pause_countdown()
             time.sleep(1)
             stop_timeout()
-            return redirect(url_for('timeout'))
+            return redirect(url_for('timeout_page'))
 
         elif direction == 'decrement':
             awaytimeoutv = int(awaytimeoutv) - 1
@@ -2834,7 +3011,7 @@ def awaytimeout():
             # pause_countdown()
             time.sleep(1)
             start_timeout()
-            return redirect(url_for('timeout'))
+            return redirect(url_for('timeout_page'))
         
         elif direction == 'decrement':
             awaytimeoutv = int(awaytimeoutv) - 1
@@ -2855,10 +3032,11 @@ def awaytimeout():
 
 
 @app.route('/timeout')
-def timeout():
-    global  timeout
+def timeout_page():
+    global timeout
     timeout = Config.TIMEOUT_TIME
     start_timeout()
+    remaining_time = math.floor(max(Config.GAME_TIME * 30 - elapsed_time, 0))
     return render_template('timeout.html', scores=scores, teama=teama, teamb=teamb,
                            elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
                            periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
@@ -2985,6 +3163,8 @@ def settings():
         AwayTeam=Config.DEFAULT_AWAY_TEAM,
         location=Config.DEFAULT_LOCATION,
         ble_clients=ble_clients,
+        serial_port=Config.SERIAL_PORT,
+        com_ports=list_com_ports(),
         listen_ip=_preferred_listening_ipv4_address(),
     )
 
@@ -3003,7 +3183,13 @@ def save():
     Config.DEFAULT_AWAY_TEAM = (request.form['Away'])
     Config.SHOT_CLOCK = int(request.form['shotclock'])
     Config.MAJORS = int(request.form['majors'])
+    Config.SERIAL_PORT = (request.form.get('serial_port') or '').strip()
     # Config.BLUETOOTH_NAME = str(request.form['ble'])
+
+    if Config.SERIAL_PORT:
+        try_autoconnect_serial()
+    else:
+        disconnect_serial()
 
     return redirect(url_for('index'))
 
@@ -3021,14 +3207,14 @@ def savehomeplayers(user_id):
         home_data[user_id] = []
 
         # Get the number of entries
-        num_entries = int(request.form.get('num_entries'))
+        num_entries = int(request.form.get('num_entries') or 0)
 
         # Update the user's data with the new entries
         for i in range(num_entries):
             hatnum = request.form.get(f'hatnum_{i}')
             name = request.form.get(f'name_{i}')
 
-            form_data = [hatnum,name]
+            form_data = [hatnum or "", name or ""]
 
             home_data[user_id].append(form_data)
 
@@ -3149,14 +3335,14 @@ def saveawayplayers(user_id):
         away_data[user_id] = []
 
         # Get the number of entries
-        num_entries = int(request.form.get('num_entries'))
+        num_entries = int(request.form.get('num_entries') or 0)
 
         # Update the user's data with the new entries
         for i in range(num_entries):
             hatnum = request.form.get(f'hatnum_{i}')
             name = request.form.get(f'name_{i}')
 
-            form_data = [hatnum,name]
+            form_data = [hatnum or "", name or ""]
 
             away_data[user_id].append(form_data)
 
@@ -3183,7 +3369,7 @@ def saverefdata(user_id):
         ref_data[user_id] = []
 
         # Get the number of entries
-        num_entries = int(request.form.get('num_entries'))
+        num_entries = int(request.form.get('num_entries') or 0)
 
         # Update the user's data with the new entries
         for i in range(num_entries):
@@ -3192,7 +3378,7 @@ def saverefdata(user_id):
             club = request.form.get(f'club_{i}')
             expences = request.form.get(f'expences_{i}')
 
-            form_data = [hatnum,name,club,expences]
+            form_data = [hatnum or "", name or "", club or "", expences or ""]
 
             ref_data[user_id].append(form_data)
         # print(ref_data)
@@ -3216,7 +3402,7 @@ def convert_csv_to_pdf():
     def write_line(text: str, *, bold: bool = False) -> None:
         pdf.set_font("helvetica", style="B" if bold else "", size=10)
         if pdf.get_string_width(text) > max_text_width:
-            pdf.multi_cell(0, line_height, txt=text, border=0)
+            pdf.multi_cell(0, line_height, text=text, border=0)
         else:
             pdf.cell(0, line_height, text=text, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
@@ -3304,7 +3490,7 @@ def convert_csv_to_pdf():
             if i < len(left_ids):
                 user_id = left_ids[i]
                 name = home_data.get("home", [])[int(user_id) - 1][1] if int(user_id) - 1 < len(home_data.get("home", [])) else ""
-                stats = teama.get(user_id, {})
+                stats = teama.get(user_id) or newPlayerStats()
                 goals = stats.get("goals", "")
                 majors = stats.get("majors", "")
                 reds = stats.get("reds", "")
@@ -3322,7 +3508,7 @@ def convert_csv_to_pdf():
             if i < len(right_ids):
                 user_id = right_ids[i]
                 name = away_data.get("away", [])[int(user_id) - 1][1] if int(user_id) - 1 < len(away_data.get("away", [])) else ""
-                stats = teamb.get(user_id, {})
+                stats = teamb.get(user_id) or newPlayerStats()
                 goals = stats.get("goals", "")
                 majors = stats.get("majors", "")
                 reds = stats.get("reds", "")
