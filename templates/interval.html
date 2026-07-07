@@ -171,7 +171,11 @@
                         } else if (timeLeft > 1) {
                             setTimeout(updateTimeout, 1000);
                         } else {
+                            if (window.__returningFromInterval) {
+                                return;
+                            }
                             playSound();
+                            window.__returningFromInterval = true;
                             setTimeout(() => { window.location.href = "/returninterval"; }, 2000);
                         }
                     } else {

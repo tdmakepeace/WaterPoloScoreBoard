@@ -1,6 +1,10 @@
+# Core web app (Flask UI + desktop window on Windows)
 flask~=3.0.0
 pywebview==5.1
+
+# Hardware integrations
 bleak==2.1.1
+pyserial==3.5
+
+# Match export (PDF)
 fpdf2==2.7.9
-quart==0.20.0
-hypercorn==0.18.0
