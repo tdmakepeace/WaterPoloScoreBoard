@@ -1132,6 +1132,8 @@ def resume_countdown():
 def return_countdown():
     global countdown_running, start_time , start_shot
     countdown_running = True
+    start_time = time.time() - elapsed_time
+    start_shot = time.time() - elapsed_shot
     return jsonify({'status': 'success'})
 
 
@@ -1372,6 +1374,7 @@ def start_timeout():
 @app.route('/stop_timeout')
 def stop_timeout():
     global timeoutrunning, starttimeout, elapsedtimeout
+    timeoutrunning = False
     starttimeout = 0
     elapsedtimeout = 0
     return jsonify({'status': 'success'})
@@ -3200,6 +3203,7 @@ def save():
     Config.DEFAULT_HOME_TEAM = (request.form['Home'])
     Config.DEFAULT_AWAY_TEAM = (request.form['Away'])
     Config.SHOT_CLOCK = int(request.form['shotclock'])
+    Config.FOUL_CLOCK = max(Config.SHOT_CLOCK - 10, 0)
     Config.MAJORS = int(request.form['majors'])
     Config.SERIAL_PORT = (request.form.get('serial_port') or '').strip()
     # Config.BLUETOOTH_NAME = str(request.form['ble'])
