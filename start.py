@@ -354,6 +354,7 @@ elapsedtimeout = 0
 
 reason = 'Timeout'
 timeout: int = Config.TIMEOUT_TIME
+interval_active = False
 BLUETOOTH_CONNECT = Config.BLUETOOTH_CONNECT
 
 
@@ -1167,6 +1168,14 @@ def getCountdownDisplayValues() -> dict:
     }
 
 
+def syncRemainingShot() -> float:
+    """Synchronize the cached global shot clock value with elapsed state."""
+    global remaining_shot
+
+    remaining_shot = max(clock_shot - elapsed_shot, 0)
+    return remaining_shot
+
+
 def getScoreboardSnapshot() -> dict:
     """Live scoreboard state for display pages that refresh without a full reload."""
     period_data = {}
@@ -1282,14 +1291,14 @@ def reset20():
     global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
     if countdown_running:
         pause_countdown()
-        if remaining_shot < 20:
+        if syncRemainingShot() < Config.FOUL_CLOCK:
             clock_shot = max((Config.FOUL_CLOCK),0)+1
             remaining_shot = max((clock_shot) , 0)
             elapsed_shot = 0
             start_shot = 0
         start_countdown()
     else:
-        if remaining_shot < 20:
+        if syncRemainingShot() < Config.FOUL_CLOCK:
             clock_shot = max((Config.FOUL_CLOCK),0)+1
             remaining_shot = max((clock_shot) , 0)
             elapsed_shot = 0
@@ -1305,13 +1314,13 @@ def pause20():
     global countdown_running, start_time, elapsed_time, remaining_time , start_shot, elapsed_shot , remaining_shot, clock_shot
     if countdown_running:
         pause_countdown()
-        if remaining_shot < 20:
+        if syncRemainingShot() < Config.FOUL_CLOCK:
             clock_shot = max((Config.FOUL_CLOCK),0)
             remaining_shot = max((clock_shot) , 0)
             elapsed_shot = 0
             start_shot = 0
     else:
-        if remaining_shot < 20:
+        if syncRemainingShot() < Config.FOUL_CLOCK:
             clock_shot = max((Config.FOUL_CLOCK),0)
             remaining_shot = max((clock_shot) , 0)
             elapsed_shot = 0
@@ -3093,7 +3102,11 @@ def interval():
 
 @app.route('/returninterval')
 def returninterval():
-    global quarter
+    global quarter, interval_active
+    if not interval_active:
+        return redirect(url_for('index'))
+
+    interval_active = False
     stop_countdown()
 
     timestamp = datetime.now()
@@ -3122,15 +3135,20 @@ def returninterval():
 @app.route('/callinterval', methods=['GET', 'POST'])
 def callinterval():
     if request.method == 'GET':
-        global quarter
+        global quarter, interval_active
         global countdown_running, start_time, elapsed_time
         global timeout, reason ,intervaltime
+        if interval_active:
+            return redirect(url_for('runinterval'))
+
+        interval_active = True
         reason = 'Break'
         timeout = Config.TIMEOUT_TIME
         # elapsed_time = time.time() - start_time
         # remaining_time = math.floor(max(gametime * 30 - elapsed_time, 0))
 
-        pause_countdown()
+        if countdown_running:
+            pause_countdown()
         time.sleep(1)
         stop_timeout()
         return redirect(url_for('runinterval'))

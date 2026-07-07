@@ -114,7 +114,7 @@ inline bool handleScoreboardCommand(const String& command, String* bleAckOut) {
   }
 
   if (command == "CHANGE") {
-    if (bleAckOut != nullptr) {1
+    if (bleAckOut != nullptr) {
       *bleAckOut = "CHANGE";
     }
     digitalWrite(buzzerPin, HIGH);

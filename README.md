@@ -62,8 +62,15 @@ If you see `ModuleNotFoundError: No module named 'serial'`, install deps into th
 
 ### Tests (optional)
 
+For local development, install the combined dev dependencies file:
+
 ```powershell
-.\.venv\Scripts\python.exe -m pip install pytest
+.\.venv\Scripts\python.exe -m pip install -r requirements-development.txt
+```
+
+This includes `requirements.txt` plus test and packaging tools like `pytest`, `pyinstaller`, and `auto-py-to-exe`.
+
+```powershell
 .\.venv\Scripts\python.exe -m pytest tests/
 ```
 

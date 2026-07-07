@@ -1,0 +1,9 @@
+# Base runtime dependencies
+-r requirements.txt
+
+# Testing
+pytest
+
+# Packaging / desktop build tooling
+pyinstaller
+auto-py-to-exe

@@ -253,6 +253,9 @@
                                 setTimeout(updateCountdown, 1000);
 
                             } else {
+                                if (window.__navigatingToInterval) {
+                                    return;
+                                }
                                 playSound();
                                 // Mark that we are deliberately navigating. The force-reload
                                 // poller (below) must not reload() during this window, or the
