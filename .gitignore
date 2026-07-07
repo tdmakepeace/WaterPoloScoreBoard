@@ -165,5 +165,6 @@ docker-compose.override.yml
 
 # PyInstaller build artifacts
 build/
-output/
+output/results
 *.exe
+!output/WaterPoloScoreBoard*.exe
