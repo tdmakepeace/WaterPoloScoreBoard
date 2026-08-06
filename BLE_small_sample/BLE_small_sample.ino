@@ -116,7 +116,7 @@ void setup() {
   BLE.addService(gpioService);
 
   BLE.advertise();
-  Serial.println("BLE GPIO service started");
+  Serial.println("BLE GPIO service started (USB serial enabled @ 9600)");
 
 }
 
@@ -143,8 +143,81 @@ void clearDisplay() {
   digitalWrite(SEG_1DP, HIGH);
 }
 
+void processScoreboardCommand(String command, BLEDevice central) {
+  command.trim();
+  if (command.length() == 0) {
+    return;
+  }
+  command = command.substring(0, 10);
+  Serial.print("Command: ");
+  Serial.println(command);
+
+  if (command == "TEST") {
+    digitalWrite(SEG_DP, LOW);
+    digitalWrite(buzzerPin, HIGH);
+    delay(50);
+    digitalWrite(buzzerPin, LOW);
+    if (central && central.connected()) {
+      txChar.writeValue("D10 TEST");
+    }
+  } else if (command == "BUZZER") {
+    if (central && central.connected()) {
+      txChar.writeValue("BUZZER");
+    }
+    digitalWrite(buzzerPin, HIGH);
+    delay(500);
+    digitalWrite(buzzerPin, LOW);
+    delay(100);
+  } else if (command == "CHANGE") {
+    if (central && central.connected()) {
+      txChar.writeValue("CHANGE");
+    }
+    digitalWrite(buzzerPin, HIGH);
+    delay(1000);
+    digitalWrite(buzzerPin, LOW);
+    delay(100);
+    clearDisplay();
+  } else if (command == "END") {
+    if (central && central.connected()) {
+      txChar.writeValue("END");
+    }
+    digitalWrite(buzzerPin, HIGH);
+    delay(1000);
+    digitalWrite(buzzerPin, LOW);
+    delay(100);
+    clearDisplay();
+  } else if (command == "exit") {
+    if (central && central.connected()) {
+      txChar.writeValue("exit");
+    }
+    clearDisplay();
+  } else if (command == "0") {
+    clearDisplay();
+  } else if (command >= "1") {
+    int n = command.toInt();
+    int tens = n / 10;
+    int ones = n % 10;
+    showDigit(ones);
+    showDigittens(tens);
+    Serial.print(n);
+    Serial.print(" tens :");
+    Serial.print(tens);
+    Serial.print(" ones :");
+    Serial.println(ones);
+  }
+}
+
+void pollUsbSerial(BLEDevice central) {
+  if (!Serial.available()) {
+    return;
+  }
+  String command = Serial.readStringUntil('\n');
+  processScoreboardCommand(command, central);
+}
+
 void loop() {
   BLEDevice central = BLE.central();
+  pollUsbSerial(central);
 
   if (central) {
     Serial.print("Connected to: ");
@@ -153,65 +226,10 @@ void loop() {
 
     while (central.connected()) {
       digitalWrite(SEG_DP, HIGH);
+      pollUsbSerial(central);
       if (rxChar.written()) {
         String command = String((char*)rxChar.value());
-        command.trim();
-        command = command.substring(0, 10); // Optional: limit to 10 chars
-        Serial.print("Command: ");
-        Serial.println(command);
-
-        if (command == "TEST") {
-          digitalWrite(SEG_DP, LOW);
-          digitalWrite(buzzerPin, HIGH);
-          delay (50);
-          digitalWrite(buzzerPin, LOW);
-          txChar.writeValue("D10 TEST");
-        } else if (command == "BUZZER") {
-          txChar.writeValue("BUZZER");
-          for (int i =0; i<1 ; i++){
-            digitalWrite(buzzerPin, HIGH); // Send 1KHz sound signal...
-            delay (500);
-            digitalWrite(buzzerPin, LOW);     // Stop sound...
-            delay (100); 
-          }
-        } else if (command == "CHANGE") {
-          txChar.writeValue("CHANGE");
-          for (int i =0; i<1 ; i++){
-            digitalWrite(buzzerPin, HIGH); // Send 1KHz sound signal...
-            delay (1000);
-            digitalWrite(buzzerPin, LOW);     // Stop sound...
-            delay (100); 
-            clearDisplay();
-
-          } 
-        } else if (command == "END") {
-          txChar.writeValue("END");
-          for (int i =0; i<1 ; i++){
-            digitalWrite(buzzerPin, HIGH); // Send 1KHz sound signal...
-            delay (1000);
-            digitalWrite(buzzerPin, LOW);     // Stop sound...
-            delay (100); 
-            clearDisplay();
-
-          }          
-        } else if (command == "exit") {
-          txChar.writeValue("exit");
-          clearDisplay();
-        } else if (command >= "1") {
-          int n = command.toInt();
-          int tens = n / 10;
-          int ones = n % 10;
-          showDigit(ones);
-          showDigittens(tens);
-          Serial.print(n);
-          Serial.print("tens :"); 
-          Serial.print(tens);
-          Serial.print(" ones :");
-          Serial.println(ones);
-        }
-         else if (command == "0") {
-          clearDisplay();
-        }
+        processScoreboardCommand(command, central);
       }
     }
 
