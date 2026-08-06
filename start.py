@@ -2657,6 +2657,16 @@ def disconnectserial():
         return jsonify({'status': 'success', 'flags': get_device_connection_flags()})
     return redirect(url_for('settings'))
 
+
+@app.route('/comports', methods=['GET'])
+def comports():
+    """Re-scan USB/serial adapters for the settings COM port dropdown."""
+    return jsonify({
+        'status': 'success',
+        'ports': list_com_ports(),
+        'selected': Config.SERIAL_PORT or '',
+    })
+
     
 @app.route('/start', methods=['GET', 'POST'])
 def start():

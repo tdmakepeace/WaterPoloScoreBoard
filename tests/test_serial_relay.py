@@ -119,3 +119,31 @@ def test_save_clears_serial_when_port_empty():
         )
     assert start.Config.SERIAL_PORT == ""
     mock_disconnect.assert_called_once()
+
+
+def test_comports_returns_rescanned_ports():
+    start.Config.SERIAL_PORT = "COM5"
+    fake_ports = [
+        {"device": "COM5", "description": "USB Serial"},
+        {"device": "COM7", "description": "LoRa Master"},
+    ]
+    with patch.object(start, "list_com_ports", return_value=fake_ports) as mock_list:
+        client = start.app.test_client()
+        resp = client.get("/comports", headers={"Accept": "application/json"})
+
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["status"] == "success"
+    assert body["selected"] == "COM5"
+    assert body["ports"] == fake_ports
+    mock_list.assert_called_once()
+
+
+def test_list_com_ports_skips_blank_devices():
+    entry_ok = MagicMock(device="COM3", description="USB-SERIAL CH340")
+    entry_blank = MagicMock(device="  ", description="ignored")
+    with patch.object(start, "list_ports") as mock_list_ports:
+        mock_list_ports.comports.return_value = [entry_ok, entry_blank]
+        ports = start.list_com_ports()
+
+    assert ports == [{"device": "COM3", "description": "USB-SERIAL CH340"}]

@@ -115,10 +115,15 @@
                             </option>
                             {% endfor %}
                         </select>
+                        <button id="refreshComPortsBtn" class="btn-secondary" type="button"
+                                style="height:40px;width:160px;margin-left:8px;vertical-align:middle;"
+                                onclick="refreshComPorts(this)">Refresh Ports</button>
                         <div style="font-size:14px;color:#555;margin-top:6px;">
-                            Save, then click <strong>Serial Connect</strong>. The badge should show your COM port as
-                            <em>connected</em>. The PC app sends the same text commands as BLE (e.g. <code>TEST</code>).
-                            Your Arduino master sketch must read USB <code>Serial</code> at 9600 baud.
+                            Plug in the USB adapter, click <strong>Refresh Ports</strong>, pick the COM port, then
+                            <strong>Save</strong> and <strong>Serial Connect</strong>. The badge should show your COM
+                            port as <em>connected</em>. The PC app sends the same text commands as BLE
+                            (e.g. <code>TEST</code>). Your Arduino master sketch must read USB <code>Serial</code>
+                            at 9600 baud.
                         </div>
                     </td>
                 </tr>
@@ -332,6 +337,83 @@
 
         function disconnectSerial(btn) {
             runBleAction(btn, '/disconnectserial', 'Disconnecting serial', 'Serial disconnect done.');
+        }
+
+        function portOptionLabel(port) {
+            var device = port.device || '';
+            var description = port.description || '';
+            return description ? (device + ' — ' + description) : device;
+        }
+
+        function populateComPortSelect(selectEl, ports, preferredValue) {
+            if (!selectEl) return;
+            var keepValue = preferredValue || selectEl.value || '';
+            var foundPreferred = false;
+            selectEl.innerHTML = '';
+
+            var noneOpt = document.createElement('option');
+            noneOpt.value = '';
+            noneOpt.textContent = '(none)';
+            selectEl.appendChild(noneOpt);
+
+            (ports || []).forEach(function (port) {
+                if (!port || !port.device) return;
+                var opt = document.createElement('option');
+                opt.value = port.device;
+                opt.textContent = portOptionLabel(port);
+                if (port.device === keepValue) {
+                    opt.selected = true;
+                    foundPreferred = true;
+                }
+                selectEl.appendChild(opt);
+            });
+
+            if (!foundPreferred && keepValue) {
+                var missing = document.createElement('option');
+                missing.value = keepValue;
+                missing.textContent = keepValue + ' (not detected)';
+                missing.selected = true;
+                selectEl.appendChild(missing);
+            } else if (!foundPreferred) {
+                selectEl.value = '';
+            }
+        }
+
+        function refreshComPorts(btn) {
+            var status = document.getElementById('bleStatus');
+            var selectEl = document.getElementById('serial_port');
+            var originalLabel = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Scanning...';
+            if (status) { status.textContent = 'Scanning COM ports...'; }
+
+            fetch('/comports', { cache: 'no-store', headers: { 'Accept': 'application/json' } })
+                .then(function (resp) {
+                    return resp.json().catch(function () { return {}; })
+                        .then(function (body) { return { ok: resp.ok, body: body }; });
+                })
+                .then(function (result) {
+                    var body = result.body || {};
+                    if (!result.ok || body.status !== 'success') {
+                        var msg = body.message || 'COM port scan failed.';
+                        if (status) { status.textContent = msg; }
+                        return;
+                    }
+                    var preferred = (selectEl && selectEl.value) || body.selected || '';
+                    populateComPortSelect(selectEl, body.ports || [], preferred);
+                    var count = (body.ports || []).length;
+                    if (status) {
+                        status.textContent = 'COM ports refreshed: ' + count
+                            + (count === 1 ? ' port' : ' ports') + ' found.';
+                    }
+                })
+                .catch(function (err) {
+                    if (status) { status.textContent = 'COM port refresh error: ' + err; }
+                })
+                .finally(function () {
+                    btn.disabled = false;
+                    btn.textContent = originalLabel;
+                });
         }
     </script>
 
