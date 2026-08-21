@@ -147,3 +147,48 @@ def test_list_com_ports_skips_blank_devices():
         ports = start.list_com_ports()
 
     assert ports == [{"device": "COM3", "description": "USB-SERIAL CH340"}]
+
+
+def test_connect_serial_opens_port_and_sends_test():
+    mock_serial = MagicMock()
+    mock_serial.is_open = True
+    start.disconnect_serial()
+    with (
+        patch("start.serial.Serial", return_value=mock_serial) as serial_ctor,
+        patch("start.time.sleep") as mock_sleep,
+    ):
+        error = start.connect_serial("COM3", 9600)
+
+    assert error == ""
+    serial_ctor.assert_called_once_with()
+    mock_serial.open.assert_called_once()
+    mock_sleep.assert_called()
+    mock_serial.write.assert_called_with(b"TEST\n")
+    assert start.serial_is_connected()
+    start.disconnect_serial()
+
+
+def test_connect_serial_keeps_port_if_test_write_fails():
+    mock_serial = MagicMock()
+    mock_serial.is_open = True
+    mock_serial.write.side_effect = OSError("device not functioning")
+    start.disconnect_serial()
+    with patch("start.serial.Serial", return_value=mock_serial), patch("start.time.sleep"):
+        error = start.connect_serial("COM5")
+
+    assert error == ""
+    assert start.serial_is_connected()
+    start.disconnect_serial()
+
+
+def test_connect_serial_permission_error_mentions_serial_monitor():
+    start.disconnect_serial()
+    with patch("start.serial.Serial") as serial_ctor:
+        conn = MagicMock()
+        conn.open.side_effect = PermissionError("Access is denied.")
+        serial_ctor.return_value = conn
+        error = start.connect_serial("COM4")
+
+    assert "Access is denied" in error
+    assert "Serial Monitor" in error
+    assert not start.serial_is_connected()
