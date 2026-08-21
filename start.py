@@ -143,6 +143,7 @@ class Config:
     # Serial relay (e.g. LoRa master on USB). Empty string disables serial output.
     SERIAL_PORT: str = ""
     SERIAL_BAUD: int = 9600
+    SERIAL_OPEN_SETTLE_S: float = 0.5
 
     # Default values
     DEFAULT_LOCATION: str = "New Malden"
@@ -794,6 +795,19 @@ def disconnect_serial() -> None:
     print("[SERIAL] Disconnected")
 
 
+def _serial_open_error_message(exc: Exception) -> str:
+    """Turn a pyserial open failure into a UI/log message."""
+    message = str(exc)
+    lowered = message.lower()
+    if "permission" in lowered or "access is denied" in lowered:
+        return (
+            f"{message} Close Arduino Serial Monitor or any other app using this COM port, then try again."
+        )
+    if "file not found" in lowered or "cannot find" in lowered:
+        return f"{message} Click Refresh Ports and pick the COM port that is currently plugged in."
+    return message
+
+
 def connect_serial(port: Optional[str] = None, baud: Optional[int] = None) -> str:
     """Open the configured COM port. Returns an error message, or empty string on success."""
     global _serial_conn, _serial_drop_warned
@@ -805,13 +819,32 @@ def connect_serial(port: Optional[str] = None, baud: Optional[int] = None) -> st
     with _serial_lock:
         _close_serial_locked()
         try:
-            _serial_conn = serial.Serial(port_name, baud_rate, timeout=1)
+            conn = serial.Serial()
+            conn.port = port_name
+            conn.baudrate = baud_rate
+            conn.timeout = 1
+            conn.write_timeout = 2
+            conn.dsrdtr = False
+            conn.dtr = False
+            conn.rts = False
+            conn.open()
+            _serial_conn = conn
         except Exception as e:
             _serial_conn = None
-            return str(e)
+            return _serial_open_error_message(e)
     _serial_drop_warned = False
     print(f"[SERIAL] Connected on {port_name} @ {baud_rate}")
-    serial_send_command("TEST")
+    time.sleep(Config.SERIAL_OPEN_SETTLE_S)
+    with _serial_lock:
+        if _serial_conn is not None:
+            try:
+                _serial_conn.reset_input_buffer()
+                _serial_conn.reset_output_buffer()
+            except Exception as e:
+                print(f"[SERIAL] buffer reset failed: {e}")
+    # Opening the port is the connection. TEST is a probe; keep the port if the
+    # Arduino is still coming out of a USB reset.
+    serial_send_command("TEST", close_on_error=False)
     return ""
 
 
@@ -824,7 +857,7 @@ def try_autoconnect_serial() -> None:
         print(f"[SERIAL] Auto-connect failed: {error}")
 
 
-def serial_send_command(command: str) -> None:
+def serial_send_command(command: str, *, close_on_error: bool = True) -> None:
     """Mirror a scoreboard text command to the serial port (newline-delimited)."""
     global _serial_drop_warned
     if not command:
@@ -844,7 +877,8 @@ def serial_send_command(command: str) -> None:
             print(f"[SERIAL] TX: {command}")
         except Exception as e:
             print(f"[SERIAL] write '{command}' failed: {e}")
-            _close_serial_locked()
+            if close_on_error:
+                _close_serial_locked()
 
 
 def get_device_connection_flags() -> dict[str, Union[bool, str]]:
