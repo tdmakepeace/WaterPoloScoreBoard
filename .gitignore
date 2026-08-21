@@ -168,3 +168,7 @@ build/
 output/results
 *.exe
 !output/WaterPoloScoreBoard*.exe
+
+# Experimental LoRa sketch copies (keep master/remote tracked)
+BLE_small_sample/lora_master2/
+BLE_small_sample/lora_remote2/
