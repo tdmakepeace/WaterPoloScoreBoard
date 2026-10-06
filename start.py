@@ -349,6 +349,62 @@ elapsed_shot = 0
 clock_shot = Config.SHOT_CLOCK
 remaining_shot = 0
 
+
+class ExclusionClock(TypedDict):
+    """An 18s (foul clock) exclusion countdown that follows the game clock run/pause state."""
+    duration: float
+    spent: float
+    mark: Optional[float]
+
+
+MAX_EXCLUSION_CLOCKS = 2
+exclusion_clocks: list[ExclusionClock] = []
+
+
+def pauseExclusionClocks(now: Optional[float] = None) -> None:
+    """Bank elapsed running time into each clock and stop it ticking (idempotent)."""
+    now = time.time() if now is None else now
+    for clock in exclusion_clocks:
+        if clock['mark'] is None:
+            continue
+        clock['spent'] += now - clock['mark']
+        clock['mark'] = None
+
+
+def resumeExclusionClocks(now: Optional[float] = None) -> None:
+    """Start ticking any paused clocks (idempotent, so repeated resumes don't double-count)."""
+    now = time.time() if now is None else now
+    for clock in exclusion_clocks:
+        if clock['mark'] is None:
+            clock['mark'] = now
+
+
+def startExclusionClock(now: Optional[float] = None) -> None:
+    """Add a new exclusion clock, dropping the oldest when the cap is reached."""
+    now = time.time() if now is None else now
+    if len(exclusion_clocks) >= MAX_EXCLUSION_CLOCKS:
+        exclusion_clocks.pop(0)
+    exclusion_clocks.append({
+        'duration': float(Config.FOUL_CLOCK),
+        'spent': 0.0,
+        'mark': now if countdown_running else None,
+    })
+
+
+def clearExclusionClocks() -> None:
+    exclusion_clocks.clear()
+
+
+def getExclusionRemaining(now: Optional[float] = None) -> list[float]:
+    """Remaining seconds per active exclusion clock, floored at 0."""
+    now = time.time() if now is None else now
+    remaining = []
+    for clock in exclusion_clocks:
+        spent = clock['spent'] + (now - clock['mark'] if clock['mark'] is not None else 0)
+        remaining.append(max(clock['duration'] - spent, 0.0))
+    return remaining
+
+
 timeoutrunning = False
 starttimeout = 0
 elapsedtimeout = 0
@@ -1017,7 +1073,8 @@ def index():
                            hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
                            home_coach=home_team_red, away_coach=away_team_red,
                            initial_game_clock=clock_display['game_clock'],
-                           initial_shot_clock=clock_display['shot_clock'])
+                           initial_shot_clock=clock_display['shot_clock'],
+                           initial_exclusion_clocks=clock_display['exclusion_clocks'])
 
 @app.route('/display')
 def display():
@@ -1039,6 +1096,7 @@ def controls():
         'controls.html',
         initial_game_clock=clock_display['game_clock'],
         initial_shot_clock=clock_display['shot_clock'],
+        initial_exclusion_clocks=clock_display['exclusion_clocks'],
     )
 
 @app.route('/get_timer_reload_timestamp')
@@ -1121,6 +1179,7 @@ def start_countdown():
     countdown_running = True
     start_time = time.time() - elapsed_time
     start_shot = time.time() - elapsed_shot
+    resumeExclusionClocks()
     broadcast_refresh_event()
     return jsonify({'status': 'success'})
 
@@ -1129,6 +1188,7 @@ def start_countdown():
 def stop_countdown():
     global countdown_running, start_time, elapsed_time, start_shot, elapsed_shot, clock_shot
     countdown_running = False
+    pauseExclusionClocks()
     clock_shot = Config.SHOT_CLOCK
     start_time = 0
     elapsed_time = 0
@@ -1146,10 +1206,12 @@ def pause_countdown():
         countdown_running = False
         elapsed_time = time.time() - start_time
         elapsed_shot = time.time() - start_shot
+        pauseExclusionClocks()
     else:
         countdown_running = True
         start_time = time.time() - elapsed_time
         start_shot = time.time() - elapsed_shot
+        resumeExclusionClocks()
     broadcast_refresh_event()
     return jsonify({'status': 'success'})
 
@@ -1160,6 +1222,7 @@ def resume_countdown():
     countdown_running = True
     start_time = time.time() - elapsed_time
     start_shot = time.time() - elapsed_shot
+    resumeExclusionClocks()
     return jsonify({'status': 'success'})
 
 @app.route('/return_countdown')
@@ -1168,6 +1231,7 @@ def return_countdown():
     countdown_running = True
     start_time = time.time() - elapsed_time
     start_shot = time.time() - elapsed_shot
+    resumeExclusionClocks()
     return jsonify({'status': 'success'})
 
 
@@ -1178,6 +1242,7 @@ def get_countdown_status():
         'countdown_running': values['countdown_running'],
         'elapsed_time': values['remaining_time'],
         'elapsed_shot': values['remaining_shot'],
+        'exclusion_clocks': values['exclusion_clocks'],
     })
 
 
@@ -1201,6 +1266,7 @@ def getCountdownDisplayValues() -> dict:
         'remaining_shot': remaining_shot,
         'game_clock': f'{game_minutes}:{game_seconds:02d}',
         'shot_clock': f'{shot_seconds:02d}',
+        'exclusion_clocks': getExclusionRemaining(),
     }
 
 
@@ -1299,6 +1365,7 @@ def reset30():
     elapsed_shot = 0
     start_shot = 0
     # start_countdown()
+    clearExclusionClocks()
     command = str(remaining_shot)
     # print(f"Sent command to int: {command}")
     ble_send_int(command)
@@ -1315,6 +1382,7 @@ def possession():
     elapsed_shot = 0
     start_shot = 0
     start_countdown()
+    clearExclusionClocks()
     command = str(remaining_shot -1)
     # print(f"Sent command to int: {command}")
     ble_send_int(command)
@@ -1588,6 +1656,7 @@ def goalint():
 def major():
     if quarter == 0 :
         return redirect(url_for('index'))
+    startExclusionClock()
     if countdown_running:
         if runningclock == "no":
             pause20()
