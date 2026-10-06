@@ -23,17 +23,9 @@
                     <td>Game Time</td>
                     <td>
                         <select name="game" id="game">
-                            <option value=14>7 Min</option>
-                            <option value=13>6:30 Min</option>
-                            <option value=12>6 Min</option>
-                            <option value=11>5:30 Min</option>
-                            <option value=10>5 Min</option>
-                            <option value=15>7:30 Min</option>
-                            <option value=16>8 Min</option>
-                            <option value=17>8:30 Min</option>
-                            <option value=18>9 Min</option>
-                            <option value=19>9:30 Min</option>
-                            <option value=20>10 Min</option>
+                            {% for value, label in game_time_options %}
+                            <option value="{{ value }}"{% if value == game_time %} selected{% endif %}>{{ label }} Min</option>
+                            {% endfor %}
                         </select>
                     </td>
                 </tr>
@@ -41,10 +33,9 @@
                     <td>Interval</td>
                     <td>
                         <select name="interval" id="interval">
-                            <option value=4>2</option>
-                            <option value=2>1</option>
-                            <option value=3>1.5</option>
-                            <option value=4>2</option>
+                            {% for value, label in interval_options %}
+                            <option value="{{ value }}"{% if value == interval_time %} selected{% endif %}>{{ label }} Min</option>
+                            {% endfor %}
                         </select>
                     </td>
                 </tr>
@@ -52,12 +43,9 @@
                     <td>Half Time</td>
                     <td>
                         <select name="half" id="half">
-                            <option value=4>2</option>
-                            <option value=2>1</option>
-                            <option value=3>1.5</option>
-                            <option value=4>2</option>
-                            <option value=5>2.5</option>
-                            <option value=6>3</option>
+                            {% for value, label in halftime_options %}
+                            <option value="{{ value }}"{% if value == halftime %} selected{% endif %}>{{ label }} Min</option>
+                            {% endfor %}
                         </select>
                     </td>
                 </tr>
@@ -65,8 +53,9 @@
                     <td>Shot Clock</td>
                     <td>
                         <select name="shotclock" id="shotclock">
-                            <option value=28>28</option>
-                            <option value=30>30</option>
+                            {% for value in shot_clock_options %}
+                            <option value="{{ value }}"{% if value == shot_clock %} selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
                         </select>
                     </td>
                 </tr>

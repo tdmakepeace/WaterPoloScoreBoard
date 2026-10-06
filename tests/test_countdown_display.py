@@ -16,7 +16,7 @@ def test_get_countdown_display_values_default_game_start():
     assert values['countdown_running'] is False
     assert values['remaining_time'] == start.Config.GAME_TIME * 30
     assert values['remaining_shot'] == start.Config.SHOT_CLOCK
-    assert values['game_clock'] == '6:30'
+    assert values['game_clock'] == start.formatHalfMinutes(start.Config.GAME_TIME)
     assert values['shot_clock'] == f'{start.Config.SHOT_CLOCK:02d}'
 
 
