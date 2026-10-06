@@ -198,10 +198,19 @@
             });
         }
 
+        function renderExclusionClocks(clocks) {
+            let el = document.getElementById('exclusion-clocks');
+            if (!el) return;
+            el.innerHTML = (clocks || []).map(function (secs) {
+                return '<span class="exclusion-clock">' + Math.floor(secs).toString().padStart(2, '0') + '</span>';
+            }).join('');
+        }
+
         function updateCountdown() {
             $.ajax({
                 url: '/get_countdown_status',
                 success: function (response) {
+                    renderExclusionClocks(response.exclusion_clocks);
                     let countdownElement = document.getElementById('countdown');
                     let shotdownElement = document.getElementById('shotdown');
                     let timeLeft = response.elapsed_time;

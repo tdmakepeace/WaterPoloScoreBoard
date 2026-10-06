@@ -125,12 +125,18 @@ class Config:
 
     # Game settings
     # All time is based on 30 second increments
-    INTERVAL_TIME: int = 4
-    HALFTIME: int = 4
+    INTERVAL_TIME: int = 4  # 2:00
+    HALFTIME: int = 4  # 2:00
     TIMEOUT_TIME: int = 2
-    GAME_TIME: int = 13
+    GAME_TIME: int = 16  # 8:00
     SHOT_CLOCK: int = 28
     FOUL_CLOCK: int = SHOT_CLOCK - 10
+
+    # Settings page choices (times in 30 second units)
+    GAME_TIME_OPTIONS: tuple[int, ...] = tuple(range(10, 21))  # 5:00 - 10:00
+    INTERVAL_TIME_OPTIONS: tuple[int, ...] = tuple(range(1, 7))  # 0:30 - 3:00
+    HALFTIME_OPTIONS: tuple[int, ...] = tuple(range(2, 11))  # 1:00 - 5:00
+    SHOT_CLOCK_OPTIONS: tuple[int, ...] = (24, 26, 28, 30)
     BLUETOOTH_CONNECT: int = 0
     MAJORS: int = 3
 
@@ -144,6 +150,7 @@ class Config:
     SERIAL_PORT: str = ""
     SERIAL_BAUD: int = 9600
     SERIAL_OPEN_SETTLE_S: float = 0.5
+    MATRIX_FRAME_INTERVAL_S: float = 0.25
 
     # Default values
     DEFAULT_LOCATION: str = "New Malden"
@@ -349,6 +356,62 @@ elapsed_shot = 0
 clock_shot = Config.SHOT_CLOCK
 remaining_shot = 0
 
+
+class ExclusionClock(TypedDict):
+    """An 18s (foul clock) exclusion countdown that follows the game clock run/pause state."""
+    duration: float
+    spent: float
+    mark: Optional[float]
+
+
+MAX_EXCLUSION_CLOCKS = 2
+exclusion_clocks: list[ExclusionClock] = []
+
+
+def pauseExclusionClocks(now: Optional[float] = None) -> None:
+    """Bank elapsed running time into each clock and stop it ticking (idempotent)."""
+    now = time.time() if now is None else now
+    for clock in exclusion_clocks:
+        if clock['mark'] is None:
+            continue
+        clock['spent'] += now - clock['mark']
+        clock['mark'] = None
+
+
+def resumeExclusionClocks(now: Optional[float] = None) -> None:
+    """Start ticking any paused clocks (idempotent, so repeated resumes don't double-count)."""
+    now = time.time() if now is None else now
+    for clock in exclusion_clocks:
+        if clock['mark'] is None:
+            clock['mark'] = now
+
+
+def startExclusionClock(now: Optional[float] = None) -> None:
+    """Add a new exclusion clock, dropping the oldest when the cap is reached."""
+    now = time.time() if now is None else now
+    if len(exclusion_clocks) >= MAX_EXCLUSION_CLOCKS:
+        exclusion_clocks.pop(0)
+    exclusion_clocks.append({
+        'duration': float(Config.FOUL_CLOCK),
+        'spent': 0.0,
+        'mark': now if countdown_running else None,
+    })
+
+
+def clearExclusionClocks() -> None:
+    exclusion_clocks.clear()
+
+
+def getExclusionRemaining(now: Optional[float] = None) -> list[float]:
+    """Remaining seconds per active exclusion clock, floored at 0."""
+    now = time.time() if now is None else now
+    remaining = []
+    for clock in exclusion_clocks:
+        spent = clock['spent'] + (now - clock['mark'] if clock['mark'] is not None else 0)
+        remaining.append(max(clock['duration'] - spent, 0.0))
+    return remaining
+
+
 timeoutrunning = False
 starttimeout = 0
 elapsedtimeout = 0
@@ -356,6 +419,9 @@ elapsedtimeout = 0
 reason = 'Timeout'
 timeout: int = Config.TIMEOUT_TIME
 interval_active = False
+# Matrix display label while a break clock replaces the game clock: "TO", "HT", "IN" or None.
+MATRIX_BREAK_LABELS = ("TO", "HT", "IN")
+break_label: Optional[str] = None
 BLUETOOTH_CONNECT = Config.BLUETOOTH_CONNECT
 
 
@@ -845,6 +911,7 @@ def connect_serial(port: Optional[str] = None, baud: Optional[int] = None) -> st
     # Opening the port is the connection. TEST is a probe; keep the port if the
     # Arduino is still coming out of a USB reset.
     serial_send_command("TEST", close_on_error=False)
+    ensureMatrixFrameThread()
     return ""
 
 
@@ -879,6 +946,54 @@ def serial_send_command(command: str, *, close_on_error: bool = True) -> None:
             print(f"[SERIAL] write '{command}' failed: {e}")
             if close_on_error:
                 _close_serial_locked()
+
+
+# --- Matrix display frames (PC -> matrix Arduino -> LoRa) --------------------
+# Event.wait (not time.sleep) paces the loop so tests that patch time.sleep don't make it spin.
+_matrix_frame_stop = threading.Event()
+_matrix_frame_thread: Optional[threading.Thread] = None
+_matrix_frame_start_lock = threading.Lock()
+_last_matrix_frame = ""
+
+
+def writeMatrixFrame() -> bool:
+    """Write one display frame to the open serial port. Returns True when the frame was written."""
+    global _last_matrix_frame
+    if not serial_is_connected():
+        return False
+    frame = buildMatrixFrame()
+    with _serial_lock:
+        if _serial_conn is None or not _serial_conn.is_open:
+            return False
+        try:
+            _serial_conn.write((frame + "\n").encode("ascii"))
+        except Exception as e:
+            print(f"[SERIAL] matrix frame write failed: {e}")
+            _close_serial_locked()
+            return False
+    if frame != _last_matrix_frame:
+        print(f"[SERIAL] FRAME: {frame}")
+        _last_matrix_frame = frame
+    return True
+
+
+def _matrixFrameLoop() -> None:
+    while not _matrix_frame_stop.wait(Config.MATRIX_FRAME_INTERVAL_S):
+        try:
+            writeMatrixFrame()
+        except Exception as e:
+            print(f"[SERIAL] matrix frame loop error: {e}")
+
+
+def ensureMatrixFrameThread() -> None:
+    """Start (once) the background thread that streams display frames while the port is open."""
+    global _matrix_frame_thread
+    with _matrix_frame_start_lock:
+        if _matrix_frame_thread is not None and _matrix_frame_thread.is_alive():
+            return
+        _matrix_frame_stop.clear()
+        _matrix_frame_thread = threading.Thread(target=_matrixFrameLoop, name="matrix-frame", daemon=True)
+        _matrix_frame_thread.start()
 
 
 def get_device_connection_flags() -> dict[str, Union[bool, str]]:
@@ -1007,8 +1122,11 @@ def displayshotclock(shot):
 
 @app.route('/')
 def index():
-    global timer_reload_timestamp
+    global timer_reload_timestamp, break_label
     timer_reload_timestamp = time.time()  # Update timestamp when timer.html loads
+    # timeout.html returns here on expiry and on the X key without calling /stop_timeout.
+    if break_label == "TO":
+        break_label = None
     clock_display = getCountdownDisplayValues()
     return render_template('timer.html', scores=scores, teama=teama, teamb=teamb,
                            elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
@@ -1017,7 +1135,8 @@ def index():
                            hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
                            home_coach=home_team_red, away_coach=away_team_red,
                            initial_game_clock=clock_display['game_clock'],
-                           initial_shot_clock=clock_display['shot_clock'])
+                           initial_shot_clock=clock_display['shot_clock'],
+                           initial_exclusion_clocks=clock_display['exclusion_clocks'])
 
 @app.route('/display')
 def display():
@@ -1039,6 +1158,7 @@ def controls():
         'controls.html',
         initial_game_clock=clock_display['game_clock'],
         initial_shot_clock=clock_display['shot_clock'],
+        initial_exclusion_clocks=clock_display['exclusion_clocks'],
     )
 
 @app.route('/get_timer_reload_timestamp')
@@ -1121,6 +1241,7 @@ def start_countdown():
     countdown_running = True
     start_time = time.time() - elapsed_time
     start_shot = time.time() - elapsed_shot
+    resumeExclusionClocks()
     broadcast_refresh_event()
     return jsonify({'status': 'success'})
 
@@ -1129,6 +1250,7 @@ def start_countdown():
 def stop_countdown():
     global countdown_running, start_time, elapsed_time, start_shot, elapsed_shot, clock_shot
     countdown_running = False
+    pauseExclusionClocks()
     clock_shot = Config.SHOT_CLOCK
     start_time = 0
     elapsed_time = 0
@@ -1146,10 +1268,12 @@ def pause_countdown():
         countdown_running = False
         elapsed_time = time.time() - start_time
         elapsed_shot = time.time() - start_shot
+        pauseExclusionClocks()
     else:
         countdown_running = True
         start_time = time.time() - elapsed_time
         start_shot = time.time() - elapsed_shot
+        resumeExclusionClocks()
     broadcast_refresh_event()
     return jsonify({'status': 'success'})
 
@@ -1160,6 +1284,7 @@ def resume_countdown():
     countdown_running = True
     start_time = time.time() - elapsed_time
     start_shot = time.time() - elapsed_shot
+    resumeExclusionClocks()
     return jsonify({'status': 'success'})
 
 @app.route('/return_countdown')
@@ -1168,6 +1293,7 @@ def return_countdown():
     countdown_running = True
     start_time = time.time() - elapsed_time
     start_shot = time.time() - elapsed_shot
+    resumeExclusionClocks()
     return jsonify({'status': 'success'})
 
 
@@ -1178,6 +1304,7 @@ def get_countdown_status():
         'countdown_running': values['countdown_running'],
         'elapsed_time': values['remaining_time'],
         'elapsed_shot': values['remaining_shot'],
+        'exclusion_clocks': values['exclusion_clocks'],
     })
 
 
@@ -1201,7 +1328,46 @@ def getCountdownDisplayValues() -> dict:
         'remaining_shot': remaining_shot,
         'game_clock': f'{game_minutes}:{game_seconds:02d}',
         'shot_clock': f'{shot_seconds:02d}',
+        'exclusion_clocks': getExclusionRemaining(),
     }
+
+
+def getBreakRemaining(now: Optional[float] = None) -> float:
+    """Remaining seconds on the timeout / interval / halftime clock (frozen while paused)."""
+    now = time.time() if now is None else now
+    spent = now - starttimeout if timeoutrunning else elapsedtimeout
+    return max((timeout * 30) - spent, 0.0)
+
+
+def isHalftimeBreak() -> bool:
+    """Half-time is the break after P2 (quarter advances only when returning from the break)."""
+    return quarter == 2
+
+
+def _clampTwoDigits(value: float) -> int:
+    return min(max(int(value), 0), 99)
+
+
+def buildMatrixFrame() -> str:
+    """Matrix Arduino frame: HH,AA,PERIOD,CLOCK,SHOT,EX1,EX2 (clocks in whole seconds).
+
+    During TO / HT / IN the PERIOD field is the break label and CLOCK is the break countdown.
+    """
+    values = getCountdownDisplayValues()
+    exclusions = [_clampTwoDigits(seconds) for seconds in values['exclusion_clocks'][:MAX_EXCLUSION_CLOCKS]]
+    exclusions += [0] * (MAX_EXCLUSION_CLOCKS - len(exclusions))
+
+    if break_label in MATRIX_BREAK_LABELS:
+        period = break_label
+        clock = int(getBreakRemaining())
+    else:
+        period = f"P{min(max(quarter, 1), 4)}"
+        clock = int(values['remaining_time'])
+
+    home = _clampTwoDigits(scores['Home']['goals'])
+    away = _clampTwoDigits(scores['Away']['goals'])
+    shot = _clampTwoDigits(values['remaining_shot'])
+    return f"{home:02d},{away:02d},{period},{clock},{shot},{exclusions[0]},{exclusions[1]}"
 
 
 def syncRemainingShot() -> float:
@@ -1299,6 +1465,7 @@ def reset30():
     elapsed_shot = 0
     start_shot = 0
     # start_countdown()
+    clearExclusionClocks()
     command = str(remaining_shot)
     # print(f"Sent command to int: {command}")
     ble_send_int(command)
@@ -1315,6 +1482,7 @@ def possession():
     elapsed_shot = 0
     start_shot = 0
     start_countdown()
+    clearExclusionClocks()
     command = str(remaining_shot -1)
     # print(f"Sent command to int: {command}")
     ble_send_int(command)
@@ -1407,8 +1575,9 @@ def start_timeout():
 
 @app.route('/stop_timeout')
 def stop_timeout():
-    global timeoutrunning, starttimeout, elapsedtimeout
+    global timeoutrunning, starttimeout, elapsedtimeout, break_label
     timeoutrunning = False
+    break_label = None
     starttimeout = 0
     elapsedtimeout = 0
     return jsonify({'status': 'success'})
@@ -1588,6 +1757,7 @@ def goalint():
 def major():
     if quarter == 0 :
         return redirect(url_for('index'))
+    startExclusionClock()
     if countdown_running:
         if runningclock == "no":
             pause20()
@@ -3089,9 +3259,10 @@ def awaytimeout():
 
 @app.route('/timeout')
 def timeout_page():
-    global timeout
+    global timeout, break_label
     timeout = Config.TIMEOUT_TIME
     start_timeout()
+    break_label = "TO"
     remaining_time = math.floor(max(Config.GAME_TIME * 30 - elapsed_time, 0))
     return render_template('timeout.html', scores=scores, teama=teama, teamb=teamb,
                            elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
@@ -3102,11 +3273,13 @@ def timeout_page():
                            elapsed_timeout=elapsedtimeout, clocktime=remaining_time)
 @app.route('/runinterval')
 def runinterval():
-    global timeout
-    if quarter == 3 :
+    global timeout, break_label
+    if isHalftimeBreak():
         timeout = Config.HALFTIME
+        break_label = "HT"
     else:
         timeout = Config.INTERVAL_TIME
+        break_label = "IN"
 
     start_timeout()
     return render_template('interval.html', scores=scores, teama=teama, teamb=teamb,
@@ -3149,11 +3322,12 @@ def interval():
 
 @app.route('/returninterval')
 def returninterval():
-    global quarter, interval_active
+    global quarter, interval_active, break_label
     if not interval_active:
         return redirect(url_for('index'))
 
     interval_active = False
+    break_label = None
     stop_countdown()
 
     timestamp = datetime.now()
@@ -3224,6 +3398,14 @@ def callintervalgoal():
 def settings():
     return render_template(
         'setup.html',
+        game_time_options=buildHalfMinuteOptions(Config.GAME_TIME_OPTIONS),
+        interval_options=buildHalfMinuteOptions(Config.INTERVAL_TIME_OPTIONS),
+        halftime_options=buildHalfMinuteOptions(Config.HALFTIME_OPTIONS),
+        shot_clock_options=Config.SHOT_CLOCK_OPTIONS,
+        game_time=Config.GAME_TIME,
+        interval_time=Config.INTERVAL_TIME,
+        halftime=Config.HALFTIME,
+        shot_clock=Config.SHOT_CLOCK,
         HomeTeam=Config.DEFAULT_HOME_TEAM,
         AwayTeam=Config.DEFAULT_AWAY_TEAM,
         location=Config.DEFAULT_LOCATION,
@@ -3237,16 +3419,37 @@ def settings():
 def help():
     return render_template('help.html')
 
+def formatHalfMinutes(units: int) -> str:
+    """30-second units -> 'M:SS' (e.g. 17 -> '8:30')."""
+    minutes, seconds = divmod(units * 30, 60)
+    return f"{minutes}:{seconds:02d}"
+
+
+def buildHalfMinuteOptions(units: tuple[int, ...]) -> list[tuple[int, str]]:
+    return [(unit, formatHalfMinutes(unit)) for unit in units]
+
+
+def pickAllowedSetting(raw: Optional[str], allowed: tuple[int, ...], current: int) -> int:
+    """Form value if it is one of the allowed choices, otherwise keep the current setting."""
+    try:
+        value = int(raw or "")
+    except ValueError:
+        return current
+    return value if value in allowed else current
+
+
 @app.route('/save' , methods=['GET', 'POST'])
 def save():
 
-    Config.GAME_TIME = int(request.form['game'])
-    Config.INTERVAL_TIME = int(request.form['interval'])
-    Config.HALFTIME = int(request.form['half'])
+    Config.GAME_TIME = pickAllowedSetting(request.form.get('game'), Config.GAME_TIME_OPTIONS, Config.GAME_TIME)
+    Config.INTERVAL_TIME = pickAllowedSetting(
+        request.form.get('interval'), Config.INTERVAL_TIME_OPTIONS, Config.INTERVAL_TIME
+    )
+    Config.HALFTIME = pickAllowedSetting(request.form.get('half'), Config.HALFTIME_OPTIONS, Config.HALFTIME)
     Config.DEFAULT_LOCATION = (request.form['Location'])
     Config.DEFAULT_HOME_TEAM = (request.form['Home'])
     Config.DEFAULT_AWAY_TEAM = (request.form['Away'])
-    Config.SHOT_CLOCK = int(request.form['shotclock'])
+    Config.SHOT_CLOCK = pickAllowedSetting(request.form.get('shotclock'), Config.SHOT_CLOCK_OPTIONS, Config.SHOT_CLOCK)
     Config.FOUL_CLOCK = max(Config.SHOT_CLOCK - 10, 0)
     Config.MAJORS = int(request.form['majors'])
     Config.SERIAL_PORT = (request.form.get('serial_port') or '').strip()
