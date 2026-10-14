@@ -104,7 +104,7 @@ def test_save_recomputes_foul_clock_from_shot_clock(restore_config_state):
                 "Location": "Pool",
                 "Home": "Home",
                 "Away": "Away",
-                "shotclock": "25",
+                "shotclock": "24",
                 "majors": "3",
                 "serial_port": "",
             },
@@ -112,5 +112,5 @@ def test_save_recomputes_foul_clock_from_shot_clock(restore_config_state):
         )
 
     assert response.status_code == 302
-    assert start.Config.SHOT_CLOCK == 25
-    assert start.Config.FOUL_CLOCK == 15
+    assert start.Config.SHOT_CLOCK == 24
+    assert start.Config.FOUL_CLOCK == 14

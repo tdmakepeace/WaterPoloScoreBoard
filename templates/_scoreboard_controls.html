@@ -13,8 +13,13 @@
                 Paused Change (H)
             </button>
         </th>
-        <th colspan="3">
+        <th colspan="3" style="position:relative;">
             <span style="font-size: 300px;font-weight: bold" id="shotdown">{{ initial_shot_clock }}</span>
+            <div id="exclusion-clocks" style="position:absolute;top:100%;left:0;right:0;display:flex;gap:40px;justify-content:center;line-height:56px;font-size:48px;font-weight:bold;color:purple;">
+                {% for seconds in initial_exclusion_clocks or [] %}
+                <span class="exclusion-clock">{{ '%02d' % seconds|int }}</span>
+                {% endfor %}
+            </div>
         </th>
         <th colspan="2">
             <button class="btn-shot" style="height:150px;width:150px" onclick="reset20()">

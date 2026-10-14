@@ -298,6 +298,22 @@ Routes are used by the UI buttons, for example:
 
 When a USB serial device is configured (`Config.SERIAL_PORT` on the settings page), scoreboard commands are mirrored over the COM port as newline-delimited text — the same payloads used for BLE (`TEST`, `BUZZER`, integers, etc.). Useful for a LoRa master or other wired relay. Leave the port empty to disable serial output.
 
+While the port is open, a display frame is also written every 0.25 s (`Config.MATRIX_FRAME_INTERVAL_S`) for the Mega matrix scoreboard in [WaterPolo_Arduino](https://github.com/tdmakepeace/WaterPolo_Arduino) (`waterpolo_scoreboard.ino`), which draws the RGB matrix and relays the shot clock to the LoRa remotes:
+
+```text
+HH,AA,PERIOD,CLOCK,SHOT,EX1,EX2      e.g. 03,01,P2,245,18,12,0
+```
+
+| Field | Meaning |
+|-------|---------|
+| `HH`, `AA` | Home / away goals, 2 digits (0–99) |
+| `PERIOD` | `P1`–`P4`, or `TO` / `IN` / `HT` during a timeout, interval, or half-time |
+| `CLOCK` | Game clock in whole seconds; during `TO` / `IN` / `HT` it is the break countdown |
+| `SHOT` | Shot clock seconds |
+| `EX1`, `EX2` | Exclusion clocks in seconds (`0` = inactive) |
+
+`HT` is the break at the end of P2 (`quarter == 2`, the same rule that loads `Config.HALFTIME`); the breaks after P1 and P3 are `IN`. See `buildMatrixFrame()` in `start.py`.
+
 Connection status appears on the setup page alongside BLE device flags (`get_device_connection_flags()`).
 
 ### Bluetooth (BLE) controls

@@ -94,6 +94,12 @@
                     let shotseconds = Math.floor(response.elapsed_shot % 60);
                     let el = document.getElementById('shotdown');
                     if (el) el.textContent = shotseconds.toString().padStart(2, '0');
+                    let excl = document.getElementById('exclusion-clocks');
+                    if (excl) {
+                        excl.innerHTML = (response.exclusion_clocks || []).map(function (secs) {
+                            return '<span class="exclusion-clock">' + Math.floor(secs).toString().padStart(2, '0') + '</span>';
+                        }).join('');
+                    }
                 }
             });
         }
