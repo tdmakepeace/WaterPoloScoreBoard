@@ -1352,6 +1352,8 @@ def buildMatrixFrame() -> str:
     """Matrix Arduino frame: HH,AA,PERIOD,CLOCK,SHOT,EX1,EX2 (clocks in whole seconds).
 
     During TO / HT / IN the PERIOD field is the break label and CLOCK is the break countdown.
+    When the game clock is shorter than the shot clock, SHOT is the game clock so the Mega
+    shot-clock display never shows more time than is left in the period.
     """
     values = getCountdownDisplayValues()
     exclusions = [_clampTwoDigits(seconds) for seconds in values['exclusion_clocks'][:MAX_EXCLUSION_CLOCKS]]
@@ -1367,6 +1369,9 @@ def buildMatrixFrame() -> str:
     home = _clampTwoDigits(scores['Home']['goals'])
     away = _clampTwoDigits(scores['Away']['goals'])
     shot = _clampTwoDigits(values['remaining_shot'])
+    game_seconds = int(values['remaining_time'])
+    if game_seconds < shot:
+        shot = game_seconds
     return f"{home:02d},{away:02d},{period},{clock},{shot},{exclusions[0]},{exclusions[1]}"
 
 

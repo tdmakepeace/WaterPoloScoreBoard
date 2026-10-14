@@ -70,6 +70,53 @@ def test_play_frame_floors_partial_seconds():
     assert fields[3:5] == [f"{start.Config.GAME_TIME * 30 - 1}", f"{start.Config.SHOT_CLOCK - 1}"]
 
 
+def test_shot_field_follows_game_clock_when_game_is_shorter():
+    game_left = start.Config.SHOT_CLOCK - 8
+    setGame(elapsed=start.Config.GAME_TIME * 30 - game_left, shot_elapsed=0)
+
+    fields = start.buildMatrixFrame().split(",")
+
+    assert fields[3] == str(game_left)
+    assert fields[4] == str(game_left)
+
+
+def test_shot_field_keeps_lower_shot_clock_near_end_of_period():
+    game_left = start.Config.SHOT_CLOCK - 5
+    shot_left = 9
+    setGame(
+        elapsed=start.Config.GAME_TIME * 30 - game_left,
+        shot_elapsed=start.Config.SHOT_CLOCK - shot_left,
+    )
+
+    fields = start.buildMatrixFrame().split(",")
+
+    assert fields[3] == str(game_left)
+    assert fields[4] == str(shot_left)
+
+
+def test_shot_field_unchanged_when_clocks_show_the_same_second():
+    left = 12
+    setGame(
+        elapsed=start.Config.GAME_TIME * 30 - left,
+        shot_elapsed=start.Config.SHOT_CLOCK - left,
+    )
+
+    assert start.buildMatrixFrame().split(",")[4] == str(left)
+
+
+def test_break_shot_field_follows_shorter_game_clock():
+    game_left = 10
+    setGame(elapsed=start.Config.GAME_TIME * 30 - game_left, shot_elapsed=0)
+    start.break_label = "TO"
+    start.timeout = 2
+    start.elapsedtimeout = 15
+
+    fields = start.buildMatrixFrame().split(",")
+
+    assert fields[2:4] == ["TO", "45"]
+    assert fields[4] == str(game_left)
+
+
 def test_quarter_zero_reports_p1():
     setGame(quarter=0)
 
