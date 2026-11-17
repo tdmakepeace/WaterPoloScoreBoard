@@ -45,6 +45,16 @@ class PeriodScores(TypedDict):
     majors4: int
 
 
+class CountdownDisplayValues(TypedDict):
+    """Live clock values shared by the API, templates, and remote displays."""
+    countdown_running: bool
+    remaining_time: float
+    remaining_shot: float
+    game_clock: str
+    shot_clock: str
+    exclusion_clocks: list[float]
+
+
 def newPlayerStats() -> PlayerStats:
     return {"assists": 0, "goals": 0, "majors": 0, "reds": 0}
 
@@ -1308,16 +1318,16 @@ def get_countdown_status():
     })
 
 
-def getCountdownDisplayValues() -> dict:
+def getCountdownDisplayValues() -> CountdownDisplayValues:
     """Remaining game/shot clock values for API responses and template rendering."""
     global countdown_running, start_time, elapsed_time, start_shot, elapsed_shot, clock_shot
 
     if countdown_running:
-        remaining_time = max((Config.GAME_TIME * 30) - (time.time() - start_time), 0)
-        remaining_shot = max(clock_shot - (time.time() - start_shot), 0)
+        remaining_time = max((Config.GAME_TIME * 30) - (time.time() - start_time), 0.0)
+        remaining_shot = max(clock_shot - (time.time() - start_shot), 0.0)
     else:
-        remaining_time = max((Config.GAME_TIME * 30) - elapsed_time, 0)
-        remaining_shot = max(clock_shot - elapsed_shot, 0)
+        remaining_time = max((Config.GAME_TIME * 30) - elapsed_time, 0.0)
+        remaining_shot = max(clock_shot - elapsed_shot, 0.0)
 
     game_minutes = int(remaining_time // 60)
     game_seconds = int(remaining_time % 60)
@@ -1356,9 +1366,10 @@ def capShotClockToGameClock(shot_seconds: int | float, game_seconds: Optional[fl
     on the game clock shows 24.
     """
     shot = max(int(shot_seconds), 0)
-    if game_seconds is None:
-        game_seconds = getCountdownDisplayValues()['remaining_time']
-    game_whole = max(int(game_seconds), 0)
+    resolved_game_seconds = game_seconds
+    if resolved_game_seconds is None:
+        resolved_game_seconds = getCountdownDisplayValues()['remaining_time']
+    game_whole = max(int(resolved_game_seconds), 0)
     if game_whole < shot:
         return game_whole
     return shot
