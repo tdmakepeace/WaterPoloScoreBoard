@@ -1108,9 +1108,8 @@ def buzzer():
 
 @app.route('/displayshotclock/<int:shot>')
 def displayshotclock(shot):
-    command = shot
     try:
-        ble_send_int(command)
+        sendRemoteShotClock(shot)
         return jsonify({'status': 'success'})
     except Exception as e:
         # Log the error and return a controlled response
@@ -1141,6 +1140,7 @@ def index():
 @app.route('/display')
 def display():
     clock_display = getCountdownDisplayValues()
+    remote_shot = capShotClockToGameClock(clock_display['remaining_shot'], clock_display['remaining_time'])
     return render_template('display.html', scores=scores, teama=teama, teamb=teamb, 
                            elapsed_shot=elapsed_shot, elapsed_time=elapsed_time, TeamHome=TeamHome, TeamAway=TeamAway,
                            periodscores=periodscores, quarter=quarter, HomeTeam=Config.DEFAULT_HOME_TEAM,
@@ -1148,7 +1148,7 @@ def display():
                            hometimeoutv=hometimeoutv, awaytimeoutv=awaytimeoutv, filename=filename,
                            home_coach=home_team_red, away_coach=away_team_red,
                            initial_game_clock=clock_display['game_clock'],
-                           initial_shot_clock=clock_display['shot_clock'])
+                           initial_shot_clock=f'{remote_shot:02d}')
 
 @app.route('/controls')
 def controls():
@@ -1348,6 +1348,27 @@ def _clampTwoDigits(value: float) -> int:
     return min(max(int(value), 0), 99)
 
 
+def capShotClockToGameClock(shot_seconds: int | float, game_seconds: Optional[float] = None) -> int:
+    """Whole seconds to show on a remote shot clock.
+
+    The remote shows whichever clock has less time left. A 30s game clock with
+    a 28s shot clock stays on 28. Resetting the shot clock to 28 with 24s left
+    on the game clock shows 24.
+    """
+    shot = max(int(shot_seconds), 0)
+    if game_seconds is None:
+        game_seconds = getCountdownDisplayValues()['remaining_time']
+    game_whole = max(int(game_seconds), 0)
+    if game_whole < shot:
+        return game_whole
+    return shot
+
+
+def sendRemoteShotClock(shot_seconds: int | float) -> None:
+    """Push a shot-clock value to the BLE remotes, capped by the game clock."""
+    ble_send_int(str(capShotClockToGameClock(shot_seconds)))
+
+
 def buildMatrixFrame() -> str:
     """Matrix Arduino frame: HH,AA,PERIOD,CLOCK,SHOT,EX1,EX2 (clocks in whole seconds).
 
@@ -1368,10 +1389,7 @@ def buildMatrixFrame() -> str:
 
     home = _clampTwoDigits(scores['Home']['goals'])
     away = _clampTwoDigits(scores['Away']['goals'])
-    shot = _clampTwoDigits(values['remaining_shot'])
-    game_seconds = int(values['remaining_time'])
-    if game_seconds < shot:
-        shot = game_seconds
+    shot = _clampTwoDigits(capShotClockToGameClock(values['remaining_shot'], values['remaining_time']))
     return f"{home:02d},{away:02d},{period},{clock},{shot},{exclusions[0]},{exclusions[1]}"
 
 
@@ -1442,8 +1460,7 @@ def _shot_clock_apply_delta(delta):
         clock_shot = elapsed_shot + new_remaining
         remaining_shot = max(clock_shot - elapsed_shot, 0)
 
-    command = str(remaining_shot)
-    ble_send_int(command)
+    sendRemoteShotClock(remaining_shot)
     broadcast_refresh_event()
     return jsonify({'status': 'success'})
 
@@ -1471,9 +1488,7 @@ def reset30():
     start_shot = 0
     # start_countdown()
     clearExclusionClocks()
-    command = str(remaining_shot)
-    # print(f"Sent command to int: {command}")
-    ble_send_int(command)
+    sendRemoteShotClock(remaining_shot)
 
     return jsonify({'status': 'success'})
 
@@ -1488,9 +1503,7 @@ def possession():
     start_shot = 0
     start_countdown()
     clearExclusionClocks()
-    command = str(remaining_shot -1)
-    # print(f"Sent command to int: {command}")
-    ble_send_int(command)
+    sendRemoteShotClock(remaining_shot - 1)
 
     return jsonify({'status': 'success'})
 
@@ -1513,9 +1526,7 @@ def reset20():
             elapsed_shot = 0
             start_shot = 0
         start_countdown()
-    command = str(remaining_shot-1)
-    # print(f"Sent command to int: {command}")
-    ble_send_int(command)
+    sendRemoteShotClock(remaining_shot - 1)
     return jsonify({'status': 'success'})
 
 @app.route('/pause20')
@@ -1534,9 +1545,7 @@ def pause20():
             remaining_shot = max((clock_shot) , 0)
             elapsed_shot = 0
             start_shot = 0
-    command = str(remaining_shot)
-    # print(f"Sent command to int: {command}")
-    ble_send_int(command)
+    sendRemoteShotClock(remaining_shot)
     return jsonify({'status': 'success'})
     # return jsonify({'countdown_running': countdown_running, 'elapsed_time': remaining_time, 'elapsed_shot': remaining_shot })
 
@@ -1551,9 +1560,7 @@ def force20():
     remaining_shot = max((clock_shot) , 0)
     elapsed_shot = 0
     start_shot = 0
-    command = str(remaining_shot)
-    # print(f"Sent command to int: {command}")
-    ble_send_int(command)
+    sendRemoteShotClock(remaining_shot)
     return jsonify({'status': 'success'})
 
 @app.route('/pause30')
@@ -1565,9 +1572,7 @@ def pause30():
     remaining_shot = max((clock_shot) , 0)
     elapsed_shot = 0
     start_shot = 0
-    command = str(remaining_shot)
-    # print(f"Sent command to int: {command}")
-    ble_send_int(command)
+    sendRemoteShotClock(remaining_shot)
     return jsonify({'status': 'success'})
 
 @app.route('/start_timeout')
