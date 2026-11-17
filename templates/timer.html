@@ -246,7 +246,7 @@
                                     });
                                 } else {
                                    $.ajax({
-                                        url: '/displayshotclock/' + seconds,
+                                        url: '/displayshotclock/' + Math.floor(timeLeft),
                                         method: 'GET', // or 'POST' depending on your backend
                                     });
                                 }
@@ -284,7 +284,7 @@
                                     });
                                 } else {
                                    $.ajax({
-                                        url: '/displayshotclock/' + seconds,
+                                        url: '/displayshotclock/' + Math.floor(timeLeft),
                                         method: 'GET', // or 'POST' depending on your backend
                                     });
                                 }
@@ -313,7 +313,7 @@
                                     });
                                 } else {
                                    $.ajax({
-                                        url: '/displayshotclock/' + seconds,
+                                        url: '/displayshotclock/' + Math.floor(timeLeft),
                                         method: 'GET', // or 'POST' depending on your backend
                                     });
                                 }

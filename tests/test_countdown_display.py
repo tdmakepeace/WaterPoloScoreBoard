@@ -101,6 +101,85 @@ def test_pause20_uses_configured_foul_clock_as_threshold():
         start.Config.FOUL_CLOCK = original_foul_clock
 
 
+def test_cap_shot_clock_keeps_shot_when_game_clock_is_longer():
+    start.countdown_running = False
+    start.elapsed_time = start.Config.GAME_TIME * 30 - 30
+    start.elapsed_shot = 0
+    start.clock_shot = 28
+
+    assert start.capShotClockToGameClock(28) == 28
+
+
+def test_cap_shot_clock_uses_game_clock_when_shot_is_reset_longer():
+    start.countdown_running = False
+    start.elapsed_time = start.Config.GAME_TIME * 30 - 24
+    start.elapsed_shot = 0
+    start.clock_shot = 28
+
+    assert start.capShotClockToGameClock(28) == 24
+
+
+def test_reset30_sends_game_clock_when_it_is_shorter_than_the_shot_clock():
+    start.countdown_running = False
+    start.elapsed_time = start.Config.GAME_TIME * 30 - 24
+    start.elapsed_shot = 10
+    start.clock_shot = 18
+    start.remaining_shot = 8
+
+    with start.app.app_context():
+        with (
+            patch.object(start, "ble_send_int") as mock_ble_send_int,
+            patch.object(start, "broadcast_refresh_event"),
+        ):
+            start.reset30()
+
+    assert start.remaining_shot == start.Config.SHOT_CLOCK
+    mock_ble_send_int.assert_called_once_with("24")
+
+
+def test_reset30_sends_shot_clock_when_game_clock_is_longer():
+    start.countdown_running = False
+    start.elapsed_time = start.Config.GAME_TIME * 30 - 30
+    start.elapsed_shot = 0
+    start.clock_shot = 20
+
+    with start.app.app_context():
+        with (
+            patch.object(start, "ble_send_int") as mock_ble_send_int,
+            patch.object(start, "broadcast_refresh_event"),
+        ):
+            start.reset30()
+
+    mock_ble_send_int.assert_called_once_with("28")
+
+
+def test_displayshotclock_caps_requested_value_to_the_game_clock():
+    start.countdown_running = False
+    start.elapsed_time = start.Config.GAME_TIME * 30 - 24
+    start.elapsed_shot = 0
+    start.clock_shot = 28
+
+    client = start.app.test_client()
+    with patch.object(start, "ble_send_int") as mock_ble_send_int:
+        response = client.get('/displayshotclock/28')
+
+    assert response.status_code == 200
+    mock_ble_send_int.assert_called_once_with("24")
+
+
+def test_display_page_initial_shot_clock_follows_shorter_game_clock():
+    start.countdown_running = False
+    start.elapsed_time = start.Config.GAME_TIME * 30 - 24
+    start.elapsed_shot = 0
+    start.clock_shot = 28
+
+    client = start.app.test_client()
+    with patch.object(start, "render_template", return_value="") as mock_render:
+        client.get('/display')
+
+    assert mock_render.call_args.kwargs['initial_shot_clock'] == '24'
+
+
 def test_callinterval_is_idempotent_while_interval_is_active():
     start.interval_active = False
     start.countdown_running = True

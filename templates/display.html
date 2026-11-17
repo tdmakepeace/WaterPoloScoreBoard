@@ -200,12 +200,8 @@
                             gameLabelElement.innerHTML = 'GAME CLOCK';
                             shotLabelElement.innerHTML = 'SHOT CLOCK';
                             
-                            // Color coding for shot clock
-                            if (shotLeft <= timeLeft) {
-                                shotdownElement.style.color = "red";
-                            } else {
-                                shotdownElement.style.color = "transparent";
-                            }
+                            // Shot clock stays visible. When the game clock is shorter,
+                            // this display shows the game clock instead of the shot clock.
 
                             // Color coding for main clock
                             if (timeLeft > 60) {
@@ -219,9 +215,14 @@
                             let minutes = Math.floor(timeLeft / 60);
                             let seconds = Math.floor(timeLeft % 60);
                             let shotseconds = Math.floor(shotLeft % 60);
+                            let shownShot = shotseconds;
+                            if (Math.floor(timeLeft) < shotseconds) {
+                                shownShot = Math.floor(timeLeft);
+                            }
                             
                             countdownElement.innerHTML = minutes + ':' + seconds.toString().padStart(2, '0');
-                            shotdownElement.innerHTML = shotseconds.toString().padStart(2, '0');
+                            shotdownElement.style.color = "red";
+                            shotdownElement.innerHTML = shownShot.toString().padStart(2, '0');
 
                             // Auto-refresh every second
                             setTimeout(updateCountdown, 1000);
